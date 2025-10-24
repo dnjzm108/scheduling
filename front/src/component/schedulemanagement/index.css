@@ -1,0 +1,210 @@
+/* 기본 스타일 (데스크톱 우선) */
+.schedule-management-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.title {
+  color: #4CAF50; /* 초록색 테마 */
+  font-size: 24px;
+  margin: 0;
+}
+
+.admin-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-name {
+  color: #333;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.logout-button {
+  background-color: #ffffff;
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.back-button {
+  background-color: #ffffff;
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.back-button:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.week-selector {
+  margin-bottom: 15px;
+}
+
+.week-selector label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.week-selector select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.download-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: background-color 0.3s;
+}
+
+.download-button:hover {
+  background-color: #45a049;
+}
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.schedule-table th, .schedule-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.schedule-table th {
+  background-color: #4CAF50;
+  color: white;
+}
+
+/* 모바일 반응형 (768px 이하) */
+@media (max-width: 768px) {
+  .schedule-management-container {
+    max-width: 100%;
+    padding: 15px;
+    margin: 10px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .admin-name {
+    font-size: 14px;
+  }
+
+  .logout-button {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .back-button {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .week-selector select {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .download-button {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .schedule-table th, .schedule-table td {
+    padding: 8px;
+    font-size: 14px;
+  }
+}
+
+/* 초소형 화면 (480px 이하) */
+@media (max-width: 480px) {
+  .schedule-management-container {
+    padding: 10px;
+    margin: 5px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .admin-name {
+    font-size: 13px;
+  }
+
+  .logout-button {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+
+  .back-button {
+    font-size: 13px;
+    padding: 6px;
+  }
+
+  .week-selector select {
+    font-size: 13px;
+    padding: 7px;
+  }
+
+  .download-button {
+    font-size: 13px;
+    padding: 7px;
+  }
+
+  .schedule-table {
+    font-size: 12px;
+  }
+
+  .schedule-table th, .schedule-table td {
+    padding: 6px;
+  }
+}
