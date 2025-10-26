@@ -1,5 +1,8 @@
 /* 기본 스타일 (데스크톱 우선) */
 .myschedules-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   max-width: 600px;
   margin: 0 auto;
   padding: 20px;
@@ -14,12 +17,19 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  width: 100%;
 }
 
 .title {
-  color: #4CAF50; /* 초록색 테마 */
+  color: #4CAF50;
   font-size: 24px;
   margin: 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .user-name {
@@ -28,10 +38,26 @@
   font-weight: bold;
 }
 
+.logout-button {
+  background-color: #ffffff;
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
 .schedule-button {
   width: 100%;
   padding: 12px;
-  background-color: #4CAF50; /* 초록색 버튼 */
+  background-color: #4CAF50;
   color: white;
   border: none;
   border-radius: 4px;
@@ -48,6 +74,7 @@
 .schedule-list {
   list-style: none;
   padding: 0;
+  width: 100%;
 }
 
 .schedule-item {
@@ -58,6 +85,7 @@
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.3s;
+  text-align: center;
 }
 
 .schedule-item:hover {
@@ -69,11 +97,19 @@
   padding: 10px;
   background-color: #f9f9f9;
   border-top: 1px solid #ddd;
+  text-align: left;
 }
 
 .details p {
   margin: 5px 0;
   font-size: 14px;
+}
+
+.no-schedules {
+  color: #666;
+  font-size: 16px;
+  text-align: center;
+  margin: 20px 0;
 }
 
 /* 모바일 반응형 (768px 이하) */
@@ -92,6 +128,11 @@
     font-size: 14px;
   }
 
+  .logout-button {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
   .schedule-button {
     font-size: 16px;
     padding: 10px;
@@ -103,6 +144,10 @@
 
   .details p {
     font-size: 13px;
+  }
+
+  .no-schedules {
+    font-size: 14px;
   }
 }
 
@@ -127,6 +172,11 @@
     font-size: 13px;
   }
 
+  .logout-button {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+
   .schedule-button {
     font-size: 14px;
     padding: 8px;
@@ -138,5 +188,9 @@
 
   .details p {
     font-size: 12px;
+  }
+
+  .no-schedules {
+    font-size: 13px;
   }
 }

@@ -1,28 +1,45 @@
 /* 기본 스타일 (데스크톱 우선) */
 .login-container {
-  max-width: 600px;
-  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh; /* 화면 전체 높이 */
+  background-color: #f0f2f5; /* 배경색 부드럽게 */
   padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   font-family: Arial, sans-serif;
 }
 
+.login-box {
+  max-width: 400px; /* 컨테이너 너비 축소 */
+  width: 100%;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* 그림자 강화 */
+  text-align: center; /* 내부 요소 중앙 정렬 */
+}
+
 .title {
-  text-align: center;
   color: #4CAF50; /* 초록색 테마 */
-  margin-bottom: 20px;
-  font-size: 24px;
+  margin-bottom: 25px;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.error-message {
+  color: #d32f2f; /* 빨간색 에러 메시지 */
+  font-size: 14px;
+  margin-bottom: 15px;
+  text-align: center;
 }
 
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 20px; /* 입력창 간격 */
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
   font-weight: bold;
   color: #333;
   font-size: 16px;
@@ -30,49 +47,63 @@
 
 .form-group input {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 16px;
   box-sizing: border-box;
+  transition: border-color 0.3s, box-shadow 0.3s; /* 부드러운 전환 */
 }
 
 .form-group input:focus {
-  border-color: #4CAF50; /* 초록색 포커스 */
+  border-color: #4CAF50;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.2); /* 포커스 효과 */
   outline: none;
 }
 
-.submit-button {
+.login-button, .signup-button {
   width: 100%;
   padding: 12px;
-  background-color: #4CAF50; /* 초록색 버튼 */
+  background-color: #4CAF50;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 18px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-top: 10px;
 }
 
-.submit-button:hover {
-  background-color: #45a049; /* 더 어두운 초록 */
+.login-button:hover, .signup-button:hover {
+  background-color: #45a049;
+  transform: translateY(-2px); /* 호버 시 살짝 올라가는 효과 */
+}
+
+.signup-button {
+  background-color: #ffffff;
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+}
+
+.signup-button:hover {
+  background-color: #4CAF50;
+  color: white;
 }
 
 /* 모바일 반응형 (768px 이하) */
 @media (max-width: 768px) {
-  .login-container {
-    max-width: 100%;
-    padding: 15px;
-    margin: 10px;
+  .login-box {
+    max-width: 90%;
+    padding: 20px;
   }
 
   .title {
-    font-size: 20px;
-    margin-bottom: 15px;
+    font-size: 24px;
+    margin-bottom: 20px;
   }
 
   .form-group {
-    margin-bottom: 12px;
+    margin-bottom: 15px;
   }
 
   .form-group label {
@@ -81,33 +112,41 @@
 
   .form-group input {
     font-size: 14px;
-    padding: 8px;
+    padding: 10px;
   }
 
-  .submit-button {
+  .login-button, .signup-button {
     font-size: 16px;
     padding: 10px;
+  }
+
+  .error-message {
+    font-size: 13px;
   }
 }
 
 /* 초소형 화면 (480px 이하) */
 @media (max-width: 480px) {
-  .login-container {
-    padding: 10px;
-    margin: 5px;
+  .login-box {
+    padding: 15px;
   }
 
   .title {
-    font-size: 18px;
+    font-size: 20px;
+    margin-bottom: 15px;
   }
 
   .form-group input {
     font-size: 13px;
-    padding: 7px;
+    padding: 8px;
   }
 
-  .submit-button {
+  .login-button, .signup-button {
     font-size: 14px;
     padding: 8px;
+  }
+
+  .error-message {
+    font-size: 12px;
   }
 }

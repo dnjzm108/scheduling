@@ -23,12 +23,12 @@ root.render(
       <Routes>
         <Route path='/Apply' exact={true} element={<Main />}></Route>
 
-        <Route path='/admin' exact={true} element={<Admin />}></Route>
+        <Route path='/AdminDashboard' exact={true} element={<Admin />}></Route>
         <Route path='/EmployeeManagement' exact={true} element={<EmployeeManagement />}></Route>
         <Route path='/ScheduleManagement' exact={true} element={<ScheduleManagement />}></Route>
 
         <Route path='/' exact={true} element={<Login />}></Route>
-        <Route path='/Join' exact={true} element={<Join />}></Route>
+        <Route path='/signup' exact={true} element={<Join />}></Route>
         <Route path='/Myschedules' exact={true} element={<Myschedules />}></Route>
   
 

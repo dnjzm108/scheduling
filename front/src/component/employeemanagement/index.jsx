@@ -1,98 +1,235 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { BASE_URL } from '../../config';
 import './index.css';
 
 function EmployeeManagement() {
-  const navigate = useNavigate();
-  const [employees, setEmployees] = useState([
-    { id: 1, name: '홍길동', userId: 'hong123', password: 'pass123', birthdate: '19900101', phone: '01012345678' },
-    { id: 2, name: '김철수', userId: 'kim456', password: 'pass456', birthdate: '19950215', phone: '01098765432' },
-    // 추가 직원 데이터 (DB에서 불러올 수 있음)
-  ]);
-  const [editingId, setEditingId] = useState(null);
-  const [editedData, setEditedData] = useState({});
+  const [employees, setEmployees] = useState([]);
+  const [stores, setStores] = useState([]);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  const [error, setError] = useState('');
 
-  const handleLogout = () => {
-    navigate('/');
-  };
-
-  const handleBack = () => {
-    navigate('/admin');
-  };
+  // 직원 및 매장 목록 가져오기
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const [employeesResponse, storesResponse] = await Promise.all([
+          axios.get(`${BASE_URL}/admin/employees`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get(`${BASE_URL}/stores`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        setEmployees(employeesResponse.data);
+        setStores(storesResponse.data);
+      } catch (err) {
+        console.error('Error fetching employees or stores:', err);
+        setError('데이터를 불러올 수 없습니다.');
+        toast.error('데이터를 불러올 수 없습니다.');
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleEdit = (employee) => {
-    setEditingId(employee.id);
-    setEditedData(employee);
+    setEditingEmployee({ ...employee });
   };
 
-  const handleSave = (id) => {
-    setEmployees(prev => prev.map(emp => emp.id === id ? editedData : emp));
-    setEditingId(null);
+  const handleCancelEdit = () => {
+    setEditingEmployee(null);
   };
 
-  const handleChange = (field, value) => {
-    setEditedData(prev => ({ ...prev, [field]: value }));
+  const handleSaveEdit = async () => {
+    if (!editingEmployee.name || !editingEmployee.userId || !editingEmployee.birthdate || !editingEmployee.phone || !editingEmployee.store_id) {
+      setError('모든 필드를 입력하세요.');
+      toast.error('모든 필드를 입력하세요.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${BASE_URL}/admin/employees/${editingEmployee.id}`,
+        {
+          name: editingEmployee.name,
+          userId: editingEmployee.userId,
+          birthdate: editingEmployee.birthdate,
+          phone: editingEmployee.phone,
+          store_id: parseInt(editingEmployee.store_id),
+          isAdmin: editingEmployee.isAdmin
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setEmployees(
+        employees.map((emp) =>
+          emp.id === editingEmployee.id ? { ...editingEmployee } : emp
+        )
+      );
+      setEditingEmployee(null);
+      setError('');
+      toast.success('직원 정보가 수정되었습니다.');
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || '직원 정보 수정 실패';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('정말 삭제하시겠습니까?')) {
-      setEmployees(prev => prev.filter(emp => emp.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm('정말로 이 직원을 삭제하시겠습니까?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${BASE_URL}/admin/employees/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEmployees(employees.filter((emp) => emp.id !== id));
+      setError('');
+      toast.success('직원이 삭제되었습니다.');
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || '직원 삭제 실패';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleToggleAdmin = async (id, currentAdminStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${BASE_URL}/admin/employees/${id}/admin`,
+        { isAdmin: !currentAdminStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setEmployees(
+        employees.map((emp) =>
+          emp.id === id ? { ...emp, isAdmin: !currentAdminStatus } : emp
+        )
+      );
+      setError('');
+      toast.success(`관리자 권한이 ${!currentAdminStatus ? '부여' : '해제'}되었습니다.`);
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || '관리자 권한 수정 실패';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
   return (
-    <div className="employee-container">
-      <div className="header">
-        <h1 className="title">직원 관리</h1>
-        <div className="admin-info">
-          <span className="admin-name">관리자님</span>
-          <button className="logout-button" onClick={handleLogout}>로그아웃</button>
-        </div>
+    <div className="employee-management-container">
+      <h1 className="title">직원 관리</h1>
+      {error && <p className="error-message">{error}</p>}
+      <div className="employee-list">
+        {employees.map((employee) => (
+          <div key={employee.id} className="employee-item">
+            {editingEmployee && editingEmployee.id === employee.id ? (
+              <div className="edit-form">
+                <div className="form-group">
+                  <label>이름</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.name}
+                    onChange={(e) =>
+                      setEditingEmployee({ ...editingEmployee, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>아이디</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.userId}
+                    onChange={(e) =>
+                      setEditingEmployee({ ...editingEmployee, userId: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label>생년월일</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.birthdate}
+                    onChange={(e) =>
+                      setEditingEmployee({ ...editingEmployee, birthdate: e.target.value })
+                    }
+                    placeholder="YYYYMMDD"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>전화번호</label>
+                  <input
+                    type="text"
+                    value={editingEmployee.phone}
+                    onChange={(e) =>
+                      setEditingEmployee({ ...editingEmployee, phone: e.target.value })
+                    }
+                    placeholder="010XXXXXXXX"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>매장</label>
+                  <select
+                    value={editingEmployee.store_id}
+                    onChange={(e) =>
+                      setEditingEmployee({ ...editingEmployee, store_id: e.target.value })
+                    }
+                  >
+                    <option value="">매장을 선택하세요</option>
+                    {stores.map((store) => (
+                      <option key={store.id} value={store.id}>
+                        {store.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>관리자 권한</label>
+                  <input
+                    type="checkbox"
+                    checked={editingEmployee.isAdmin}
+                    onChange={(e) =>
+                      setEditingEmployee({ ...editingEmployee, isAdmin: e.target.checked })
+                    }
+                  />
+                </div>
+                <div className="button-group">
+                  <button className="save-button" onClick={handleSaveEdit}>
+                    저장
+                  </button>
+                  <button className="cancel-button" onClick={handleCancelEdit}>
+                    취소
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="employee-details">
+                <span>
+                  {employee.name} ({employee.userId}) - {employee.birthdate}, {employee.phone},{' '}
+                  {stores.find((s) => s.id === employee.store_id)?.name || 'Unknown Store'},{' '}
+                  {employee.isAdmin ? '관리자' : '직원'}
+                </span>
+                <div className="action-buttons">
+                  <button className="edit-button" onClick={() => handleEdit(employee)}>
+                    수정
+                  </button>
+                  <button className="delete-button" onClick={() => handleDelete(employee.id)}>
+                    삭제
+                  </button>
+                  <button
+                    className="admin-button"
+                    onClick={() => handleToggleAdmin(employee.id, employee.isAdmin)}
+                  >
+                    {employee.isAdmin ? '관리자 해제' : '관리자 부여'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
-      <button className="back-button" onClick={handleBack}>이전 페이지로 돌아가기</button>
-      <table className="employee-table">
-        <thead>
-          <tr>
-            <th>이름</th>
-            <th>아이디</th>
-            <th>비밀번호</th>
-            <th>생년월일</th>
-            <th>전화번호</th>
-            <th>작업</th>
-          </tr>
-        </thead>
-        <tbody>
-          {employees.map(emp => (
-            <tr key={emp.id}>
-              {editingId === emp.id ? (
-                <>
-                  <td><input value={editedData.name} onChange={(e) => handleChange('name', e.target.value)} /></td>
-                  <td><input value={editedData.userId} onChange={(e) => handleChange('userId', e.target.value)} /></td>
-                  <td><input type="password" value={editedData.password} onChange={(e) => handleChange('password', e.target.value)} /></td>
-                  <td><input value={editedData.birthdate} onChange={(e) => handleChange('birthdate', e.target.value)} /></td>
-                  <td><input value={editedData.phone} onChange={(e) => handleChange('phone', e.target.value)} /></td>
-                  <td>
-                    <button className="save-button" onClick={() => handleSave(emp.id)}>저장</button>
-                    <button className="cancel-button" onClick={() => setEditingId(null)}>취소</button>
-                  </td>
-                </>
-              ) : (
-                <>
-                  <td>{emp.name}</td>
-                  <td>{emp.userId}</td>
-                  <td>{emp.password}</td>
-                  <td>{emp.birthdate}</td>
-                  <td>{emp.phone}</td>
-                  <td>
-                    <button className="edit-button" onClick={() => handleEdit(emp)}>수정</button>
-                    <button className="delete-button" onClick={() => handleDelete(emp.id)}>삭제</button>
-                  </td>
-                </>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );
 }

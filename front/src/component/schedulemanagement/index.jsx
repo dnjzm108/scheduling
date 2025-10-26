@@ -1,103 +1,148 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import * as XLSX from 'xlsx';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { BASE_URL } from '../../config';
 import './index.css';
 
 function ScheduleManagement() {
-  const navigate = useNavigate();
-  const [selectedWeek, setSelectedWeek] = useState('10/20~10/26'); // 기본 선택 주
+  const [stores, setStores] = useState([]);
+  const [selectedStore, setSelectedStore] = useState('');
+  const [weekStart, setWeekStart] = useState('');
+  const [weekEnd, setWeekEnd] = useState('');
+  const [schedulePeriods, setSchedulePeriods] = useState([]);
+  const [error, setError] = useState('');
 
-  // 주 단위 옵션 (하드코딩, 실제 DB에서 불러올 수 있음)
-  const weeks = [
-    '10/13~10/19',
-    '10/20~10/26',
-    '10/27~11/02',
-  ];
+  // 매장 목록 및 스케줄 기간 가져오기
+  useEffect(() => {
+    const fetchStoresAndPeriods = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const [storesResponse, periodsResponse] = await Promise.all([
+          axios.get(`${BASE_URL}/stores`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get(`${BASE_URL}/admin/schedule-periods`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+        setStores(storesResponse.data);
+        setSchedulePeriods(periodsResponse.data);
+      } catch (err) {
+        console.error('Error fetching stores or periods:', err);
+        setError('데이터를 불러올 수 없습니다.');
+        toast.error('데이터를 불러올 수 없습니다.');
+      }
+    };
+    fetchStoresAndPeriods();
+  }, []);
 
-  // 신청 데이터 (하드코딩 예시, 실제 DB에서 불러오기)
-  const scheduleData = {
-    '10/13~10/19': [
-      { name: '홍길동', monday: '09:00-18:00', tuesday: '휴무', wednesday: '09:00-18:00', thursday: '09:00-18:00', friday: '09:00-18:00', saturday: '10:00-15:00', sunday: '휴무' },
-      { name: '김철수', monday: '휴무', tuesday: '09:00-18:00', wednesday: '09:00-18:00', thursday: '휴무', friday: '09:00-18:00', saturday: '09:00-18:00', sunday: '10:00-15:00' },
-    ],
-    '10/20~10/26': [
-      { name: '홍길동', monday: '10:00-19:00', tuesday: '09:00-18:00', wednesday: '휴무', thursday: '09:00-18:00', friday: '09:00-18:00', saturday: '휴무', sunday: '09:00-18:00' },
-      { name: '김철수', monday: '09:00-18:00', tuesday: '휴무', wednesday: '09:00-18:00', thursday: '09:00-18:00', friday: '휴무', saturday: '09:00-18:00', sunday: '09:00-18:00' },
-    ],
-    '10/27~11/02': [
-      { name: '홍길동', monday: '09:00-18:00', tuesday: '09:00-18:00', wednesday: '09:00-18:00', thursday: '휴무', friday: '09:00-18:00', saturday: '10:00-15:00', sunday: '휴무' },
-      { name: '김철수', monday: '휴무', tuesday: '09:00-18:00', wednesday: '휴무', thursday: '09:00-18:00', friday: '09:00-18:00', saturday: '09:00-18:00', sunday: '10:00-15:00' },
-    ],
+  const handleOpenSchedule = async () => {
+    if (!selectedStore || !weekStart || !weekEnd) {
+      setError('매장, 시작일, 종료일을 모두 입력하세요.');
+      toast.error('매장, 시작일, 종료일을 모두 입력하세요.');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `${BASE_URL}/admin/open-schedule`,
+        { store_id: parseInt(selectedStore), week_start: weekStart, week_end: weekEnd },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setError('');
+      toast.success('스케줄 신청 기간이 열렸습니다.');
+      const periodsResponse = await axios.get(`${BASE_URL}/admin/schedule-periods`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSchedulePeriods(periodsResponse.data);
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || '스케줄 열기 실패';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
-  const handleLogout = () => {
-    navigate('/');
+  const handleCloseSchedule = async (periodId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        `${BASE_URL}/admin/close-schedule/${periodId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setError('');
+      toast.success('스케줄 신청 기간이 닫혔습니다.');
+      const periodsResponse = await axios.get(`${BASE_URL}/admin/schedule-periods`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSchedulePeriods(periodsResponse.data);
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || '스케줄 닫기 실패';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
-
-  const handleBack = () => {
-    navigate('/admin');
-  };
-
-  const handleDownload = () => {
-    const data = scheduleData[selectedWeek] || [];
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, selectedWeek);
-    XLSX.writeFile(wb, `${selectedWeek}_schedules.xlsx`);
-  };
-
-  const currentSchedules = scheduleData[selectedWeek] || [];
 
   return (
     <div className="schedule-management-container">
-      <div className="header">
-        <h1 className="title">직원 스케줄 관리</h1>
-        <div className="admin-info">
-          <span className="admin-name">관리자님</span>
-          <button className="logout-button" onClick={handleLogout}>로그아웃</button>
-        </div>
-      </div>
-      <button className="back-button" onClick={handleBack}>이전 페이지로 돌아가기</button>
-      <div className="week-selector">
-        <label>날짜 선택:</label>
-        <select value={selectedWeek} onChange={(e) => setSelectedWeek(e.target.value)}>
-          {weeks.map(week => <option key={week} value={week}>{week}</option>)}
+      <h1 className="title">스케줄 관리</h1>
+      {error && <p className="error-message">{error}</p>}
+      <div className="form-group">
+        <label htmlFor="storeId">매장 선택</label>
+        <select
+          id="storeId"
+          value={selectedStore}
+          onChange={(e) => setSelectedStore(e.target.value)}
+        >
+          <option value="">매장을 선택하세요</option>
+          {stores.map((store) => (
+            <option key={store.id} value={store.id}>
+              {store.name}
+            </option>
+          ))}
         </select>
       </div>
-      <button className="download-button" onClick={handleDownload}>엑셀로 다운로드</button>
-      <table className="schedule-table">
-        <thead>
-          <tr>
-            <th>이름</th>
-            <th>월요일</th>
-            <th>화요일</th>
-            <th>수요일</th>
-            <th>목요일</th>
-            <th>금요일</th>
-            <th>토요일</th>
-            <th>일요일</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentSchedules.map((emp, index) => (
-            <tr key={index}>
-              <td>{emp.name}</td>
-              <td>{emp.monday}</td>
-              <td>{emp.tuesday}</td>
-              <td>{emp.wednesday}</td>
-              <td>{emp.thursday}</td>
-              <td>{emp.friday}</td>
-              <td>{emp.saturday}</td>
-              <td>{emp.sunday}</td>
-            </tr>
-          ))}
-          {currentSchedules.length === 0 && (
-            <tr>
-              <td colSpan="8" style={{ textAlign: 'center' }}>신청한 스케줄이 없습니다.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <div className="form-group">
+        <label htmlFor="weekStart">시작일</label>
+        <input
+          type="date"
+          id="weekStart"
+          value={weekStart}
+          onChange={(e) => setWeekStart(e.target.value)}
+        />
+      </div>
+      <div className="form-group">
+        <label htmlFor="weekEnd">종료일</label>
+        <input
+          type="date"
+          id="weekEnd"
+          value={weekEnd}
+          onChange={(e) => setWeekEnd(e.target.value)}
+        />
+      </div>
+      <button className="submit-button" onClick={handleOpenSchedule}>
+        스케줄 신청 열기
+      </button>
+      <h2 className="subtitle">현재 스케줄 신청 기간</h2>
+      <div className="periods-list">
+        {schedulePeriods.map((period) => (
+          <div key={period.id} className="period-item">
+            <span>
+              {period.store_name}: {period.week_start} ~ {period.week_end} ({period.is_open ? '열림' : '닫힘'})
+            </span>
+            {period.is_open && (
+              <button
+                className="close-button"
+                onClick={() => handleCloseSchedule(period.id)}
+              >
+                닫기
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );
 }
