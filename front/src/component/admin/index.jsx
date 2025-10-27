@@ -4,92 +4,92 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
+import { getToken, removeToken } from '../../utils/auth';
 import './index.css';
 
 function AdminDashboard() {
   const navigate = useNavigate();
-  const [adminName, setAdminName] = useState('관리자님');
-  const [error, setError] = useState('');
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  // Check authentication and fetch admin name
   useEffect(() => {
-    const fetchAdminName = async () => {
-      const token = localStorage.getItem('token');
-      console.log('Token from localStorage:', token); // 디버깅 로그
-      if (!token) {
-        setError('로그인이 필요합니다.');
-        toast.error('로그인이 필요합니다.');
-        setTimeout(() => navigate('/'), 2000);
-        return;
-      }
+    const token = getToken();
+    if (!token) {
+      toast.error('로그인이 필요합니다.');
+      setTimeout(() => navigate('/'), 2000);
+      return;
+    }
 
+    // 사용자 정보 가져오기
+    const fetchUserInfo = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/user-profile`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await axios.get(`${BASE_URL}/user`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        console.log('User profile response:', response.data); // 디버깅 로그
-        setAdminName(`${response.data.name}님`);
-
-        // 추가: 관리자 권한 확인
-        const isAdminResponse = await axios.get(`${BASE_URL}/user-profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!isAdminResponse.data.isAdmin) {
-          setError('관리자 권한이 필요합니다.');
-          toast.error('관리자 권한이 필요합니다.');
-          localStorage.removeItem('token');
-          setTimeout(() => navigate('/'), 2000);
-          return;
-        }
+        console.log('User info response:', response.data);
+        setUserName(response.data.name);
       } catch (err) {
-        console.error('Failed to fetch admin name:', err);
-        const errorMessage = err.response?.data?.message || '관리자 정보를 불러올 수 없습니다.';
-        console.log('Error details:', err.response?.status, err.response?.data); // 디버깅 로그
-        setError(errorMessage);
-        toast.error(errorMessage);
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          localStorage.removeItem('token');
-          setTimeout(() => navigate('/'), 2000);
-        }
+        console.error('User info error:', err.response?.data || err.message);
+        toast.error('사용자 정보를 불러오지 못했습니다.');
+      } finally {
+        setLoading(false);
       }
     };
-    fetchAdminName();
+    fetchUserInfo();
   }, [navigate]);
 
-  const handleSchedulesClick = () => {
-    navigate('/ScheduleManagement');
-  };
-
-  const handleEmployeesClick = () => {
-    navigate('/EmployeeManagement');
-  };
-
+  // 로그아웃 함수
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    toast.success('로그아웃 되었습니다.');
-    setTimeout(() => navigate('/'), 1000);
+    removeToken();
+    toast.success('로그아웃되었습니다.');
+    setTimeout(() => navigate('/'), 2000);
   };
 
   return (
-    <div className="admin-container">
-      <div className="header">
-        <h1 className="title">관리자 페이지</h1>
-        <div className="admin-info">
-          <span className="admin-name">{adminName}</span>
-          <button className="logout-button" onClick={handleLogout}>
-            로그아웃
+    <div className="adminContainer">
+      <div className="adminUserInfo">
+        <span className="adminUserName">{userName || '사용자'}님</span>
+        <button className="adminLogoutButton" onClick={handleLogout}>
+          로그아웃
+        </button>
+      </div>
+      <h1 className="adminTitle">관리자 대시보드</h1>
+      {loading ? (
+        <p className="adminLoading">로딩 중...</p>
+      ) : (
+        <div className="adminButtonGroup">
+          <button
+            className="adminButton adminButtonPrimary"
+            onClick={() => navigate('/ScheduleManagement')}
+          >
+            스케줄 관리
+          </button>
+          <button
+            className="adminButton adminButtonPrimary"
+            onClick={() => navigate('/EmployeeManagement')}
+          >
+            직원 관리
+          </button>
+          <button
+            className="adminButton adminButtonPrimary"
+            onClick={() => navigate('/notices')}
+          >
+            공지사항 관리
+          </button>
+          <button
+            className="adminButton adminButtonPrimary"
+            onClick={() => navigate('/StoreManagement')}
+          >
+            매장 관리
+          </button>
+          <button
+            className="adminButton adminButtonSuggestion"
+            onClick={() => navigate('/RequestsList')}
+          >
+            건의사항 관리
           </button>
         </div>
-      </div>
-      {error && <p className="error-message">{error}</p>}
-      <div className="menu">
-        <button className="menu-button" onClick={handleSchedulesClick}>
-          스케줄 관리
-        </button>
-        <button className="menu-button" onClick={handleEmployeesClick}>
-          직원 관리
-        </button>
-      </div>
+      )}
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );

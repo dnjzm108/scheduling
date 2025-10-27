@@ -1,152 +1,160 @@
-/* 기본 스타일 (데스크톱 우선) */
-.login-container {
+/* 전체 페이지 컨테이너 */
+.container {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 100vh; /* 화면 전체 높이 */
-  background-color: #f0f2f5; /* 배경색 부드럽게 */
-  padding: 20px;
-  font-family: Arial, sans-serif;
+  height: 100vh;
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  font-family: 'Noto Sans KR', sans-serif;
+  padding: 1.2rem;
+  box-sizing: border-box;
 }
 
-.login-box {
-  max-width: 400px; /* 컨테이너 너비 축소 */
-  width: 100%;
-  padding: 30px;
-  background-color: #ffffff;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* 그림자 강화 */
-  text-align: center; /* 내부 요소 중앙 정렬 */
-}
-
+/* 제목 */
 .title {
-  color: #4CAF50; /* 초록색 테마 */
-  margin-bottom: 25px;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.error-message {
-  color: #d32f2f; /* 빨간색 에러 메시지 */
-  font-size: 14px;
-  margin-bottom: 15px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e88e5;
+  margin-bottom: 1.2rem;
   text-align: center;
 }
 
+/* 폼 카드 */
+form {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 400px;
+  transition: all 0.3s ease;
+}
+
+/* 입력 그룹 */
 .form-group {
-  margin-bottom: 20px; /* 입력창 간격 */
+  margin-bottom: 1.1rem;
 }
 
-.form-group label {
+label {
   display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
+  margin-bottom: 0.4rem;
   color: #333;
-  font-size: 16px;
+  font-weight: 500;
+  font-size: 0.95rem;
 }
 
-.form-group input {
+/* 입력창 */
+input {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  transition: border-color 0.3s, box-shadow 0.3s; /* 부드러운 전환 */
+  padding: 0.9rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: all 0.2s ease-in-out;
+  background-color: #fafafa;
 }
 
-.form-group input:focus {
-  border-color: #4CAF50;
-  box-shadow: 0 0 8px rgba(76, 175, 80, 0.2); /* 포커스 효과 */
+input:focus {
+  border-color: #1e88e5;
+  background-color: #fff;
   outline: none;
+  box-shadow: 0 0 5px rgba(30, 136, 229, 0.3);
 }
 
-.login-button, .signup-button {
+/* 버튼 */
+.button {
   width: 100%;
-  padding: 12px;
-  background-color: #4CAF50;
-  color: white;
+  padding: 1rem;
   border: none;
-  border-radius: 6px;
-  font-size: 18px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-  margin-top: 10px;
+  transition: all 0.3s ease;
+  touch-action: manipulation;
 }
 
-.login-button:hover, .signup-button:hover {
-  background-color: #45a049;
-  transform: translateY(-2px); /* 호버 시 살짝 올라가는 효과 */
+.button-primary {
+  background-color: #1e88e5;
+  color: #fff;
 }
 
-.signup-button {
-  background-color: #ffffff;
-  color: #4CAF50;
-  border: 1px solid #4CAF50;
+.button-primary:hover:not(:disabled) {
+  background-color: #1565c0;
+  box-shadow: 0 4px 10px rgba(21, 101, 192, 0.3);
 }
 
-.signup-button:hover {
-  background-color: #4CAF50;
-  color: white;
+.button:disabled {
+  background-color: #90caf9;
+  cursor: not-allowed;
 }
 
-/* 모바일 반응형 (768px 이하) */
-@media (max-width: 768px) {
-  .login-box {
-    max-width: 90%;
-    padding: 20px;
-  }
-
-  .title {
-    font-size: 24px;
-    margin-bottom: 20px;
-  }
-
-  .form-group {
-    margin-bottom: 15px;
-  }
-
-  .form-group label {
-    font-size: 14px;
-  }
-
-  .form-group input {
-    font-size: 14px;
-    padding: 10px;
-  }
-
-  .login-button, .signup-button {
-    font-size: 16px;
-    padding: 10px;
-  }
-
-  .error-message {
-    font-size: 13px;
-  }
+/* 에러 메시지 */
+.error-message {
+  color: #d32f2f;
+  font-size: 0.9rem;
+  margin-top: -0.3rem;
+  margin-bottom: 0.8rem;
+  text-align: center;
 }
 
-/* 초소형 화면 (480px 이하) */
+/* 회원가입 링크 */
+.signup-link {
+  margin-top: 1.2rem;
+  text-align: center;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.signup-link a {
+  color: #1e88e5;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.signup-link a:hover {
+  text-decoration: underline;
+}
+
+/* Toast 알림 위치 조정 */
+.Toastify__toast-container {
+  z-index: 9999;
+}
+
+/* 모바일 화면 전용 (반응형) */
 @media (max-width: 480px) {
-  .login-box {
-    padding: 15px;
+  .container {
+    background: #fff;
+    padding: 1.5rem;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  form {
+    box-shadow: none;
+    padding: 1.5rem 1.2rem;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
   }
 
   .title {
-    font-size: 20px;
-    margin-bottom: 15px;
+    font-size: 1.8rem;
+    color: #1976d2;
   }
 
-  .form-group input {
-    font-size: 13px;
-    padding: 8px;
+  input {
+    font-size: 1rem;
+    padding: 0.85rem;
   }
 
-  .login-button, .signup-button {
-    font-size: 14px;
-    padding: 8px;
+  .button {
+    font-size: 1rem;
+    padding: 0.9rem;
   }
 
-  .error-message {
-    font-size: 12px;
+  .signup-link {
+    font-size: 0.9rem;
+    margin-top: 1rem;
   }
 }

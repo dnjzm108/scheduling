@@ -1,147 +1,147 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
+import { getToken, removeToken } from '../../utils/auth';
 import './index.css';
 
 function ScheduleManagement() {
+  const navigate = useNavigate();
+  const [schedules, setSchedules] = useState([]);
   const [stores, setStores] = useState([]);
-  const [selectedStore, setSelectedStore] = useState('');
-  const [weekStart, setWeekStart] = useState('');
-  const [weekEnd, setWeekEnd] = useState('');
-  const [schedulePeriods, setSchedulePeriods] = useState([]);
-  const [error, setError] = useState('');
+  const [userName, setUserName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    store_id: '',
+    week_start: ''
+  });
 
-  // 매장 목록 및 스케줄 기간 가져오기
   useEffect(() => {
-    const fetchStoresAndPeriods = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const [storesResponse, periodsResponse] = await Promise.all([
-          axios.get(`${BASE_URL}/stores`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          axios.get(`${BASE_URL}/admin/schedule-periods`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        ]);
-        setStores(storesResponse.data);
-        setSchedulePeriods(periodsResponse.data);
-      } catch (err) {
-        console.error('Error fetching stores or periods:', err);
-        setError('데이터를 불러올 수 없습니다.');
-        toast.error('데이터를 불러올 수 없습니다.');
-      }
-    };
-    fetchStoresAndPeriods();
-  }, []);
-
-  const handleOpenSchedule = async () => {
-    if (!selectedStore || !weekStart || !weekEnd) {
-      setError('매장, 시작일, 종료일을 모두 입력하세요.');
-      toast.error('매장, 시작일, 종료일을 모두 입력하세요.');
+    const token = getToken();
+    if (!token) {
+      toast.error('로그인이 필요합니다.');
+      setTimeout(() => navigate('/'), 2000);
       return;
     }
+
+    const fetchUserInfo = async () => {
+      try {
+        const response = await axios.get(`${BASE_URL}/user`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUserName(response.data.name || '관리자');
+      } catch (err) {
+        toast.error('사용자 정보 불러오기 실패');
+      }
+    };
+
+    const fetchData = async () => {
+      try {
+        const [storesRes, schedulesRes] = await Promise.all([
+          axios.get(`${BASE_URL}/stores`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${BASE_URL}/schedules`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        setStores(storesRes.data);
+        setSchedules(schedulesRes.data);
+      } catch (err) {
+        toast.error('데이터 불러오기 실패');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+    fetchData();
+  }, [navigate]);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleOpenSchedule = async (e) => {
+    e.preventDefault();
+    const token = getToken();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        `${BASE_URL}/admin/open-schedule`,
-        { store_id: parseInt(selectedStore), week_start: weekStart, week_end: weekEnd },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setError('');
-      toast.success('스케줄 신청 기간이 열렸습니다.');
-      const periodsResponse = await axios.get(`${BASE_URL}/admin/schedule-periods`, {
+      await axios.post(`${BASE_URL}/schedule`, formData, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSchedulePeriods(periodsResponse.data);
+      toast.success('스케줄 오픈 성공!');
+      setSchedules([...schedules, { ...formData }]);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || '스케줄 열기 실패';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error('스케줄 오픈 실패');
     }
   };
 
-  const handleCloseSchedule = async (periodId) => {
+  const handleAutoSchedule = async (scheduleId) => {
+    const token = getToken();
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(
-        `${BASE_URL}/admin/close-schedule/${periodId}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setError('');
-      toast.success('스케줄 신청 기간이 닫혔습니다.');
-      const periodsResponse = await axios.get(`${BASE_URL}/admin/schedule-periods`, {
+      await axios.post(`${BASE_URL}/auto-schedule`, { schedule_id: scheduleId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSchedulePeriods(periodsResponse.data);
+      toast.success('자동 스케줄링 완료!');
     } catch (err) {
-      const errorMessage = err.response?.data?.message || '스케줄 닫기 실패';
-      setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error('자동 스케줄링 실패');
     }
+  };
+
+  const handleLogout = () => {
+    removeToken();
+    toast.success('로그아웃되었습니다.');
+    setTimeout(() => navigate('/'), 2000);
   };
 
   return (
     <div className="schedule-management-container">
-      <h1 className="title">스케줄 관리</h1>
-      {error && <p className="error-message">{error}</p>}
-      <div className="form-group">
-        <label htmlFor="storeId">매장 선택</label>
-        <select
-          id="storeId"
-          value={selectedStore}
-          onChange={(e) => setSelectedStore(e.target.value)}
-        >
-          <option value="">매장을 선택하세요</option>
-          {stores.map((store) => (
-            <option key={store.id} value={store.id}>
-              {store.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label htmlFor="weekStart">시작일</label>
-        <input
-          type="date"
-          id="weekStart"
-          value={weekStart}
-          onChange={(e) => setWeekStart(e.target.value)}
-        />
-      </div>
-      <div className="form-group">
-        <label htmlFor="weekEnd">종료일</label>
-        <input
-          type="date"
-          id="weekEnd"
-          value={weekEnd}
-          onChange={(e) => setWeekEnd(e.target.value)}
-        />
-      </div>
-      <button className="submit-button" onClick={handleOpenSchedule}>
-        스케줄 신청 열기
-      </button>
-      <h2 className="subtitle">현재 스케줄 신청 기간</h2>
-      <div className="periods-list">
-        {schedulePeriods.map((period) => (
-          <div key={period.id} className="period-item">
-            <span>
-              {period.store_name}: {period.week_start} ~ {period.week_end} ({period.is_open ? '열림' : '닫힘'})
-            </span>
-            {period.is_open && (
-              <button
-                className="close-button"
-                onClick={() => handleCloseSchedule(period.id)}
-              >
-                닫기
-              </button>
-            )}
+      <header className="header">
+        <button className="back-button" onClick={() => navigate('/AdminDashboard')}>
+          이전 페이지
+        </button>
+        <div className="user-info">
+          <span>{userName}님</span>
+          <button className="logout-button" onClick={handleLogout}>
+            로그아웃
+          </button>
+        </div>
+      </header>
+      <main className="main-content">
+        <h1 className="title">스케줄 관리</h1>
+        {loading ? (
+          <p className="loading">로딩 중...</p>
+        ) : (
+          <div>
+            <h2 className="subtitle">신규 스케줄 오픈</h2>
+            <form onSubmit={handleOpenSchedule} className="open-form">
+              <div className="form-group">
+                <label>매장</label>
+                <select name="store_id" value={formData.store_id} onChange={handleChange}>
+                  <option value="">매장 선택</option>
+                  {stores.map(store => (
+                    <option key={store.id} value={store.id}>{store.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>시작 날짜</label>
+                <input type="date" name="week_start" value={formData.week_start} onChange={handleChange} />
+              </div>
+              <button type="submit" className="submit-button">스케줄 오픈</button>
+            </form>
+            <h2 className="subtitle">스케줄 목록</h2>
+            <ul className="periods-list">
+              {schedules.map(schedule => (
+                <li key={schedule.id} className="period-item">
+                  {schedule.date} ({schedule.store_name}) - {schedule.status}
+                  <button className="close-button" onClick={() => handleAutoSchedule(schedule.id)}>
+                    자동 배치
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
-        ))}
-      </div>
+        )}
+      </main>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );

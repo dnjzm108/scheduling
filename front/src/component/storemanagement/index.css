@@ -1,0 +1,183 @@
+/* src/component/stores/index.css */
+
+/* 공통 스타일 */
+.store-manage-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.store-manage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.store-manage-back-button,
+.store-manage-logout-button,
+.store-manage-submit-button,
+.store-manage-cancel-button,
+.store-manage-edit-button,
+.store-manage-delete-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.store-manage-back-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.store-manage-back-button:hover {
+  background-color: #5a6268;
+}
+
+.store-manage-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.store-manage-user-name {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.store-manage-logout-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.store-manage-logout-button:hover {
+  background-color: #c82333;
+}
+
+.store-manage-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.store-manage-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+.store-manage-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.store-manage-form-group label {
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.store-manage-form-group input,
+.store-manage-form-group select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.store-manage-form-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.store-manage-submit-button {
+  background-color: #007bff;
+  color: white;
+}
+
+.store-manage-submit-button:hover {
+  background-color: #0056b3;
+}
+
+.store-manage-submit-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.store-manage-cancel-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.store-manage-cancel-button:hover {
+  background-color: #5a6268;
+}
+
+.store-manage-list-title {
+  font-size: 20px;
+  margin: 20px 0;
+}
+
+.store-manage-list {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+}
+
+.store-manage-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  padding: 15px;
+}
+
+.store-manage-item-details {
+  flex: 1;
+}
+
+.store-manage-item-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.store-manage-edit-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.store-manage-edit-button:hover {
+  background-color: #218838;
+}
+
+.store-manage-delete-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.store-manage-delete-button:hover {
+  background-color: #c82333;
+}
+
+.store-manage-no-stores,
+.store-manage-loading {
+  text-align: center;
+  font-size: 16px;
+  color: #555;
+}

@@ -1,0 +1,141 @@
+/* Suggestions.js 전용 스타일: 건의사항 목록 페이지 */
+.suggestion-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.suggestion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.suggestion-back-button {
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.suggestion-back-button:hover {
+  background-color: #5a6268;
+}
+
+.suggestion-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.suggestion-user-name {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.suggestion-logout-button {
+  padding: 8px 16px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.suggestion-logout-button:hover {
+  background-color: #c82333;
+}
+
+.suggestion-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.suggestion-store-selector {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.suggestion-store-selector label {
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+.suggestion-store-selector select {
+  padding: 8px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.suggestion-loading,
+.suggestion-no-suggestions {
+  text-align: center;
+  font-size: 16px;
+  color: #555;
+}
+
+.suggestion-list {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+}
+
+.suggestion-item {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  padding: 15px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.suggestion-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-item.expanded {
+  transform: scale(1.02);
+  background-color: #e9ecef;
+}
+
+.suggestion-details {
+  margin-top: 10px;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+}
+
+.suggestion-attachment {
+  max-width: 100%;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+.suggestion-delete-button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.suggestion-delete-button:hover {
+  background-color: #c82333;
+}

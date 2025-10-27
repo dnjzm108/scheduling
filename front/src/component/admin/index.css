@@ -1,146 +1,188 @@
-.admin-container {
+/* AdminDashboard.js 전용 스타일: 관리자 대시보드 페이지 */
+.adminContainer {
+  width: 100%;
+  max-width: 700px; /* MySchedules.js와 유사한 넓이 */
+  padding: 24px;
+  background: #f9f9f9; /* MySchedules.js의 .myschedules-container 배경 */
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* MySchedules.js와 동일한 그림자 */
+  margin: 24px auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; /* 통일된 폰트 */
   display: flex;
   flex-direction: column;
-  align-items: center;
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 30px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  align-items: stretch;
 }
 
-.header {
+.adminHeader {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-between; /* 제목 왼쪽, 사용자 정보 오른쪽 */
   align-items: center;
+  margin-bottom: 20px;
   width: 100%;
-  margin-bottom: 30px;
+  flex-wrap: wrap; /* 좁은 화면에서 줄바꿈 */
 }
 
-.title {
-  color: #2c3e50;
-  font-size: 28px;
+.adminTitle {
+  font-size: 26px; /* MySchedules.js의 .myschedules-title과 동일 */
   font-weight: 600;
+  color: #2c3e50; /* MySchedules.js와 색상 조화 */
+  text-align: left; /* 왼쪽 상단 배치 */
   margin: 0;
+  word-break: keep-all; /* 긴 제목 깨짐 방지 */
+  overflow-wrap: break-word;
+  max-width: 50%; /* PC에서 너무 길지 않도록 */
 }
 
-.admin-info {
+.adminUserInfo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px; /* MySchedules.js의 .myschedules-user-info와 유사 */
+  justify-content: flex-end; /* 오른쪽 상단 배치 */
+  flex-wrap: wrap;
 }
 
-.admin-name {
+.adminUserName {
   font-size: 16px;
-  color: #34495e;
+  color: #34495e; /* MySchedules.js의 .myschedules-user-name과 동일 */
   font-weight: 500;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  max-width: 200px; /* 긴 이름 깨짐 방지 */
 }
 
-.logout-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background-color: #e74c3c;
-  color: white;
+.adminLogoutButton {
+  background: #ffffff; /* MySchedules.js의 .myschedules-logout-button 참고 */
+  border: 1px solid #4CAF50;
+  color: #4CAF50;
   font-size: 14px;
   font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-.logout-button:hover {
-  background-color: #c0392b;
+.adminLogoutButton:hover {
+  background-color: #4CAF50;
+  color: #ffffff;
 }
 
-.menu {
+.adminButtonGroup {
   display: flex;
-  gap: 12px;
+  flex-direction: column; /* 세로로 일렬 배치 */
+  gap: 12px; /* 버튼 간격, MySchedules.js와 유사 */
+  align-items: center; /* 중앙 정렬 */
   width: 100%;
-  justify-content: center;
 }
 
-.menu-button {
-  flex: 1;
-  max-width: 200px;
-  padding: 14px;
-  border: none;
-  border-radius: 6px;
-  background-color: #3498db;
-  color: white;
-  font-size: 18px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.menu-button:hover {
-  background-color: #2980b9;
-}
-
-.error-message {
-  color: #e74c3c;
+.adminButton {
+  width: 100%;
+  max-width: 300px; /* 버튼 너비 제한, 깔끔한 크기 */
+  padding: 12px;
   font-size: 16px;
-  margin-bottom: 15px;
-  text-align: center;
+  font-weight: 500;
+  border: none;
+  border-radius: 4px; /* MySchedules.js와 동일한 모서리 */
+  cursor: pointer;
+  transition: background-color 0.3s; /* MySchedules.js와 유사한 전환 */
+  background: #4CAF50; /* MySchedules.js의 .myschedules-schedule-button 색상 */
+  color: #ffffff;
 }
 
-/* 모바일 반응형 (768px 이하) */
+.adminButton:hover:not(:disabled) {
+  background: #45a049; /* MySchedules.js의 호버 색상 */
+}
+
+.adminButton:disabled {
+  background: #a5d6a7; /* 비활성화 색상, MySchedules.js와 조화 */
+  cursor: not-allowed;
+}
+
+.adminLoading {
+  font-size: 16px;
+  color: #34495e; /* MySchedules.js와 색상 통일 */
+  text-align: center;
+  margin: 20px 0;
+}
+
+.adminButton:focus,
+.adminLogoutButton:focus {
+  outline: 2px solid #4CAF50; /* MySchedules.js와 동일한 포커스 색상 */
+  outline-offset: 2px;
+}
+
+/* 반응형 디자인: 태블릿 이상 (768px 이상) */
+@media (min-width: 768px) {
+  .adminContainer {
+    max-width: 900px; /* MySchedules.js와 유사한 넓은 레이아웃 */
+    padding: 32px;
+  }
+  .adminTitle {
+    font-size: 28px;
+  }
+  .adminUserName,
+  .adminLogoutButton {
+    font-size: 16px;
+  }
+  .adminButton {
+    font-size: 18px;
+    padding: 14px;
+    max-width: 400px; /* PC에서 버튼 조금 더 넓게 */
+  }
+}
+
+/* 반응형 디자인: 모바일 (768px 이하) */
 @media (max-width: 768px) {
-  .admin-container {
-    max-width: 90%;
-    padding: 20px;
-    margin: 15px;
-  }
-
-  .title {
-    font-size: 24px;
-  }
-
-  .admin-name {
-    font-size: 14px;
-  }
-
-  .logout-button {
-    padding: 6px 12px;
-    font-size: 13px;
-  }
-
-  .menu-button {
+  .adminContainer {
     max-width: 100%;
+    padding: 16px;
+    margin: 10px;
+  }
+  .adminHeader {
+    flex-direction: column; /* 제목과 사용자 정보 세로 배치 */
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .adminTitle {
+    font-size: 22px;
+    max-width: 100%; /* 모바일에서 풀 너비 */
+  }
+  .adminUserInfo {
+    justify-content: flex-start; /* 모바일에서 왼쪽 정렬 */
+  }
+  .adminUserName {
+    font-size: 14px;
+    max-width: 150px;
+  }
+  .adminLogoutButton {
+    font-size: 13px;
+    padding: 5px 10px;
+  }
+  .adminButton {
     font-size: 16px;
     padding: 12px;
+    max-width: 100%; /* 모바일에서 풀 너비 */
   }
 }
 
 /* 초소형 화면 (480px 이하) */
 @media (max-width: 480px) {
-  .admin-container {
-    padding: 15px;
-    margin: 10px;
+  .adminContainer {
+    padding: 12px;
+    margin: 5px;
   }
-
-  .title {
-    font-size: 20px;
+  .adminTitle {
+    font-size: 18px;
   }
-
-  .admin-name {
+  .adminUserName {
     font-size: 13px;
+    max-width: 120px;
   }
-
-  .logout-button {
-    padding: 6px 10px;
+  .adminLogoutButton {
     font-size: 12px;
+    padding: 4px 8px;
   }
-
-  .menu {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .menu-button {
-    max-width: 100%;
+  .adminButton {
     font-size: 14px;
     padding: 10px;
   }

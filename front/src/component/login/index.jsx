@@ -4,62 +4,47 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
+import { setToken } from '../../utils/auth';
 import './index.css';
 
 function Login() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    userId: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ userId: '', password: '' });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError('');
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-
-  if (!formData.userId || !formData.password) {
-    setError('아이디와 비밀번호를 입력해주세요.');
-    toast.error('아이디와 비밀번호를 입력해주세요.');
-    return;
-  }
-
-  try {
-    const response = await axios.post(`${BASE_URL}/login`, {
-      userId: formData.userId,
-      password: formData.password
-    });
-    console.log('Login response:', response.data);
-    const { token, isAdmin } = response.data;
-    
-    // 토큰 저장
-    localStorage.setItem('token', token);
-    console.log('Token saved:', localStorage.getItem('token'));
-
-    toast.success('로그인 성공!');
-    setTimeout(() => {
-      // 관리자는 /AdminDashboard, 일반 사용자는 /myschedules로 리다이렉트
-      navigate(isAdmin ? '/AdminDashboard' : '/myschedules');
-    }, 1000);
-  } catch (err) {
-    console.error('Login error:', err);
-    const errorMessage = err.response?.data?.message || '로그인에 실패했습니다.';
-    setError(errorMessage);
-    toast.error(errorMessage);
-  }
-};
-
-  const handleSignUp = () => {
-    navigate('/signup');
+    e.preventDefault();
+    setLoading(true);
+    if (!formData.userId || !formData.password) {
+      setError('아이디와 비밀번호를 입력하세요.');
+      toast.error('아이디와 비밀번호를 입력하세요.');
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await axios.post(`${BASE_URL}/login`, formData);
+      setToken(response.data.token);
+      toast.success('로그인 성공!');
+      console.log(response.data);
+      
+      setTimeout(() => navigate(response.data.isAdmin ? '/AdminDashboard' : '/myschedules'), 1000);
+    } catch (err) {
+      const message = err.response?.data?.message || '로그인 실패';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="login-container">
+    <div className="container">
       <h1 className="title">로그인</h1>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
@@ -70,7 +55,7 @@ function Login() {
             name="userId"
             value={formData.userId}
             onChange={handleChange}
-            placeholder="아이디를 입력하세요"
+            placeholder="아이디 입력"
           />
         </div>
         <div className="form-group">
@@ -81,15 +66,17 @@ function Login() {
             name="password"
             value={formData.password}
             onChange={handleChange}
-            placeholder="비밀번호를 입력하세요"
+            placeholder="비밀번호 입력"
           />
         </div>
         {error && <p className="error-message">{error}</p>}
-        <button type="submit" className="login-button">로그인</button>
-        <button type="button" className="signup-button" onClick={handleSignUp}>
-          회원가입
+        <button type="submit" className="button button-primary" disabled={loading}>
+          {loading ? '로그인 중...' : '로그인'}
         </button>
       </form>
+      <p className="signup-link">
+        계정이 없으신가요? <a href="/signup">회원가입</a>
+      </p>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );

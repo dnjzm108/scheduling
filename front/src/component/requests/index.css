@@ -1,0 +1,260 @@
+/* Requests.js 전용 스타일: 건의사항 작성 페이지 */
+.request-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+}
+
+.request-back-button {
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.request-back-button:hover {
+  background-color: #5a6268;
+}
+
+.request-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+  text-align: center;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+.request-user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.request-user-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #34495e;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  max-width: 200px;
+}
+
+.request-logout-button {
+  padding: 8px 16px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.request-logout-button:hover {
+  background-color: #c82333;
+}
+
+.request-form {
+  width: 100%;
+  max-width: 600px;
+  margin-top: 20px;
+}
+
+.request-form-group {
+  margin-bottom: 15px;
+}
+
+.request-form-group label {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  color: #34495e;
+  margin-bottom: 5px;
+}
+
+.request-form-input {
+  width: 100%;
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.request-form-input:focus {
+  border-color: #4CAF50;
+  outline: none;
+}
+
+.request-form-input[readonly] {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+
+.request-submit-button {
+  width: 100%;
+  max-width: 300px;
+  padding: 12px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+  display: block;
+  margin: 20px auto;
+}
+
+.request-submit-button:hover {
+  background-color: #45a049;
+}
+
+.request-loading,
+.request-no-requests {
+  text-align: center;
+  font-size: 16px;
+  color: #555;
+  margin: 20px 0;
+}
+
+.request-list {
+  list-style: none;
+  padding: 0;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.request-item {
+  background-color: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  padding: 15px;
+}
+
+.request-item h3 {
+  font-size: 18px;
+  margin: 0 0 10px;
+  color: #2c3e50;
+}
+
+.request-item p {
+  font-size: 14px;
+  color: #34495e;
+  margin: 5px 0;
+}
+
+.request-attachment {
+  max-width: 100%;
+  margin: 10px 0;
+  border-radius: 4px;
+}
+
+/* 반응형 디자인: 태블릿 이상 (768px 이상) */
+@media (min-width: 768px) {
+  .request-container {
+    max-width: 900px;
+    padding: 32px;
+  }
+  .request-title {
+    font-size: 28px;
+  }
+  .request-user-name,
+  .request-logout-button,
+  .request-back-button {
+    font-size: 16px;
+  }
+  .request-form-input {
+    font-size: 16px;
+    padding: 10px;
+  }
+  .request-submit-button {
+    font-size: 18px;
+    padding: 14px;
+  }
+}
+
+/* 반응형 디자인: 모바일 (768px 이하) */
+@media (max-width: 768px) {
+  .request-container {
+    max-width: 100%;
+    padding: 16px;
+    margin: 10px;
+  }
+  .request-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .request-title {
+    font-size: 22px;
+  }
+  .request-user-name {
+    font-size: 14px;
+    max-width: 150px;
+  }
+  .request-logout-button,
+  .request-back-button {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  .request-form-input {
+    font-size: 14px;
+    padding: 8px;
+  }
+  .request-submit-button {
+    font-size: 16px;
+    padding: 12px;
+  }
+}
+
+/* 초소형 화면 (480px 이하) */
+@media (max-width: 480px) {
+  .request-container {
+    padding: 12px;
+    margin: 5px;
+  }
+  .request-title {
+    font-size: 18px;
+  }
+  .request-user-name {
+    font-size: 13px;
+    max-width: 120px;
+  }
+  .request-logout-button,
+  .request-back-button {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+  .request-form-input {
+    font-size: 13px;
+    padding: 6px;
+  }
+  .request-submit-button {
+    font-size: 14px;
+    padding: 10px;
+  }
+}

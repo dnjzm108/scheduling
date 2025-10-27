@@ -1,48 +1,54 @@
-/* 기본 스타일 (데스크톱 우선) */
+/* Apply.js 전용 스타일: 스케줄 신청 페이지 */
 .apply-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 800px;
+  max-width: 900px; /* 넓이 증가로 텍스트 잘림 방지 */
   margin: 0 auto;
-  padding: 20px;
+  padding: 24px;
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.title {
+.apply-title {
   color: #2c3e50;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
   margin-bottom: 24px;
   text-align: center;
+  word-break: keep-all; /* 긴 제목 깨짐 방지 */
+  overflow-wrap: break-word;
+  max-width: 100%; /* 제목이 컨테이너 넘지 않도록 */
 }
 
-.store-info {
+.apply-store-info {
   font-size: 16px;
   color: #34495e;
   margin-bottom: 20px;
   text-align: center;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
-.form-group {
+.apply-form-group {
   display: flex;
   flex-direction: column;
   width: 100%;
   margin-bottom: 16px;
 }
 
-.form-group label {
+.apply-form-group label {
   font-size: 14px;
   font-weight: 500;
   color: #34495e;
   margin-bottom: 8px;
 }
 
-.form-group select,
-.form-group input {
+.apply-form-group select,
+.apply-form-group input {
   width: 100%;
   padding: 10px;
   border: 1px solid #e0e0e0;
@@ -52,19 +58,19 @@
   transition: border-color 0.2s;
 }
 
-.form-group select:focus,
-.form-group input:focus {
+.apply-form-group select:focus,
+.apply-form-group input:focus {
   border-color: #3498db;
   outline: none;
 }
 
-.form-group input:disabled {
+.apply-form-group input:disabled {
   background-color: #f0f0f0;
   color: #a0a0a0;
   cursor: not-allowed;
 }
 
-.day-group {
+.apply-day-group {
   width: 100%;
   margin-bottom: 24px;
   padding: 16px;
@@ -72,7 +78,7 @@
   border-radius: 6px;
 }
 
-.day-group h3 {
+.apply-day-group h3 {
   color: #2c3e50;
   font-size: 16px;
   font-weight: 600;
@@ -80,34 +86,35 @@
   text-align: center;
 }
 
-.form-row {
+.apply-form-row {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+  flex-wrap: wrap; /* 좁은 화면에서 요소 정렬 */
 }
 
-.type-group {
+.apply-type-group {
   flex: 1;
-  min-width: 200px;
+  min-width: 180px; /* 최소 너비 조정 */
 }
 
-.time-group {
+.apply-time-group {
   flex: 1;
-  min-width: 200px;
+  min-width: 180px;
 }
 
-.button-group {
+.apply-button-group {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: center;
+  flex-wrap: wrap; /* 버튼 줄바꿈 허용 */
   width: 100%;
   margin-top: 24px;
 }
 
-.submit-button,
-.back-button {
+.apply-button {
   flex: 1;
-  max-width: 180px; /* 버튼 크기 통일 */
+  max-width: 160px; /* 버튼 크기 통일 */
   padding: 12px;
   border: none;
   border-radius: 4px;
@@ -117,23 +124,38 @@
   transition: background-color 0.2s;
 }
 
-.submit-button {
+.apply-submit-button {
   background-color: #3498db;
   color: white;
 }
 
-.submit-button:hover {
+.apply-submit-button:hover {
   background-color: #2980b9;
 }
 
-.back-button {
+.apply-back-button {
   background-color: #ecf0f1;
   color: #34495e;
   border: 1px solid #e0e0e0;
 }
 
-.back-button:hover {
+.apply-back-button:hover {
   background-color: #d5dbdc;
+}
+
+.apply-suggestion-button {
+  background-color: #f1c40f;
+  color: white;
+}
+
+.apply-suggestion-button:hover {
+  background-color: #d4ac0d;
+}
+
+.apply-loading {
+  font-size: 16px;
+  color: #34495e;
+  text-align: center;
 }
 
 /* 모바일 반응형 (768px 이하) */
@@ -144,36 +166,35 @@
     margin: 8px;
   }
 
-  .title {
-    font-size: 20px;
+  .apply-title {
+    font-size: 22px;
   }
 
-  .store-info {
+  .apply-store-info {
     font-size: 14px;
   }
 
-  .form-group select,
-  .form-group input {
+  .apply-form-group select,
+  .apply-form-group input {
     font-size: 13px;
     padding: 8px;
   }
 
-  .day-group h3 {
+  .apply-day-group h3 {
     font-size: 14px;
   }
 
-  .form-row {
+  .apply-form-row {
     flex-direction: column;
     gap: 12px;
   }
 
-  .type-group,
-  .time-group {
+  .apply-type-group,
+  .apply-time-group {
     min-width: 100%;
   }
 
-  .submit-button,
-  .back-button {
+  .apply-button {
     max-width: 100%;
     font-size: 14px;
     padding: 10px;
@@ -187,26 +208,25 @@
     margin: 4px;
   }
 
-  .title {
+  .apply-title {
     font-size: 18px;
   }
 
-  .store-info {
+  .apply-store-info {
     font-size: 13px;
   }
 
-  .form-group select,
-  .form-group input {
+  .apply-form-group select,
+  .apply-form-group input {
     font-size: 12px;
     padding: 6px;
   }
 
-  .day-group h3 {
+  .apply-day-group h3 {
     font-size: 13px;
   }
 
-  .submit-button,
-  .back-button {
+  .apply-button {
     font-size: 13px;
     padding: 8px;
   }

@@ -1,83 +1,115 @@
-/* 기본 스타일 (데스크톱 우선) */
+/* MySchedules.js 전용 스타일: 스케줄 내역 확인 페이지 */
 .myschedules-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 600px;
+  max-width: 700px; /* 넓이 증가로 텍스트 잘림 방지 */
   margin: 0 auto;
-  padding: 20px;
+  padding: 24px;
   background-color: #f9f9f9;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   font-family: Arial, sans-serif;
 }
 
-.header {
+.myschedules-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
   width: 100%;
+  flex-wrap: wrap; /* 좁은 화면에서 요소 정렬 */
 }
 
-.title {
+.myschedules-title {
   color: #4CAF50;
-  font-size: 24px;
+  font-size: 26px;
   margin: 0;
+  word-break: keep-all; /* 긴 제목 깨짐 방지 */
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
-.user-info {
+.myschedules-user-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.user-name {
+.myschedules-user-name {
   color: #333;
   font-size: 16px;
   font-weight: bold;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  max-width: 200px; /* 이름 길이 제한 */
 }
 
-.logout-button {
-  background-color: #ffffff;
-  color: #4CAF50;
-  border: 1px solid #4CAF50;
-  border-radius: 4px;
-  padding: 8px 12px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-.logout-button:hover {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.schedule-button {
+.myschedules-button-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap; /* 버튼 줄바꿈 허용 */
   width: 100%;
-  padding: 12px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background-color 0.3s;
   margin-bottom: 20px;
 }
 
-.schedule-button:hover {
+.myschedules-button {
+  flex: 1;
+  max-width: 180px; /* 버튼 크기 통일 */
+  padding: 12px;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.myschedules-schedule-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.myschedules-schedule-button:hover {
   background-color: #45a049;
 }
 
-.schedule-list {
+.myschedules-notice-button {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.myschedules-notice-button:hover {
+  background-color: #27ae60;
+}
+
+.myschedules-suggestion-button {
+  background-color: #f1c40f;
+  color: white;
+}
+
+.myschedules-suggestion-button:hover {
+  background-color: #d4ac0d;
+}
+
+.myschedules-logout-button {
+  background-color: #ffffff;
+  color: #4CAF50;
+  border: 1px solid #4CAF50;
+}
+
+.myschedules-logout-button:hover {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.myschedules-schedule-list {
   list-style: none;
   padding: 0;
   width: 100%;
 }
 
-.schedule-item {
+.myschedules-schedule-item {
   background-color: #fff;
   padding: 15px;
   margin-bottom: 10px;
@@ -86,13 +118,16 @@
   cursor: pointer;
   transition: background-color 0.3s;
   text-align: center;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
-.schedule-item:hover {
+.myschedules-schedule-item:hover {
   background-color: #f0f0f0;
 }
 
-.details {
+.myschedules-details {
   margin-top: 10px;
   padding: 10px;
   background-color: #f9f9f9;
@@ -100,12 +135,21 @@
   text-align: left;
 }
 
-.details p {
+.myschedules-details p {
   margin: 5px 0;
   font-size: 14px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
-.no-schedules {
+.myschedules-no-schedules {
+  color: #666;
+  font-size: 16px;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.myschedules-loading {
   color: #666;
   font-size: 16px;
   text-align: center;
@@ -120,33 +164,31 @@
     margin: 10px;
   }
 
-  .title {
-    font-size: 20px;
+  .myschedules-title {
+    font-size: 22px;
   }
 
-  .user-name {
+  .myschedules-user-name {
     font-size: 14px;
+    max-width: 150px;
   }
 
-  .logout-button {
-    font-size: 13px;
-    padding: 6px 10px;
-  }
-
-  .schedule-button {
-    font-size: 16px;
+  .myschedules-button {
+    max-width: 100%;
+    font-size: 14px;
     padding: 10px;
   }
 
-  .schedule-item {
+  .myschedules-schedule-item {
     padding: 12px;
   }
 
-  .details p {
+  .myschedules-details p {
     font-size: 13px;
   }
 
-  .no-schedules {
+  .myschedules-no-schedules,
+  .myschedules-loading {
     font-size: 14px;
   }
 }
@@ -158,39 +200,37 @@
     margin: 5px;
   }
 
-  .header {
+  .myschedules-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
   }
 
-  .title {
+  .myschedules-title {
     font-size: 18px;
     margin-bottom: 10px;
   }
 
-  .user-name {
+  .myschedules-user-name {
     font-size: 13px;
+    max-width: 120px;
   }
 
-  .logout-button {
-    font-size: 12px;
-    padding: 5px 8px;
-  }
-
-  .schedule-button {
-    font-size: 14px;
+  .myschedules-button {
+    font-size: 13px;
     padding: 8px;
   }
 
-  .schedule-item {
+  .myschedules-schedule-item {
     padding: 10px;
   }
 
-  .details p {
+  .myschedules-details p {
     font-size: 12px;
   }
 
-  .no-schedules {
+  .myschedules-no-schedules,
+  .myschedules-loading {
     font-size: 13px;
   }
 }
