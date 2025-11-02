@@ -1,257 +1,348 @@
-/* 스케줄 관리 페이지 스타일 */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* index.css */
+
+/* --- PC 기본 레이아웃 --- */
+.schedule-management {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f8fafc;
-  min-height: 100vh;
-}
-
-.schedule-management-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 30px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* 고정 헤더 */
 .header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: #ffffff;
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-}
-
-.back-button {
-  background: #ccc;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-}
-
-.user-info span {
-  margin-right: 10px;
-}
-
-.logout-button {
-  background: #ff0000;
-  color: #fff;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* 메인 콘텐츠 */
-.main-content {
-  margin-top: 50px; /* 헤더 높이만큼 여백 */
-  width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ddd;
 }
 
 .title {
-  color: #2c3e50;
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 30px;
-  text-align: center;
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: #333;
+    display: flex;
+    align-items: center;
 }
 
-.subtitle {
-  color: #34495e;
-  font-size: 20px;
-  font-weight: 500;
-  margin: 20px 0;
+.icon-calendar {
+    margin-right: 0.5rem;
+    color: #4f46e5;
+    font-size: 1.5rem;
 }
 
-.open-form {
-  width: 100%;
+.username {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #555;
+    margin-right: 1rem;
+}
+
+.button-dashboard {
+    background-color: #eee;
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.button-dashboard:hover {
+    background-color: #ddd;
+}
+
+/* 스케줄 오픈 폼 섹션 */
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background-color: #fff;
+    border: 1px solid #e0e7ff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #4338ca;
+    display: flex;
+    align-items: center;
+}
+
+.icon-plus {
+    margin-right: 0.5rem;
+}
+
+.schedule-form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
 }
 
 .form-group {
-  width: 100%;
-  margin-bottom: 20px;
+    flex: 1;
 }
 
-.form-group label {
-  display: block;
-  font-size: 16px;
-  font-weight: 500;
-  color: #34495e;
-  margin-bottom: 8px;
+.form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.25rem;
 }
 
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 16px;
-  background-color: #f9f9f9;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
+.form-input, .form-select {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 0.375rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+    box-sizing: border-box; /* 패딩이 너비에 포함되도록 */
 }
 
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #3498db;
-  outline: none;
+.button-submit {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 0.375rem;
+    color: #fff;
+    background-color: #4f46e5;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
-.submit-button {
-  width: 100%;
-  max-width: 200px;
-  padding: 14px;
-  border: none;
-  border-radius: 6px;
-  background-color: #3498db;
-  color: white;
-  font-size: 18px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.button-submit:hover {
+    background-color: #4338ca;
 }
 
-.submit-button:hover {
-  background-color: #2980b9;
+.button-submit:disabled {
+    background-color: #999;
+    cursor: not-allowed;
 }
 
-.periods-list {
-  width: 100%;
-  margin-top: 20px;
+/* 스케줄 목록 섹션 */
+.list-section {
+    margin-top: 2rem;
 }
 
-.period-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #e0e0e0;
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
 }
 
-.close-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  background-color: #e74c3c;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
+.list-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
 }
 
-.close-button:hover {
-  background-color: #c0392b;
+.filter-group {
+    display: flex;
+    align-items: center;
 }
 
-.error-message {
-  color: #e74c3c;
-  font-size: 16px;
-  margin-bottom: 15px;
-  text-align: center;
+.filter-select {
+    width: auto; /* 필터는 내용물에 맞게 너비 조정 */
 }
 
-/* 모바일 반응형 (768px 이하) */
+.icon-filter {
+    color: #777;
+    margin-right: 0.5rem;
+}
+
+/* 테이블 스타일 (PC 기본) */
+.table-container {
+    overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #fff;
+}
+
+.schedule-table th, .schedule-table td {
+    padding: 0.75rem 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.schedule-table th {
+    background-color: #f9fafb;
+    color: #555;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.schedule-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* 상태 배지 */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+}
+
+.status-open {
+    background-color: #fffbe0;
+    color: #8b5cf6;
+}
+
+.status-assigned {
+    background-color: #f0fdf4;
+    color: #16a34a;
+}
+
+.status-closed {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* 액션 버튼 */
+.actions-cell {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.button-action {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    margin: 0 0.25rem;
+    transition: color 0.15s;
+}
+
+.button-detail {
+    color: #4f46e5;
+}
+.button-detail:hover {
+    color: #3730a3;
+}
+
+.button-auto-assign {
+    color: #2563eb;
+}
+.button-auto-assign:hover {
+    color: #1e40af;
+}
+
+.button-auto-assign.disabled {
+    color: #999;
+    cursor: not-allowed;
+}
+
+.button-delete {
+    color: #dc2626;
+}
+.button-delete:hover {
+    color: #991b1b;
+}
+
+.inline-icon {
+    margin-right: 0.25rem;
+}
+
+.no-schedules {
+    text-align: center;
+    color: #777;
+    padding: 1rem;
+}
+
+/* --- 📱 모바일 대응 (@media) --- */
 @media (max-width: 768px) {
-  .schedule-management-container {
-    max-width: 90%;
-    padding: 20px;
-    margin: 15px;
-  }
+    .schedule-management {
+        padding: 1rem;
+    }
 
-  .title {
-    font-size: 24px;
-  }
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-  .subtitle {
-    font-size: 18px;
-  }
+    .user-info {
+        margin-top: 0.5rem;
+    }
+    
+    .schedule-form {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .button-submit {
+        width: 100%;
+        margin-top: 0.5rem;
+        padding: 0.75rem 1.5rem; /* 버튼 영역 확장 */
+    }
 
-  .form-group label {
-    font-size: 14px;
-  }
+    .list-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
 
-  .form-group input,
-  .form-group select {
-    font-size: 14px;
-    padding: 10px;
-  }
+    /* 🚨 테이블을 카드뷰 형식으로 전환하여 깨짐 방지 */
+    .schedule-table {
+        border: none;
+    }
+    
+    .schedule-table thead {
+        display: none; /* 헤더 숨기기 */
+    }
 
-  .submit-button {
-    font-size: 16px;
-    padding: 12px;
-  }
+    .schedule-table tr {
+        display: block;
+        margin-bottom: 1rem;
+        border: 1px solid #ddd;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .schedule-table td {
+        display: block;
+        text-align: right;
+        border-bottom: 1px dotted #eee;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
 
-  .close-button {
-    padding: 6px 12px;
-    font-size: 13px;
-  }
+    /* 데이터 레이블 표시 */
+    .schedule-table td::before {
+        content: attr(data-label);
+        float: left;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #555;
+        font-size: 0.8rem;
+    }
+    
+    .schedule-table tr:last-child {
+        border-bottom: none;
+    }
 
-  .error-message {
-    font-size: 14px;
-  }
-}
-
-/* 초소형 화면 (480px 이하) */
-@media (max-width: 480px) {
-  .schedule-management-container {
-    padding: 15px;
-    margin: 10px;
-  }
-
-  .title {
-    font-size: 20px;
-  }
-
-  .subtitle {
-    font-size: 16px;
-  }
-
-  .form-group label {
-    font-size: 13px;
-  }
-
-  .form-group input,
-  .form-group select {
-    font-size: 13px;
-    padding: 8px;
-  }
-
-  .submit-button {
-    font-size: 14px;
-    padding: 10px;
-  }
-
-  .close-button {
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-
-  .error-message {
-    font-size: 13px;
-  }
+    .actions-cell {
+        text-align: left; /* 액션 버튼은 왼쪽 정렬 */
+        padding: 0.75rem 1rem;
+        border-bottom: none;
+    }
+    
+    .button-action {
+        margin-right: 0.5rem;
+        padding: 0.25rem;
+    }
 }

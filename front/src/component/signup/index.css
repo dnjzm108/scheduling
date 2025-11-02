@@ -1,172 +1,207 @@
+/* index.css (회원가입 페이지 - SignUp 컴포넌트용) */
+/* --- 전체 배경 및 컨테이너 --- */
 .signup-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 30px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1rem;
+    background-color: #e0e7ff; /* 연한 인디고 배경 (로그인 페이지와 통일) */
+    font-family: Arial, sans-serif;
 }
 
-.title {
-  color: #2c3e50;
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 30px;
-  text-align: center;
+.signup-bg-overlay {
+    /* 배경 오버레이는 사용하지 않으므로 투명 처리 */
+    display: none; 
 }
 
-.form-group {
-  width: 100%;
-  margin-bottom: 20px;
+/* --- 회원가입 카드 --- */
+.signup-card {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px; /* 로그인보다 약간 넓게 설정 가능 */
 }
 
-.form-group label {
-  display: block;
-  font-size: 16px;
-  font-weight: 500;
-  color: #34495e;
-  margin-bottom: 8px;
+.signup-header {
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
-.form-group input,
-.form-group select {
-  width: 100%;
-  padding: 16px; /* 입력창 크기 증가 */
-  height: 48px; /* 입력창 높이 증가 */
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 18px; /* 폰트 크기 증가 */
-  background-color: #f9f9f9;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
+.signup-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #4f46e5; /* 인디고 메인 색상 */
+    margin: 0;
 }
 
-.form-group input:focus,
-.form-group select:focus {
-  border-color: #3498db;
-  outline: none;
+.signup-subtitle {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
 }
 
-.button-group {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  width: 100%;
-}
-
-.submit-button,
-.back-button {
-  width: 100%;
-  max-width: 200px; /* 버튼 크기 통일 */
-  padding: 16px; /* 패딩 증가 */
-  border: none;
-  border-radius: 6px;
-  font-size: 18px; /* 폰트 크기 통일 */
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.submit-button {
-  background-color: #3498db;
-  color: white;
-}
-
-.submit-button:hover {
-  background-color: #2980b9;
-}
-
-.back-button {
-  background-color: #ecf0f1;
-  color: #34495e;
-  border: 1px solid #e0e0e0;
-}
-
-.back-button:hover {
-  background-color: #d5dbdc;
-}
-
-.error-message {
-  color: #e74c3c;
-  font-size: 16px;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-/* 모바일 반응형 (768px 이하) */
-@media (max-width: 768px) {
-  .signup-container {
-    max-width: 90%;
-    padding: 20px;
-    margin: 15px;
-  }
-
-  .title {
-    font-size: 24px;
-  }
-
-  .form-group label {
-    font-size: 14px;
-  }
-
-  .form-group input,
-  .form-group select {
-    font-size: 16px; /* 모바일에서도 가독성 유지 */
-    padding: 12px;
-    height: 42px;
-  }
-
-  .submit-button,
-  .back-button {
-    max-width: 180px;
-    font-size: 16px;
-    padding: 12px;
-  }
-
-  .error-message {
-    font-size: 14px;
-  }
-}
-
-/* 초소형 화면 (480px 이하) */
-@media (max-width: 480px) {
-  .signup-container {
-    padding: 15px;
-    margin: 10px;
-  }
-
-  .title {
-    font-size: 20px;
-  }
-
-  .form-group label {
-    font-size: 13px;
-  }
-
-  .form-group input,
-  .form-group select {
-    font-size: 14px;
-    padding: 10px;
-    height: 38px;
-  }
-
-  .button-group {
+/* --- 폼 및 입력 필드 --- */
+.signup-form {
+    display: flex;
     flex-direction: column;
-    gap: 10px;
-  }
+    gap: 1rem; /* 간격 축소 */
+}
 
-  .submit-button,
-  .back-button {
-    max-width: 100%;
-    font-size: 14px;
-    padding: 10px;
-  }
+.signup-input-group {
+    display: flex;
+    flex-direction: column;
+}
 
-  .error-message {
-    font-size: 13px;
-  }
+.signup-label {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.signup-input,
+.signup-select {
+    padding: 0.75rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.signup-input:focus,
+.signup-select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    outline: none;
+}
+
+.signup-input-error {
+    border-color: #ef4444 !important; /* 빨간색 경고 테두리 */
+}
+
+/* --- 상태 메시지 (아이디 중복, 비밀번호 불일치) --- */
+.signup-success {
+    font-size: 0.85rem;
+    color: #10b981; /* 녹색 */
+    margin-top: 0.25rem;
+}
+
+.signup-error {
+    font-size: 0.85rem;
+    color: #ef4444; /* 빨간색 */
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+/* --- 매장 로딩 --- */
+.signup-loading {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #6b7280;
+    text-align: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+}
+
+/* --- 동의 체크박스 그룹 --- */
+.signup-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid #eee;
+}
+
+.signup-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.signup-checkbox input[type="checkbox"] {
+    margin-right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    accent-color: #4f46e5; /* 체크박스 색상 */
+}
+
+/* --- 가입 버튼 --- */
+.signup-button {
+    padding: 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: #4f46e5;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.signup-button:hover:not(:disabled) {
+    background-color: #4338ca;
+}
+
+.signup-button:disabled {
+    background-color: #a5b4fc;
+    cursor: not-allowed;
+}
+
+/* --- 로딩 스피너 (로그인 페이지와 동일) --- */
+.signup-spinner {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #fff;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- 로그인 링크 --- */
+.signup-login-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+.signup-login-link a {
+    color: #4f46e5;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.signup-login-link a:hover {
+    text-decoration: underline;
+}
+
+/* --- 📱 모바일 대응 (@media) --- */
+@media (max-width: 500px) {
+    .signup-container {
+        padding: 0.5rem;
+    }
+
+    .signup-card {
+        padding: 1.5rem 1rem;
+    }
+
+    .signup-title {
+        font-size: 1.5rem;
+    }
 }

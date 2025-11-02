@@ -1,236 +1,186 @@
-/* MySchedules.js 전용 스타일: 스케줄 내역 확인 페이지 */
-.myschedules-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 700px; /* 넓이 증가로 텍스트 잘림 방지 */
-  margin: 0 auto;
-  padding: 24px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
+/* index.css (내 스케줄 페이지 - MySchedules 컴포넌트용) */
+* {
+    box-sizing: border-box;
 }
 
+/* --- 기본 레이아웃 및 컨테이너 --- */
+.myschedules-container {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background-color: #f7f7f7; 
+}
+
+/* --- 페이지 헤더 --- */
 .myschedules-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  width: 100%;
-  flex-wrap: wrap; /* 좁은 화면에서 요소 정렬 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ddd;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 .myschedules-title {
-  color: #4CAF50;
-  font-size: 26px;
-  margin: 0;
-  word-break: keep-all; /* 긴 제목 깨짐 방지 */
-  overflow-wrap: break-word;
-  max-width: 100%;
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
 }
 
 .myschedules-user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .myschedules-user-name {
-  color: #333;
-  font-size: 16px;
-  font-weight: bold;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-  max-width: 200px; /* 이름 길이 제한 */
+    font-size: 1rem;
+    font-weight: 500;
+    color: #555;
 }
 
+/* --- 버튼 그룹 --- */
 .myschedules-button-group {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap; /* 버튼 줄바꿈 허용 */
-  width: 100%;
-  margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
 }
 
 .myschedules-button {
-  flex: 1;
-  max-width: 180px; /* 버튼 크기 통일 */
-  padding: 12px;
-  border: none;
-  border-radius: 4px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    font-size: 0.95rem;
 }
 
+/* 주 버튼: 스케줄 신청 (인디고) */
 .myschedules-schedule-button {
-  background-color: #4CAF50;
-  color: white;
+    background-color: #4f46e5; 
+    color: #fff;
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
 }
 
 .myschedules-schedule-button:hover {
-  background-color: #45a049;
+    background-color: #4338ca;
 }
 
-.myschedules-notice-button {
-  background-color: #2ecc71;
-  color: white;
+/* 보조 버튼: 공지사항, 건의사항 (회색/연한 인디고) */
+.myschedules-notice-button,
+.myschedules-suggestion-button,
+.myschedules-logout-button {
+    background-color: #eef2ff; /* 연한 인디고 배경 */
+    color: #4f46e5;
 }
 
-.myschedules-notice-button:hover {
-  background-color: #27ae60;
-}
-
-.myschedules-suggestion-button {
-  background-color: #f1c40f;
-  color: white;
-}
-
+.myschedules-notice-button:hover,
 .myschedules-suggestion-button:hover {
-  background-color: #d4ac0d;
+    background-color: #e0e7ff;
 }
 
 .myschedules-logout-button {
-  background-color: #ffffff;
-  color: #4CAF50;
-  border: 1px solid #4CAF50;
+    background-color: #f0f0f0;
+    color: #333;
 }
-
 .myschedules-logout-button:hover {
-  background-color: #4CAF50;
-  color: white;
+    background-color: #ddd;
 }
 
+
+/* --- 스케줄 목록 --- */
 .myschedules-schedule-list {
-  list-style: none;
-  padding: 0;
-  width: 100%;
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .myschedules-schedule-item {
-  background-color: #fff;
-  padding: 15px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  text-align: center;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-  max-width: 100%;
+    background-color: #fff;
+    padding: 1rem 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: background-color 0.15s, border-left 0.15s;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    border-left: 5px solid transparent; /* 기본 상태 */
 }
 
 .myschedules-schedule-item:hover {
-  background-color: #f0f0f0;
+    background-color: #f9fafb;
 }
 
+.myschedules-schedule-item[data-selected="true"] {
+    border-left: 5px solid #4f46e5; /* 선택 시 인디고 강조 */
+    background-color: #f3f4f6;
+}
+
+/* --- 상세 내용 (클릭 시 나타남) --- */
 .myschedules-details {
-  margin-top: 10px;
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-top: 1px solid #ddd;
-  text-align: left;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: #555;
+    line-height: 1.5;
 }
 
 .myschedules-details p {
-  margin: 5px 0;
-  font-size: 14px;
-  word-break: keep-all;
-  overflow-wrap: break-word;
+    margin: 0.25rem 0;
 }
 
+/* --- 로딩/데이터 없음 --- */
+.myschedules-loading,
 .myschedules-no-schedules {
-  color: #666;
-  font-size: 16px;
-  text-align: center;
-  margin: 20px 0;
+    text-align: center;
+    padding: 2rem;
+    color: #4f46e5;
+    font-size: 1.125rem;
+    font-weight: 500;
+    border: 1px dashed #e0e7ff;
+    border-radius: 0.75rem;
+    margin-top: 1.5rem;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.myschedules-loading {
-  color: #666;
-  font-size: 16px;
-  text-align: center;
-  margin: 20px 0;
-}
+/* --- 📱 모바일 대응 (@media) --- */
+@media (max-width: 600px) {
+    .myschedules-container {
+        padding: 1rem;
+    }
 
-/* 모바일 반응형 (768px 이하) */
-@media (max-width: 768px) {
-  .myschedules-container {
-    max-width: 100%;
-    padding: 15px;
-    margin: 10px;
-  }
+    .myschedules-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
 
-  .myschedules-title {
-    font-size: 22px;
-  }
+    .myschedules-user-info {
+        width: 100%;
+        justify-content: flex-end;
+    }
 
-  .myschedules-user-name {
-    font-size: 14px;
-    max-width: 150px;
-  }
-
-  .myschedules-button {
-    max-width: 100%;
-    font-size: 14px;
-    padding: 10px;
-  }
-
-  .myschedules-schedule-item {
-    padding: 12px;
-  }
-
-  .myschedules-details p {
-    font-size: 13px;
-  }
-
-  .myschedules-no-schedules,
-  .myschedules-loading {
-    font-size: 14px;
-  }
-}
-
-/* 초소형 화면 (480px 이하) */
-@media (max-width: 480px) {
-  .myschedules-container {
-    padding: 10px;
-    margin: 5px;
-  }
-
-  .myschedules-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .myschedules-title {
-    font-size: 18px;
-    margin-bottom: 10px;
-  }
-
-  .myschedules-user-name {
-    font-size: 13px;
-    max-width: 120px;
-  }
-
-  .myschedules-button {
-    font-size: 13px;
-    padding: 8px;
-  }
-
-  .myschedules-schedule-item {
-    padding: 10px;
-  }
-
-  .myschedules-details p {
-    font-size: 12px;
-  }
-
-  .myschedules-no-schedules,
-  .myschedules-loading {
-    font-size: 13px;
-  }
+    .myschedules-button-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .myschedules-button {
+        width: 100%;
+        padding: 0.75rem;
+    }
 }

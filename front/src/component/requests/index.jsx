@@ -37,10 +37,10 @@ function Requests() {
 
     const fetchUserStore = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/user-store`, {
+        const response = await axios.get(`${BASE_URL}/api/auth/user-store`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        console.log('User store response:', response.data); // 디버깅 로그
+
         setUserInfo(prev => ({
           ...prev,
           store_id: response.data.store_id,
@@ -56,7 +56,7 @@ function Requests() {
     const fetchData = async () => {
       try {
         const [requestsRes] = await Promise.all([
-          axios.get(`${BASE_URL}/requests`, { headers: { Authorization: `Bearer ${token}` } })
+          axios.get(`${BASE_URL}/api/requests`, { headers: { Authorization: `Bearer ${token}` } })
         ]);
         setRequests(requestsRes.data || []);
       } catch (err) {
@@ -90,13 +90,13 @@ function Requests() {
       form.append('attachments', file);
     }
     try {
-      await axios.post(`${BASE_URL}/requests`, form, {
+      await axios.post(`${BASE_URL}/api/requests`, form, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
       toast.success('건의사항 제출 완료!');
       setFormData({ title: '', body: '' });
       setFiles([]);
-      const response = await axios.get(`${BASE_URL}/requests`, { headers: { Authorization: `Bearer ${token}` } });
+      const response = await axios.get(`${BASE_URL}/api/requests`, { headers: { Authorization: `Bearer ${token}` } });
       setRequests(response.data || []);
     } catch (err) {
       console.error('Submit error:', err.response?.data || err.message);

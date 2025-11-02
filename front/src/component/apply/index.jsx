@@ -44,7 +44,7 @@ function Apply() {
 
     const fetchUserStore = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/user-store`, {
+        const response = await axios.get(`${BASE_URL}/api/auth/user-store`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStoreId(response.data.store_id);
@@ -56,7 +56,7 @@ function Apply() {
 
     const fetchOpenPeriod = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/check-schedule-open`, {
+        const response = await axios.get(`${BASE_URL}/api/schedules/check-schedule-open`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (!response.data.is_open) {
@@ -64,8 +64,10 @@ function Apply() {
           setTimeout(() => navigate('/myschedules'), 2000);
           return;
         }
-        setWeekStart(response.data.week_start);
-        setWeekEnd(response.data.week_end);
+        console.log(response.data);
+        
+        setWeekStart(response.data.period.start);
+        setWeekEnd(response.data.period.end);
       } catch (err) {
         toast.error('신청 기간 확인 실패');
         setTimeout(() => navigate('/myschedules'), 2000);
@@ -108,7 +110,7 @@ function Apply() {
     }
     try {
       await axios.post(
-        `${BASE_URL}/schedule`,
+        `${BASE_URL}/api/schedules/schedule`,
         { week_start: weekStart, store_id: storeId, schedules },
         { headers: { Authorization: `Bearer ${token}` } }
       );

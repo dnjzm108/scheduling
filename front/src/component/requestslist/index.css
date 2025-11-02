@@ -1,141 +1,242 @@
-/* Suggestions.js 전용 스타일: 건의사항 목록 페이지 */
+/* index.css (건의사항 페이지 - RequestsList 컴포넌트용) */
+* {
+    box-sizing: border-box;
+}
+
+/* --- 기본 레이아웃 및 컨테이너 --- */
 .suggestion-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
+    padding: 2rem;
+    max-width: 900px; 
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background-color: #f7f7f7; /* 은은한 회색 배경 */
 }
 
+/* 배경 오버레이 및 카드 스타일 제거하여 깔끔한 컨테이너에 맞춤 */
+.suggestion-bg-overlay, 
+.suggestion-card {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+/* --- 페이지 헤더 --- */
 .suggestion-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ddd;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
-.suggestion-back-button {
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.suggestion-back-button:hover {
-  background-color: #5a6268;
-}
-
-.suggestion-user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.suggestion-user-name {
-  font-size: 16px;
-  font-weight: bold;
-}
-
+.suggestion-back-button,
 .suggestion-logout-button {
-  padding: 8px 16px;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+    background-color: #eee;
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    font-weight: 500;
 }
 
+.suggestion-back-button:hover,
 .suggestion-logout-button:hover {
-  background-color: #c82333;
+    background-color: #ddd;
 }
 
 .suggestion-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-  text-align: center;
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
 }
 
+.suggestion-user-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.suggestion-user-name {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #555;
+}
+
+/* --- 매장 필터 (관리자용) --- */
 .suggestion-store-selector {
-  margin-bottom: 20px;
-  text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #fff; /* 화이트 카드 배경 */
+    border: 1px solid #e0e7ff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .suggestion-store-selector label {
-  margin-right: 10px;
-  font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
 }
 
 .suggestion-store-selector select {
-  padding: 8px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 0.375rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
+    flex-grow: 1;
+    max-width: 300px;
 }
 
-.suggestion-loading,
-.suggestion-no-suggestions {
-  text-align: center;
-  font-size: 16px;
-  color: #555;
-}
-
+/* --- 건의사항 목록 --- */
 .suggestion-list {
-  list-style: none;
-  padding: 0;
-  width: 100%;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .suggestion-item {
-  background-color: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  padding: 15px;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 1rem 1.5rem;
+    background-color: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.15s, box-shadow 0.15s, border-left 0.15s;
+    overflow: hidden;
+    border-left: 5px solid transparent;
 }
 
 .suggestion-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #f9fafb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.suggestion-item h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .suggestion-item.expanded {
-  transform: scale(1.02);
-  background-color: #e9ecef;
+    border-left: 5px solid #4f46e5; /* 확장 시 인디고 강조 */
+    padding-bottom: 1.5rem;
 }
 
+/* --- 상세 내용 --- */
 .suggestion-details {
-  margin-top: 10px;
-  padding: 10px;
-  border-top: 1px solid #ccc;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.suggestion-details p {
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    white-space: pre-wrap; /* 본문 줄바꿈 유지 */
+}
+
+.suggestion-details p:last-of-type {
+    font-size: 0.875rem;
+    color: #777;
+    margin-bottom: 0;
+    padding-top: 0.5rem;
+    border-top: 1px dotted #eee;
 }
 
 .suggestion-attachment {
-  max-width: 100%;
-  margin: 10px 0;
-  border-radius: 4px;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
+/* --- 삭제 버튼 (관리자) --- */
 .suggestion-delete-button {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: 10px;
+    display: block;
+    margin-top: 1rem;
+    margin-left: auto; /* 오른쪽 정렬 */
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: none;
+    background-color: #ef4444; /* 빨간색 계열 */
+    color: #fff;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    font-size: 0.875rem;
+}
+.suggestion-delete-button:hover {
+    background-color: #dc2626;
 }
 
-.suggestion-delete-button:hover {
-  background-color: #c82333;
+/* --- 로딩/데이터 없음 --- */
+.suggestion-loading,
+.suggestion-no-suggestions {
+    text-align: center;
+    padding: 2rem;
+    color: #4f46e5;
+    font-size: 1.125rem;
+    font-weight: 500;
+    border: 1px dashed #e0e7ff;
+    border-radius: 0.75rem;
+    margin-top: 1.5rem;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* --- 📱 모바일 대응 (@media) --- */
+@media (max-width: 600px) {
+    .suggestion-container {
+        padding: 1rem;
+    }
+
+    .suggestion-header {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .suggestion-user-info {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+    }
+
+    .suggestion-store-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .suggestion-store-selector select {
+        max-width: 100%;
+    }
+    
+    .suggestion-item {
+        padding: 1rem;
+    }
+    
+    .suggestion-delete-button {
+        width: 100%;
+        margin-left: 0;
+    }
 }

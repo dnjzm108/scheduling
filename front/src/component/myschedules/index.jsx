@@ -38,7 +38,7 @@ function MySchedules() {
 
     const fetchScheduleOpen = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/check-schedule-open`, {
+        const response = await axios.get(`${BASE_URL}/api/schedules/check-schedule-open`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setIsScheduleOpen(response.data.is_open || false);
@@ -50,7 +50,7 @@ function MySchedules() {
 
     const fetchSchedules = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/my-schedules`, {
+        const response = await axios.get(`${BASE_URL}/api/schedules/my-schedules`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSchedules(response.data || []);
@@ -77,7 +77,7 @@ function MySchedules() {
     }
     const token = getToken();
     try {
-      const response = await axios.get(`${BASE_URL}/my-schedule-details?week_start=${period.week_start}`, {
+      const response = await axios.get(`${BASE_URL}/api/schedules/my-schedule-details?week_start=${period.week_start}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDetails(prev => ({ ...prev, [period.week_start]: response.data }));

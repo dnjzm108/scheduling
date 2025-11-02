@@ -1,295 +1,265 @@
-/* src/component/notices/index.css */
-
-/* 공통 스타일 */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f8fafc;
-  min-height: 100vh;
-}
-
-/* Notices.js 스타일 */
-.notices-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.notices-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.notices-back-button,
-.notices-logout-button,
-.notices-create-button,
-.notices-edit-button,
-.notices-delete-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.notices-back-button {
-  background-color: #6c757d;
-  color: white;
-}
-
-.notices-back-button:hover {
-  background-color: #5a6268;
-}
-
-.notices-user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.notices-user-name {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.notices-logout-button {
-  background-color: #dc3545;
-  color: white;
-}
-
-.notices-logout-button:hover {
-  background-color: #c82333;
-}
-
-.notices-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.notices-create-button {
-  display: block;
-  margin: 0 auto 20px;
-  background-color: #007bff;
-  color: white;
-}
-
-.notices-create-button:hover {
-  background-color: #0056b3;
-}
-
-.notices-store-selector {
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.notices-store-selector label {
-  margin-right: 10px;
-  font-size: 16px;
-}
-
-.notices-store-selector select {
-  padding: 8px;
-  font-size: 14px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.notices-loading,
-.notices-no-notices {
-  text-align: center;
-  font-size: 16px;
-  color: #555;
-}
-
-.notices-list {
-  list-style: none;
-  padding: 0;
-  width: 100%;
-}
-
-.notices-item {
-  background-color: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  padding: 15px;
-  cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.notices-item:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.notices-item.expanded {
-  transform: scale(1.02);
-  background-color: #e9ecef;
-}
-
-.notices-details {
-  margin-top: 10px;
-  padding: 10px;
-  border-top: 1px solid #ccc;
-}
-
-.notices-attachment {
-  max-width: 100%;
-  margin: 10px 0;
-  border-radius: 4px;
-}
-
-.notices-admin-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.notices-edit-button {
-  background-color: #28a745;
-  color: white;
-}
-
-.notices-edit-button:hover {
-  background-color: #218838;
-}
-
-.notices-delete-button {
-  background-color: #dc3545;
-  color: white;
-}
-
-.notices-delete-button:hover {
-  background-color: #c82333;
-}
-
-/* NoticeCreate.js 스타일 */
+/* 전체 레이아웃 및 배경 */
 .notice-create-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
 }
 
+/* 배경 오버레이 (블러 처리 효과) */
+.notice-create-bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* 배경색 조정 및 투명도 */
+    background: linear-gradient(135deg, #f0f4f8, #c8d3e6); 
+    opacity: 0.95;
+    z-index: 1;
+}
+
+/* 카드 영역 */
+.notice-create-card {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 700px; /* 작성 페이지는 폭을 넓게 */
+    z-index: 10;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 헤더: 제목, 뒤로가기, 사용자 정보 */
 .notice-create-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.notice-create-back-button {
-  background-color: #6c757d;
-  color: white;
-}
-
-.notice-create-back-button:hover {
-  background-color: #5a6268;
-}
-
-.notice-create-user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.notice-create-user-name {
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.notice-create-logout-button {
-  background-color: #dc3545;
-  color: white;
-}
-
-.notice-create-logout-button:hover {
-  background-color: #c82333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
 }
 
 .notice-create-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-  text-align: center;
+    font-size: 1.8rem;
+    color: #333;
+    font-weight: 700;
+    margin: 0;
+    flex-grow: 1; /* 중앙 정렬을 위해 */
+    text-align: center;
 }
 
+/* 뒤로가기 버튼 */
+.notice-create-back-button {
+    background: none;
+    border: none;
+    color: #555;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 5px 10px;
+    transition: color 0.2s;
+    font-weight: 600;
+}
+
+.notice-create-back-button:hover {
+    color: #007bff;
+}
+
+/* 사용자 정보 영역 */
+.notice-create-user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.notice-create-user-name {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* 로그아웃 버튼 */
+.notice-create-logout-button {
+    padding: 5px 10px;
+    border: 1px solid #dc3545;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.notice-create-logout-button:hover {
+    background-color: #c82333;
+}
+
+/* 로딩 상태 */
+.notice-create-loading {
+    text-align: center;
+    padding: 50px 0;
+    font-size: 1.1rem;
+    color: #999;
+}
+
+/* 폼 */
 .notice-create-form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.notice-create-form-group {
-  display: flex;
-  flex-direction: column;
+/* 입력 그룹 */
+.notice-create-input-group {
+    display: flex;
+    flex-direction: column;
 }
 
-.notice-create-form-group label {
-  margin-bottom: 5px;
-  font-weight: bold;
+.notice-create-input-group label {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 5px;
+    font-weight: 600;
 }
 
-.notice-create-form-group input,
-.notice-create-form-group textarea,
-.notice-create-form-group select {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
+/* 입력 필드 (input, textarea, select) */
+.notice-create-form input[type="text"],
+.notice-create-form textarea,
+.notice-create-form select {
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.notice-create-form-group textarea {
-  min-height: 100px;
-  resize: vertical;
+.notice-create-form input[type="text"]:focus,
+.notice-create-form textarea:focus,
+.notice-create-form select:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    outline: none;
 }
 
-.notice-create-visibility-options {
-  display: flex;
-  gap: 20px;
+.notice-create-form textarea {
+    resize: vertical;
+    min-height: 150px; /* 내용 영역 확대 */
 }
 
-.notice-create-visibility-options label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+/* 라디오 그룹 (공개 범위) */
+.notice-create-radio-group {
+    display: flex;
+    gap: 20px;
+    padding: 10px 0;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    padding-left: 15px;
 }
 
+.notice-create-radio-group label {
+    display: flex;
+    align-items: center;
+    font-weight: 400;
+    color: #333;
+    cursor: pointer;
+}
+
+.notice-create-radio-group input[type="radio"] {
+    margin-right: 5px;
+    accent-color: #007bff; /* 체크 색상 */
+}
+
+/* 파일 첨부 */
+.notice-create-form input[type="file"] {
+    border: 1px solid #ced4da;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+}
+
+/* 작성 완료 버튼 */
 .notice-create-submit-button {
-  background-color: #007bff;
-  color: white;
+    padding: 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+    margin-top: 10px;
 }
 
-.notice-create-submit-button:hover {
-  background-color: #0056b3;
+.notice-create-submit-button:hover:not([disabled]) {
+    background-color: #0056b3;
 }
 
-.notice-create-submit-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
+.notice-create-submit-button[disabled] {
+    background-color: #a0c4ff;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .notice-create-card {
+        padding: 20px;
+    }
+
+    .notice-create-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+        border-bottom: none;
+    }
+    
+    .notice-create-title {
+        text-align: left;
+        font-size: 1.5rem;
+        width: 100%;
+    }
+    
+    .notice-create-user-info {
+        width: 100%;
+        justify-content: space-between;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+    }
+    
+    .notice-create-back-button {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+    }
+    
+    .notice-create-input-group label {
+        font-size: 0.9rem;
+    }
+    
+    .notice-create-form input[type="text"],
+    .notice-create-form textarea,
+    .notice-create-form select {
+        padding: 10px;
+        font-size: 0.95rem;
+    }
+    
+    .notice-create-submit-button {
+        padding: 12px;
+        font-size: 1rem;
+    }
+    
+    .notice-create-radio-group {
+        flex-direction: column;
+        gap: 10px;
+    }
 }

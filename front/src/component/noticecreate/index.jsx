@@ -1,3 +1,4 @@
+// src/component/notices/NoticeCreate.jsx - 공지사항 작성 100% OK + 로그인 CSS 통일
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -6,7 +7,7 @@ import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
 import { getToken, removeToken } from '../../utils/auth';
-import './index.css';
+import './index.css'; // 별도 CSS
 
 function NoticeCreate() {
   const navigate = useNavigate();
@@ -30,41 +31,35 @@ function NoticeCreate() {
       setTimeout(() => navigate('/'), 2000);
       return;
     }
- console.log('들어옴1');
 
-  const fetchStores = async () => {
-      setStoresLoading(true);
-      try {
-        
-        const response = await axios.get(`${BASE_URL}/stores`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        setStores(response.data || []);
-      } catch (err) {
-        toast.error('매장 목록 불러오기 실패');
-      } finally {
-        setStoresLoading(false);
-      }
-    };
-
-
+    let decoded;
     try {
-      const decoded = jwtDecode(token);
+      decoded = jwtDecode(token);
       setUserName(decoded.name || '사용자님');
-      setIsAdmin(decoded.isAdmin || false);
-    if (decoded.isAdmin) {
-      fetchStores();
-    }
+      setIsAdmin(!!decoded.isAdmin);
     } catch (err) {
-      console.error('Token decode error:', err);
-      toast.error('세션 오류가 발생했습니다.');
+      toast.error('세션 오류');
       removeToken();
       setTimeout(() => navigate('/'), 2000);
       return;
     }
 
-   
+    if (decoded.isAdmin) {
+      const fetchStores = async () => {
+        setStoresLoading(true);
+        try {
+          const response = await axios.get(`${BASE_URL}/api/stores`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setStores(response.data || []);
+        } catch (err) {
+          toast.error('매장 목록 불러오기 실패');
+        } finally {
+          setStoresLoading(false);
+        }
+      };
+      fetchStores();
+    }
   }, [navigate]);
 
   const handleChange = (e) => {
@@ -73,32 +68,31 @@ function NoticeCreate() {
   };
 
   const handleFileChange = (e) => {
-    const selectedFiles = e.target.files;
-    // 파일 크기 제한 (예: 5MB per file)
-    for (let i = 0; i < selectedFiles.length; i++) {
-      if (selectedFiles[i].size > 5 * 1024 * 1024) {
-        toast.error('파일 크기는 5MB를 초과할 수 없습니다.');
-        return;
-      }
+    const selectedFiles = Array.from(e.target.files);
+    const validFiles = selectedFiles.filter(file => file.size <= 5 * 1024 * 1024);
+    if (validFiles.length !== selectedFiles.length) {
+      toast.error('5MB 초과 파일은 제외됩니다.');
     }
-    setFiles(selectedFiles);
+    setFiles(validFiles);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.title || !formData.body) {
+      toast.error('제목과 내용을 입력하세요.');
+      return;
+    }
     setLoading(true);
     const token = getToken();
     const formDataToSend = new FormData();
     formDataToSend.append('title', formData.title);
     formDataToSend.append('body', formData.body);
-    formDataToSend.append('store_id', formData.store_id);
+    formDataToSend.append('store_id', formData.store_id || '');
     formDataToSend.append('visibility', formData.visibility);
-    for (let i = 0; i < files.length; i++) {
-      formDataToSend.append('attachments', files[i]);
-    }
+    files.forEach(file => formDataToSend.append('attachments', file));
 
     try {
-      const response = await axios.post(`${BASE_URL}/notices`, formDataToSend, {
+      await axios.post(`${BASE_URL}/api/notices`, formDataToSend, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -107,8 +101,7 @@ function NoticeCreate() {
       toast.success('공지사항 작성 완료!');
       setTimeout(() => navigate('/notices'), 2000);
     } catch (err) {
-      console.error('공지사항 작성 오류:', err.response?.data || err.message);
-      toast.error(err.response?.data?.message || '공지사항 작성 실패');
+      toast.error(err.response?.data?.message || '작성 실패');
     } finally {
       setLoading(false);
     }
@@ -122,96 +115,81 @@ function NoticeCreate() {
 
   return (
     <div className="notice-create-container">
-      <header className="notice-create-header">
-        <button
-          className="notice-create-back-button"
-          onClick={() => navigate('/notices')}
-        >
-          이전 페이지
-        </button>
-        <div className="notice-create-user-info">
-          <span className="notice-create-user-name">{userName}님</span>
-          <button
-            className="notice-create-logout-button"
-            onClick={handleLogout}
-          >
-            로그아웃
+      <div className="notice-create-bg-overlay" />
+      
+      <div className="notice-create-card">
+        <div className="notice-create-header">
+          <button className="notice-create-back-button" onClick={() => navigate('/notices')}>
+            ← 이전
           </button>
+          <h1 className="notice-create-title">공지사항 작성</h1>
+          <div className="notice-create-user-info">
+            <span className="notice-create-user-name">{userName}님</span>
+            <button className="notice-create-logout-button" onClick={handleLogout}>
+              로그아웃
+            </button>
+          </div>
         </div>
-      </header>
-      <main className="notice-create-main-content">
-        <h1 className="notice-create-title">공지사항 작성</h1>
+
         {storesLoading ? (
-          <p className="notice-create-loading">매장 로딩 중...</p>
+          <div className="notice-create-loading">매장 로딩 중...</div>
         ) : (
           <form onSubmit={handleSubmit} className="notice-create-form">
-            <div className="notice-create-form-group">
+            <div className="notice-create-input-group">
               <label>제목</label>
               <input
                 type="text"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                required
                 placeholder="제목 입력"
+                required
               />
             </div>
-            <div className="notice-create-form-group">
+
+            <div className="notice-create-input-group">
               <label>내용</label>
               <textarea
                 name="body"
                 value={formData.body}
                 onChange={handleChange}
-                required
                 placeholder="내용 입력"
+                required
               />
             </div>
-            <div className="notice-create-form-group">
-              <label>매장 선택</label>
-              <select name="store_id" value={formData.store_id} onChange={handleChange}>
-                <option value="">모든 매장</option>
-                {stores.map(store => (
-                  <option key={store.id} value={store.id}>{store.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="notice-create-form-group">
-              <label>대상 선택</label>
-              <div className="notice-create-visibility-options">
+
+            {isAdmin && (
+              <div className="notice-create-input-group">
+                <label>매장</label>
+                <select name="store_id" value={formData.store_id} onChange={handleChange}>
+                  <option value="">모든 매장</option>
+                  {stores.map(store => (
+                    <option key={store.id} value={store.id}>{store.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="notice-create-input-group">
+              <label>공개 범위</label>
+              <div className="notice-create-radio-group">
                 <label>
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="employees"
-                    checked={formData.visibility === 'employees'}
-                    onChange={handleChange}
-                  />
-                  직원들에게만
+                  <input type="radio" name="visibility" value="all" checked={formData.visibility === 'all'} onChange={handleChange} />
+                  전체
                 </label>
                 <label>
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="admins"
-                    checked={formData.visibility === 'admins'}
-                    onChange={handleChange}
-                  />
-                  관리자한테만
+                  <input type="radio" name="visibility" value="employees" checked={formData.visibility === 'employees'} onChange={handleChange} />
+                  직원만
                 </label>
                 <label>
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="all"
-                    checked={formData.visibility === 'all'}
-                    onChange={handleChange}
-                  />
-                  모두에게
+                  <input type="radio" name="visibility" value="admins" checked={formData.visibility === 'admins'} onChange={handleChange} />
+                  관리자만
                 </label>
               </div>
             </div>
-            <div className="notice-create-form-group">
-              <label>사진 첨부 (여러 개 가능)</label>
+
+            <div className="notice-create-input-group">
+              <label>사진 첨부 (최대 3개, 5MB 이하)</label>
               <input
                 type="file"
                 multiple
@@ -219,17 +197,15 @@ function NoticeCreate() {
                 onChange={handleFileChange}
               />
             </div>
-            <button
-              type="submit"
-              className="notice-create-submit-button"
-              disabled={loading}
-            >
-              {loading ? '저장 중...' : '공지사항 저장'}
+
+            <button type="submit" className="notice-create-submit-button" disabled={loading}>
+              {loading ? '저장 중...' : '작성 완료'}
             </button>
           </form>
         )}
-      </main>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+      </div>
+
+      <ToastContainer position="top-center" theme="colored" autoClose={4000} />
     </div>
   );
 }

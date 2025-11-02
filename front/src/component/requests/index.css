@@ -1,260 +1,221 @@
-/* Requests.js 전용 스타일: 건의사항 작성 페이지 */
+/* index.css (건의사항 작성/목록 페이지 - Requests 컴포넌트용) */
+* {
+    box-sizing: border-box;
+}
+
+/* --- 기본 레이아웃 및 컨테이너 --- */
 .request-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
+    padding: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+    background-color: #f7f7f7;
 }
 
+/* --- 페이지 헤더 --- */
 .request-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
-  flex-wrap: wrap;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ddd;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
-.request-back-button {
-  padding: 8px 16px;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
+.request-back-button,
+.request-logout-button {
+    background-color: #eee;
+    color: #333;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    font-weight: 500;
 }
 
-.request-back-button:hover {
-  background-color: #5a6268;
-}
-
-.request-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #2c3e50;
-  margin: 0;
-  text-align: center;
-  word-break: keep-all;
-  overflow-wrap: break-word;
+.request-back-button:hover,
+.request-logout-button:hover {
+    background-color: #ddd;
 }
 
 .request-user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .request-user-name {
-  font-size: 16px;
-  font-weight: bold;
-  color: #34495e;
-  word-break: keep-all;
-  overflow-wrap: break-word;
-  max-width: 200px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #555;
 }
 
-.request-logout-button {
-  padding: 8px 16px;
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
+/* --- 메인 콘텐츠 및 제목 --- */
+.request-main-content {
+    background-color: #fff;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.request-logout-button:hover {
-  background-color: #c82333;
+.request-title {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: #4f46e5;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
 }
 
-.request-form {
-  width: 100%;
-  max-width: 600px;
-  margin-top: 20px;
+/* --- 건의사항 작성 폼 --- */
+.request-main-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px dashed #e0e7ff;
 }
 
-.request-form-group {
-  margin-bottom: 15px;
+.form-group {
+    display: flex;
+    flex-direction: column;
 }
 
-.request-form-group label {
-  display: block;
-  font-size: 16px;
-  font-weight: 500;
-  color: #34495e;
-  margin-bottom: 5px;
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: #4f46e5;
+    font-size: 0.95rem;
 }
 
-.request-form-input {
-  width: 100%;
-  padding: 8px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #f9f9f9;
+.request-main-content input[type="text"],
+.request-main-content textarea,
+.request-main-content input[type="file"] {
+    padding: 0.75rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
 }
 
-.request-form-input:focus {
-  border-color: #4CAF50;
-  outline: none;
+.request-main-content input:focus,
+.request-main-content textarea:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    outline: none;
 }
 
-.request-form-input[readonly] {
-  background-color: #e9ecef;
-  cursor: not-allowed;
+.request-main-content textarea {
+    resize: vertical;
 }
 
-.request-submit-button {
-  width: 100%;
-  max-width: 300px;
-  padding: 12px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.3s;
-  display: block;
-  margin: 20px auto;
+/* 파일 입력 필드 숨기기 및 스타일링 */
+.form-group input[type="file"] {
+    display: block;
+    padding: 0; /* 파일 타입은 기본 padding 제거 */
+    border: none;
 }
 
-.request-submit-button:hover {
-  background-color: #45a049;
+
+/* --- 제출 버튼 --- */
+.button.button-primary {
+    padding: 0.75rem;
+    border: none;
+    border-radius: 0.5rem;
+    background-color: #4f46e5;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    align-self: flex-start; /* 왼쪽 정렬 */
+    width: 150px; /* 고정 너비 */
 }
 
-.request-loading,
-.request-no-requests {
-  text-align: center;
-  font-size: 16px;
-  color: #555;
-  margin: 20px 0;
+.button.button-primary:hover {
+    background-color: #4338ca;
 }
 
+/* --- 건의 목록 --- */
 .request-list {
-  list-style: none;
-  padding: 0;
-  width: 100%;
-  margin-top: 20px;
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .request-item {
-  background-color: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  margin-bottom: 10px;
-  padding: 15px;
+    padding: 1rem 1.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    background-color: #f9fafb; /* 목록 아이템 배경 */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .request-item h3 {
-  font-size: 18px;
-  margin: 0 0 10px;
-  color: #2c3e50;
+    font-size: 1.125rem;
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
 }
 
 .request-item p {
-  font-size: 14px;
-  color: #34495e;
-  margin: 5px 0;
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 0.5rem;
 }
 
-.request-attachment {
-  max-width: 100%;
-  margin: 10px 0;
-  border-radius: 4px;
+.request-item p:last-child {
+    font-size: 0.85rem;
+    color: #888;
+    margin-top: 0.75rem;
+    border-top: 1px dotted #eee;
+    padding-top: 0.5rem;
 }
 
-/* 반응형 디자인: 태블릿 이상 (768px 이상) */
-@media (min-width: 768px) {
-  .request-container {
-    max-width: 900px;
-    padding: 32px;
-  }
-  .request-title {
-    font-size: 28px;
-  }
-  .request-user-name,
-  .request-logout-button,
-  .request-back-button {
-    font-size: 16px;
-  }
-  .request-form-input {
-    font-size: 16px;
-    padding: 10px;
-  }
-  .request-submit-button {
-    font-size: 18px;
-    padding: 14px;
-  }
+.request-item img {
+    margin: 0.5rem 0;
+    border-radius: 0.3rem;
 }
 
-/* 반응형 디자인: 모바일 (768px 이하) */
-@media (max-width: 768px) {
-  .request-container {
-    max-width: 100%;
-    padding: 16px;
-    margin: 10px;
-  }
-  .request-header {
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-  }
-  .request-title {
-    font-size: 22px;
-  }
-  .request-user-name {
-    font-size: 14px;
-    max-width: 150px;
-  }
-  .request-logout-button,
-  .request-back-button {
-    font-size: 13px;
-    padding: 6px 12px;
-  }
-  .request-form-input {
-    font-size: 14px;
-    padding: 8px;
-  }
-  .request-submit-button {
-    font-size: 16px;
-    padding: 12px;
-  }
+/* --- 로딩 --- */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #4f46e5;
+    font-size: 1.125rem;
+    font-weight: 500;
 }
 
-/* 초소형 화면 (480px 이하) */
-@media (max-width: 480px) {
-  .request-container {
-    padding: 12px;
-    margin: 5px;
-  }
-  .request-title {
-    font-size: 18px;
-  }
-  .request-user-name {
-    font-size: 13px;
-    max-width: 120px;
-  }
-  .request-logout-button,
-  .request-back-button {
-    font-size: 12px;
-    padding: 5px 10px;
-  }
-  .request-form-input {
-    font-size: 13px;
-    padding: 6px;
-  }
-  .request-submit-button {
-    font-size: 14px;
-    padding: 10px;
-  }
+/* --- 📱 모바일 대응 (@media) --- */
+@media (max-width: 600px) {
+    .request-container {
+        padding: 1rem;
+    }
+
+    .request-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .request-user-info {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .request-main-content {
+        padding: 1rem;
+    }
+
+    .button.button-primary {
+        width: 100%;
+        align-self: center;
+    }
 }
