@@ -250,6 +250,23 @@ async function createAuditLogsTable(conn) {
       INDEX idx_actor_time (actor_id, timestamp)
     )
   `);
+
+  // 3-11.스케줄 셋팅 테이블
+await conn.query(`
+  CREATE TABLE IF NOT EXISTS store_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    store_id INT NOT NULL,
+    day_type ENUM('weekday', 'weekend', 'holiday') NOT NULL,
+    open_time TIME,
+    close_time TIME,
+    break_start TIME,
+    break_end TIME,
+    lunch_staff INT DEFAULT 0,
+    dinner_staff INT DEFAULT 0,
+    UNIQUE KEY unique_store_day (store_id, day_type),
+    FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE
+  )
+`);
   console.log('✅ audit_logs 테이블 생성');
 }
 
@@ -328,10 +345,24 @@ async function insertInitialData(conn) {
     await conn.query('UPDATE stores SET manager_id = (SELECT id FROM users WHERE userId="admin") WHERE id=1');
     await conn.query('UPDATE stores SET manager_id = (SELECT id FROM users WHERE userId="storeadmin") WHERE id=2');
     
+    await conn.query(`
+  ALTER TABLE stores 
+  ADD COLUMN IF NOT EXISTS open_time TIME DEFAULT '10:00:00',
+  ADD COLUMN IF NOT EXISTS close_time TIME DEFAULT '22:00:00',
+  ADD COLUMN IF NOT EXISTS break_start TIME,
+  ADD COLUMN IF NOT EXISTS break_end TIME,
+  ADD COLUMN IF NOT EXISTS lunch_staff INT DEFAULT 4,
+  ADD COLUMN IF NOT EXISTS dinner_staff INT DEFAULT 6,
+  ADD COLUMN IF NOT EXISTS is_weekend_break TINYINT(1) DEFAULT 0
+`);
+
+
     console.log('🆕 초기 데이터 삽입 완료\n데모 계정:\n- admin/1234 (총괄 관리자, 승인됨)\n- storeadmin/1234 (매장 관리자, 승인됨)\n- test/1234 (직원, 승인 대기)');
   } else {
     console.log('⏭️ 초기 데이터 이미 존재 (스킵)');
   }
 }
+
+
 
 module.exports = initDB;

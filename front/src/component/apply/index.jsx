@@ -1,3 +1,4 @@
+// src/pages/Apply/index.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -13,25 +14,17 @@ function Apply() {
   const [storeName, setStoreName] = useState('');
   const [weekStart, setWeekStart] = useState('');
   const [weekEnd, setWeekEnd] = useState('');
-  const [schedules, setSchedules] = useState({
-    monday: { type: 'off', start: '', end: '' },
-    tuesday: { type: 'off', start: '', end: '' },
-    wednesday: { type: 'off', start: '', end: '' },
-    thursday: { type: 'off', start: '', end: '' },
-    friday: { type: 'off', start: '', end: '' },
-    saturday: { type: 'off', start: '', end: '' },
-    sunday: { type: 'off', start: '', end: '' }
-  });
+  const [schedules, setSchedules] = useState({});
   const [loading, setLoading] = useState(true);
 
   const days = [
-    { key: 'monday', label: '월요일' },
-    { key: 'tuesday', label: '화요일' },
-    { key: 'wednesday', label: '수요일' },
-    { key: 'thursday', label: '목요일' },
-    { key: 'friday', label: '금요일' },
-    { key: 'saturday', label: '토요일' },
-    { key: 'sunday', label: '일요일' }
+    { key: 'mon', label: '월요일' },
+    { key: 'tue', label: '화요일' },
+    { key: 'wed', label: '수요일' },
+    { key: 'thu', label: '목요일' },
+    { key: 'fri', label: '금요일' },
+    { key: 'sat', label: '토요일' },
+    { key: 'sun', label: '일요일' }
   ];
 
   useEffect(() => {
@@ -41,6 +34,9 @@ function Apply() {
       setTimeout(() => navigate('/'), 2000);
       return;
     }
+
+    // schedules 초기화
+    setSchedules(Object.fromEntries(days.map(d => [d.key, { type: 'off', start: '', end: '' }])));
 
     const fetchUserStore = async () => {
       try {
@@ -64,10 +60,19 @@ function Apply() {
           setTimeout(() => navigate('/myschedules'), 2000);
           return;
         }
-        console.log(response.data);
-        
-        setWeekStart(response.data.period.start);
-        setWeekEnd(response.data.period.end);
+
+        const { start, end } = response.data.period;
+
+        // 백엔드 기준: 월요일 ~ 일요일
+        const startDate = new Date(start);
+        const correctedStart = new Date(startDate);
+        correctedStart.setDate(startDate.getDate() - startDate.getDay() + 1); // 월요일 보정
+        const correctedEnd = new Date(correctedStart);
+        correctedEnd.setDate(correctedStart.getDate() + 6);
+
+        setWeekStart(correctedStart.toISOString().split('T')[0]);
+        setWeekEnd(correctedEnd.toISOString().split('T')[0]);
+
       } catch (err) {
         toast.error('신청 기간 확인 실패');
         setTimeout(() => navigate('/myschedules'), 2000);
@@ -102,16 +107,28 @@ function Apply() {
       navigate('/');
       return;
     }
+
+    // 필수값 검증
+    if (!weekStart || !storeId || !schedules || Object.keys(schedules).length === 0) {
+      toast.error('필수 정보를 모두 입력해주세요.');
+      return;
+    }
+
     for (const day of Object.keys(schedules)) {
       if (schedules[day].type === 'part' && (!schedules[day].start || !schedules[day].end)) {
         toast.error(`${day}의 출근/퇴근 시간을 입력하세요.`);
         return;
       }
     }
+
     try {
       await axios.post(
         `${BASE_URL}/api/schedules/schedule`,
-        { week_start: weekStart, store_id: storeId, schedules },
+        { 
+          week_start: weekStart, 
+          store_id: storeId, // 정확히 전달
+          schedules 
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('스케줄 신청 완료!');
@@ -137,7 +154,7 @@ function Apply() {
                 <div className="apply-form-group apply-type-group">
                   <label>근무 유형</label>
                   <select
-                    value={schedules[day.key].type}
+                    value={schedules[day.key]?.type || 'off'}
                     onChange={(e) => handleTypeChange(day.key, e.target.value)}
                   >
                     <option value="full">풀타임</option>
@@ -149,20 +166,20 @@ function Apply() {
                   <label>출근 시간</label>
                   <input
                     type="time"
-                    value={schedules[day.key].start}
+                    value={schedules[day.key]?.start || ''}
                     onChange={(e) => handleTimeChange(day.key, 'start', e.target.value)}
-                    disabled={schedules[day.key].type !== 'part'}
-                    required={schedules[day.key].type === 'part'}
+                    disabled={schedules[day.key]?.type !== 'part'}
+                    required={schedules[day.key]?.type === 'part'}
                   />
                 </div>
                 <div className="apply-form-group apply-time-group">
                   <label>퇴근 시간</label>
                   <input
                     type="time"
-                    value={schedules[day.key].end}
+                    value={schedules[day.key]?.end || ''}
                     onChange={(e) => handleTimeChange(day.key, 'end', e.target.value)}
-                    disabled={schedules[day.key].type !== 'part'}
-                    required={schedules[day.key].type === 'part'}
+                    disabled={schedules[day.key]?.type !== 'part'}
+                    required={schedules[day.key]?.type === 'part'}
                   />
                 </div>
               </div>

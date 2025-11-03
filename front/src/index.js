@@ -17,6 +17,9 @@ import Notices from './pages/Notices'
 import NoticeCreate from './pages/NoticeCreate'
 import Requests from './pages/Requests'
 import RequestsList from './pages/RequestsList'
+import ScheduleSettings from './pages/ScheduleSettings'
+import DaySettings from './pages/DaySettings'
+import SchedulePreview from './pages/SchedulePreview'
 import { getToken } from './utils/auth';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -43,6 +46,9 @@ root.render(
         <Route path='/ScheduleManagement' exact={true} element={<ScheduleManagement />}></Route>
         <Route path='/StoreManagement' exact={true} element={<StoreManagement />}></Route>
 
+        <Route path='/SchedulePreview' exact={true} element={<SchedulePreview />}></Route>
+        <Route path='/DaySettings' exact={true} element={<DaySettings />}></Route>
+        <Route path='/ScheduleSettings' exact={true} element={<ScheduleSettings />}></Route>
         <Route path='/' exact={true} element={<Login />}></Route>
         <Route path='/signup' exact={true} element={<Join />}></Route>
         <Route path='/Myschedules' exact={true} element={<Myschedules />}></Route>

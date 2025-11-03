@@ -6,15 +6,15 @@ const adminMiddleware = require('../middleware/admin');
 
 const pool = (req) => req.app.get('db');
 
-// --- 헬퍼 함수 ---
-const formatDate = (dateStr) => dateStr ? new Date(dateStr).toISOString().split('T')[0] : null;
-const formatTime = (timeStr) => timeStr ? timeStr.slice(0, 5) : null;
-const getKoreanDay = (dateStr) => ['일', '월', '화', '수', '목', '금', '토'][new Date(dateStr).getDay()];
-const getStatusText = (status) => ({
+// server/routes/schedule.js 상단
+const formatDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
+const formatTime = (t) => t ? t.slice(0, 5) : null;
+const getKoreanDay = (d) => ['일', '월', '화', '수', '목', '금', '토'][new Date(d).getDay()];
+const getStatusText = (s) => ({
   open: '신청 중',
-  closed: '신청 마감',
-  assigned: '배정 완료'
-})[status] || status;
+  assigned: '배정 완료',
+  closed: '마감'
+})[s] || s;
 
 const withTransaction = async (req, callback) => {
   const conn = await pool(req).getConnection();
@@ -133,38 +133,34 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
-// --- 5. 일반 사용자: 신청 기간 확인 ---
+// --- 5. 신청 기간 확인 (store_name 포함) ---
+// server/routes/schedule.js
 router.get('/check-schedule-open', authMiddleware, async (req, res) => {
   try {
     const [user] = await pool(req).query('SELECT store_id FROM users WHERE id = ?', [req.user.id]);
-    if (!user[0]?.store_id) return res.json({ is_open: false, message: '매장 정보 없음' });
+    if (!user[0]?.store_id) return res.json({ is_open: false });
 
     const [schedule] = await pool(req).query(
-      `SELECT s.week_start, s.week_end, st.name AS store_name 
-       FROM schedules s 
-       JOIN stores st ON s.store_id = st.id 
-       WHERE s.store_id = ? AND s.status = 'open' 
-       ORDER BY s.week_start DESC LIMIT 1`,
+      `SELECT week_start, week_end FROM schedules 
+       WHERE store_id = ? AND status = 'open'
+       ORDER BY week_start DESC LIMIT 1`,
       [user[0].store_id]
     );
 
-    if (!schedule[0]) return res.json({ is_open: false, message: '신청 가능한 스케줄 없음' });
+    if (!schedule[0]) return res.json({ is_open: false });
 
-    const { week_start, week_end, store_name } = schedule[0];
-    const start = formatDate(week_start);
-    const end = formatDate(week_end);
+    const start = formatDate(schedule[0].week_start);
+    const end = formatDate(schedule[0].week_end);
     res.json({
       is_open: true,
-      store_name,
-      period: { start, end, label: `${start} ~ ${end}` },
-      message: '신청 기간입니다.'
+      period: { start, end, label: `${start} ~ ${end}` }
     });
   } catch (err) {
     res.status(500).json({ message: '확인 실패' });
   }
 });
 
-// --- 6. 일반 사용자: 내 스케줄 목록 (매장명 포함) ---
+// --- 6. 내 스케줄 목록 (신청 여부 포함) ---
 router.get('/my-schedules', authMiddleware, async (req, res) => {
   try {
     const [user] = await pool(req).query('SELECT store_id FROM users WHERE id = ?', [req.user.id]);
@@ -177,12 +173,11 @@ router.get('/my-schedules', authMiddleware, async (req, res) => {
          s.week_end,
          s.status,
          st.name AS store_name,
-         COUNT(sa.id) AS assignment_count
+         CASE WHEN a.id IS NOT NULL THEN 1 ELSE 0 END AS has_applied
        FROM schedules s
        JOIN stores st ON s.store_id = st.id
-       LEFT JOIN schedule_assignments sa ON s.id = sa.schedule_id AND sa.user_id = ?
+       LEFT JOIN applications a ON s.id = a.schedule_id AND a.user_id = ?
        WHERE s.store_id = ?
-       GROUP BY s.id
        ORDER BY s.week_start DESC`,
       [req.user.id, user[0].store_id]
     );
@@ -193,20 +188,9 @@ router.get('/my-schedules', authMiddleware, async (req, res) => {
       return {
         id: r.id,
         store_name: r.store_name,
-        period: {
-          start,
-          end,
-          label: `${start} ~ ${end}`,
-          week_start: start,
-          week_end: end
-        },
-        status: {
-          value: r.status,
-          text: getStatusText(r.status),
-          color: r.status === 'open' ? 'green' : r.status === 'assigned' ? 'blue' : 'gray'
-        },
-        assignment_count: r.assignment_count,
-        has_assignment: r.assignment_count > 0
+        period: { start, end, label: `${start} ~ ${end}`, week_start: start },
+        status: { value: r.status, text: getStatusText(r.status) },
+        has_applied: r.has_applied === 1
       };
     });
 
@@ -216,10 +200,11 @@ router.get('/my-schedules', authMiddleware, async (req, res) => {
   }
 });
 
-// --- 7. 일반 사용자: 상세 스케줄 조회 (매장명 포함) ---
+// --- 7. 상세 스케줄 조회 (assignments 상세 포함) ---
+// server/routes/schedule.js
 router.get('/my-schedule-details', authMiddleware, async (req, res) => {
-  const { week_start } = req.query;
-  if (!week_start) return res.status(400).json({ message: 'week_start 필요' });
+  const { schedule_id } = req.query; // week_start → schedule_id로 변경
+  if (!schedule_id) return res.status(400).json({ message: 'schedule_id 필요' });
 
   try {
     const [user] = await pool(req).query('SELECT store_id FROM users WHERE id = ?', [req.user.id]);
@@ -229,58 +214,58 @@ router.get('/my-schedule-details', authMiddleware, async (req, res) => {
       `SELECT s.id, s.week_start, s.week_end, s.status, st.name AS store_name
        FROM schedules s
        JOIN stores st ON s.store_id = st.id
-       WHERE s.store_id = ? AND s.week_start = ?`,
-      [user[0].store_id, week_start]
+       WHERE s.id = ? AND s.store_id = ?`,
+      [schedule_id, user[0].store_id]
     );
     if (!schedule[0]) return res.json({ assignments: [] });
 
-    const { id: scheduleId, status, store_name } = schedule[0];
+    const { id: scheduleId, status, store_name, week_start, week_end } = schedule[0];
 
     const [assignments] = await pool(req).query(
-      `SELECT sa.date, sa.start_time, sa.end_time, sa.status, u.name AS assigned_by_name
-       FROM schedule_assignments sa
-       LEFT JOIN users u ON sa.assigned_by = u.id
-       WHERE sa.schedule_id = ? AND sa.user_id = ?
-       ORDER BY sa.date`,
+      `SELECT date, start_time, end_time, status
+       FROM schedule_assignments
+       WHERE schedule_id = ? AND user_id = ?
+       ORDER BY date`,
       [scheduleId, req.user.id]
     );
 
-    const formattedAssignments = assignments.map(a => ({
-      date: formatDate(a.date),
-      day: getKoreanDay(a.date),
-      time: {
-        start: formatTime(a.start_time),
-        end: formatTime(a.end_time),
-        label: `${formatTime(a.start_time)} ~ ${formatTime(a.end_time)}`
-      },
-      status: { value: a.status, text: a.status === 'assigned' ? '배정됨' : '확정됨' },
-      assigned_by: a.assigned_by_name || '시스템'
-    }));
+    const dayMap = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일' };
+
+    const formatted = assignments.map(a => {
+      const dateObj = new Date(a.date);
+      const dayKey = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][dateObj.getDay()];
+      return {
+        date: formatDate(a.date),
+        day: dayMap[dayKey],
+        time: { /* ... */ },
+        status: { /* ... */ }
+      };
+    });
 
     res.json({
       schedule_id: scheduleId,
       store_name,
       period: {
-        start: formatDate(schedule[0].week_start),
-        end: formatDate(schedule[0].week_end),
-        label: `${formatDate(schedule[0].week_start)} ~ ${formatDate(schedule[0].week_end)}`
+        start: formatDate(week_start),
+        end: formatDate(week_end),
+        label: `${formatDate(week_start)} ~ ${formatDate(week_end)}`
       },
-      status: { value: status, text: getStatusText(status), color: status === 'open' ? 'green' : status === 'assigned' ? 'blue' : 'gray' },
-      assignments: formattedAssignments,
-      total_days: formattedAssignments.length,
-      has_assignment: formattedAssignments.length > 0
+      status: { value: status, text: getStatusText(status) },
+      assignments: formatted,
+      total_days: formatted.length
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: '상세 조회 실패' });
   }
 });
+
 
 // --- 8. 일반 사용자: 스케줄 신청 (handleSubmit와 완벽 매칭) ---
 router.post('/schedule', authMiddleware, async (req, res) => {
   const { week_start, store_id, schedules } = req.body;
   const userId = req.user.id;
 
-  // 1. 입력 검증
   if (!week_start || !store_id || !schedules || typeof schedules !== 'object') {
     return res.status(400).json({ message: 'week_start, store_id, schedules는 필수입니다.' });
   }
@@ -295,7 +280,7 @@ router.post('/schedule', authMiddleware, async (req, res) => {
 
       // 2. 스케줄 존재 + 'open' 상태 확인
       const [schedule] = await conn.query(
-        `SELECT id, status FROM schedules WHERE store_id = ? AND week_start = ?`,
+        `SELECT id FROM schedules WHERE store_id = ? AND week_start = ?`,
         [store_id, week_start]
       );
       if (!schedule[0]) throw { status: 404, msg: '해당 주차의 스케줄이 없습니다.' };
@@ -303,72 +288,223 @@ router.post('/schedule', authMiddleware, async (req, res) => {
 
       const scheduleId = schedule[0].id;
 
-      // 3. 기존 신청 삭제 (중복 방지)
-      await conn.query(
-        'DELETE FROM applications WHERE schedule_id = ? AND user_id = ?',
-        [scheduleId, userId]
-      );
+      // 3. 기존 신청 삭제
+      await conn.query('DELETE FROM applications WHERE schedule_id = ? AND user_id = ?', [scheduleId, userId]);
+      await conn.query('DELETE FROM schedule_assignments WHERE schedule_id = ? AND user_id = ?', [scheduleId, userId]);
 
-      // 4. applications 테이블에 신청 기록
+      // 4. 신청 기록
       await conn.query(
         `INSERT INTO applications (user_id, schedule_id, status, applied_at)
          VALUES (?, ?, 'requested', NOW())`,
         [userId, scheduleId]
       );
 
-      // 5. schedule_assignments에 요일별 근무 시간 저장
+      // 5. 근무 시간 저장 (정확한 day 키)
       const dayOffset = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
-      const insertPromises = Object.entries(schedules).map(async ([day, data]) => {
-        const offset = dayOffset[day.toLowerCase()];
-        if (offset === undefined) return;
+      for (const [day, data] of Object.entries(schedules)) {
+        const offset = dayOffset[day];
+        if (offset === undefined) continue;
 
         const workDate = new Date(week_start);
         workDate.setDate(workDate.getDate() + offset);
         const dateStr = workDate.toISOString().split('T')[0];
 
         if (data.type === 'off') {
-          // 휴무: NULL 처리
-          return conn.query(
+          await conn.query(
             `INSERT INTO schedule_assignments 
              (schedule_id, user_id, date, start_time, end_time, status)
              VALUES (?, ?, ?, NULL, NULL, 'requested')
-             ON DUPLICATE KEY UPDATE 
-               start_time = NULL, end_time = NULL, status = 'requested'`,
+             ON DUPLICATE KEY UPDATE start_time = NULL, end_time = NULL, status = 'requested'`,
             [scheduleId, userId, dateStr]
           );
-        }
-
-        if (data.type === 'part' && data.start && data.end) {
-          // 파트타임: 시간 저장
-          return conn.query(
+        } else if (data.type === 'part' && data.start && data.end) {
+          await conn.query(
             `INSERT INTO schedule_assignments 
              (schedule_id, user_id, date, start_time, end_time, status)
              VALUES (?, ?, ?, ?, ?, 'requested')
-             ON DUPLICATE KEY UPDATE 
-               start_time = ?, end_time = ?, status = 'requested'`,
+             ON DUPLICATE KEY UPDATE start_time = ?, end_time = ?, status = 'requested'`,
             [scheduleId, userId, dateStr, data.start, data.end, data.start, data.end]
           );
         }
-      }).filter(Boolean);
-
-      await Promise.all(insertPromises);
-
-      // 6. 감사 로그
-      await conn.query(
-        `INSERT INTO audit_logs (action, actor_id, target_type, target_id, details, timestamp)
-         VALUES ('schedule_apply', ?, 'application', NULL, ?, NOW())`,
-        [userId, JSON.stringify({ week_start, store_id })]
-      );
+      }
     });
 
     res.json({ message: '스케줄 신청 완료!' });
   } catch (err) {
-    console.log(err);
-    
-    console.error('[/schedule] POST Error:', err.msg);
-    res.status(err.status || 500).json({ message: err.msg || '스케줄 신청 실패' });
+    console.error(err);
+    res.status(err.status || 500).json({ message: err.msg || '신청 실패' });
   }
 });
 
+// server/routes/store.js
+router.put('/:id/settings/days', authMiddleware, adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const settings = req.body; // 배열: [{ day_type, open_time, ... }]
+
+  try {
+    await withTransaction(req, async (conn) => {
+      // 기존 설정 삭제
+      await conn.query('DELETE FROM store_settings WHERE store_id = ?', [id]);
+
+      // 새 설정 삽입
+      for (const s of settings) {
+        await conn.query(
+          `INSERT INTO store_settings 
+           (store_id, day_type, open_time, close_time, break_start, break_end, lunch_staff, dinner_staff)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id, s.day_type, s.open_time || null, s.close_time || null,
+            s.break_start || null, s.break_end || null,
+            s.lunch_staff || 0, s.dinner_staff || 0
+          ]
+        );
+      }
+    });
+    res.json({ message: '요일별 설정 저장 완료' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '설정 저장 실패' });
+  }
+});
+
+// server/routes/schedule.js
+router.post('/:id/auto-assign', authMiddleware, adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const scheduleId = parseInt(id);
+
+  try {
+    await withTransaction(req, async (conn) => {
+      // 1. 스케줄 정보 + 매장 설정 가져오기
+      const [schedule] = await conn.query(
+        `SELECT s.store_id, s.week_start, s.week_end, st.open_time, st.close_time,
+                ss.day_type, ss.break_start, ss.break_end, ss.lunch_staff, ss.dinner_staff
+         FROM schedules s
+         JOIN stores st ON s.store_id = st.id
+         LEFT JOIN store_settings ss ON st.id = ss.store_id
+         WHERE s.id = ?`,
+        [scheduleId]
+      );
+      if (!schedule[0]) throw { status: 404, msg: '스케줄 없음' };
+
+      const { store_id, week_start } = schedule[0];
+
+      // 2. 신청된 근무 시간 가져오기
+      const [applications] = await conn.query(
+        `SELECT sa.user_id, sa.date, sa.start_time, sa.end_time
+         FROM applications a
+         JOIN schedule_assignments sa ON a.schedule_id = sa.schedule_id AND a.user_id = sa.user_id
+         WHERE a.schedule_id = ? AND a.status = 'requested' AND sa.start_time IS NOT NULL`,
+        [scheduleId]
+      );
+
+      // 3. 날짜별 필요 인원 계산
+      const needByDate = {};
+      const dates = getDatesInWeek(week_start);
+      for (const date of dates) {
+        const dayType = getDayType(date); // weekday, weekend, holiday
+        const setting = schedule.find(s => s.day_type === dayType) || {};
+        needByDate[date] = {
+          lunch: setting.lunch_staff || 4,
+          dinner: setting.dinner_staff || 6
+        };
+      }
+
+      // 4. 배치 실행
+      const assignments = assignWorkers(applications, needByDate, schedule[0]);
+
+      // 5. 배치 결과 저장
+      for (const { user_id, date, start_time, end_time } of assignments) {
+        await conn.query(
+          `UPDATE schedule_assignments 
+           SET status = 'assigned', assigned_by = ?
+           WHERE schedule_id = ? AND user_id = ? AND date = ?`,
+          [req.user.id, scheduleId, user_id, date]
+        );
+      }
+
+      // 6. 스케줄 상태 업데이트
+      await conn.query(`UPDATE schedules SET status = 'assigned' WHERE id = ?`, [scheduleId]);
+    });
+
+    res.json({ message: '자동 배치 완료' });
+  } catch (err) {
+    console.error(err);
+    res.status(err.status || 500).json({ message: err.msg || '자동 배치 실패' });
+  }
+});
+
+// server/routes/schedule.js
+router.get('/:id/preview', authMiddleware, adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool(req).query(
+      `SELECT 
+         sa.date,
+         sa.start_time,
+         sa.end_time,
+         u.name AS worker_name,
+         sa.status
+       FROM schedule_assignments sa
+       JOIN users u ON sa.user_id = u.id
+       WHERE sa.schedule_id = ?
+       ORDER BY sa.date, sa.start_time`,
+      [id]
+    );
+
+    // 날짜별 그룹화
+    const preview = {};
+    for (const r of rows) {
+      const date = r.date;
+      if (!preview[date]) preview[date] = [];
+      preview[date].push({
+        worker: r.worker_name,
+        time: `${r.start_time?.slice(0, 5)} ~ ${r.end_time?.slice(0, 5)}`,
+        status: r.status
+      });
+    }
+
+    res.json({ preview });
+  } catch (err) {
+    res.status(500).json({ message: '미리보기 실패' });
+  }
+});
+
+// server/routes/schedule.js
+router.get('/open', authMiddleware, async (req, res) => {
+  try {
+    const [user] = await pool(req).query('SELECT store_id FROM users WHERE id = ?', [req.user.id]);
+    if (!user[0]?.store_id) return res.json([]);
+
+    const [rows] = await pool(req).query(
+      `SELECT 
+         s.id,
+         s.week_start,
+         s.week_end,
+         st.name AS store_name,
+         CASE WHEN a.id IS NOT NULL THEN 1 ELSE 0 END AS has_applied
+       FROM schedules s
+       JOIN stores st ON s.store_id = st.id
+       LEFT JOIN applications a ON s.id = a.schedule_id AND a.user_id = ?
+       WHERE s.store_id = ? AND s.status = 'open'
+       ORDER BY s.week_start DESC`,
+      [req.user.id, user[0].store_id]
+    );
+
+    const result = rows.map(r => {
+      const start = formatDate(r.week_start);
+      const end = formatDate(r.week_end);
+      return {
+        id: r.id,
+        store_name: r.store_name,
+        period: { start, end, label: `${start} ~ ${end}`, week_start: start },
+        has_applied: r.has_applied === 1
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: '오픈 스케줄 조회 실패' });
+  }
+});
 
 module.exports = router;

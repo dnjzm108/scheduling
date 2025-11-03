@@ -6,6 +6,7 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { createDatabaseAndPool } = require('./config/db');
 const initDB = require('./utils/initDB');
+const { assignWorkers } = require('./utils/assigner');
 
 const app = express();
 const PORT = process.env.PORT || 5001;

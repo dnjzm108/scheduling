@@ -70,4 +70,30 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   }
 });
 
+// server/routes/store.js
+router.put('/:id/settings', authMiddleware, adminMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const {
+    open_time, close_time, break_start, break_end,
+    lunch_staff, dinner_staff, is_weekend_break
+  } = req.body;
+
+  try {
+    await pool(req).query(
+      `UPDATE stores SET 
+         open_time = ?, close_time = ?, break_start = ?, break_end = ?,
+         lunch_staff = ?, dinner_staff = ?, is_weekend_break = ?
+       WHERE id = ?`,
+      [
+        open_time || null, close_time || null, break_start || null, break_end || null,
+        lunch_staff || 0, dinner_staff || 0, is_weekend_break ? 1 : 0, id
+      ]
+    );
+    res.json({ message: '매장 설정 저장 완료' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '설정 저장 실패' });
+  }
+});
+
 module.exports = router;
