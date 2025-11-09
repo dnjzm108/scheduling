@@ -131,46 +131,55 @@ function ScheduleManagement() {
         await fetchSchedules(token, storeId);
     };
 
-    const handleOpenSchedule = async (e) => {
-        e.preventDefault();
-        const token = getToken();
-        if (!token) return;
+ // src/component/schedulemanagement/index.jsx
+const handleOpenSchedule = async (e) => {
+  e.preventDefault();
+  const token = getToken();
+  if (!token) return;
 
-        if (!formData.store_id || !formData.week_start) {
-            toast.warn('매장과 시작 날짜를 선택해주세요.');
-            return;
-        }
+  if (!formData.store_id || !formData.week_start) {
+    toast.warn('매장과 시작 날짜를 선택해주세요.');
+    return;
+  }
 
-        try {
-            const response = await axios.post(
-                `${BASE_URL}/api/schedules`,
-                {
-                    week_start: formData.week_start,
-                    store_id: selectedStoreId
-                },
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
+  // 1. 선택한 날짜를 UTC 0시 기준으로 변환 (하루 전 오류 방지)
+  const localDate = new Date(formData.week_start);
+  const utcDateStr = new Date(Date.UTC(
+    localDate.getFullYear(),
+    localDate.getMonth(),
+    localDate.getDate()
+  )).toISOString().split('T')[0]; // YYYY-MM-DD
 
-            const { message, store_name, period } = response.data;
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/api/schedules`,
+      {
+        week_start: utcDateStr,  // 정확한 월요일 날짜
+        store_id: formData.store_id
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
 
-            toast.success(
-                <div style={{ lineHeight: '1.5', textAlign: 'center' }}>
-                    <strong>{store_name}</strong><br />
-                    {period.label}<br />
-                    <small>{message}</small>
-                </div>,
-                { autoClose: 4000, position: 'top-center' }
-            );
+    const { message, store_name, period } = response.data;
 
-            setFormData(prev => ({ ...prev, week_start: '' }));
-            await fetchSchedules(token, selectedStoreId);
+    toast.success(
+      <div style={{ lineHeight: '1.5', textAlign: 'center' }}>
+        <strong>{store_name}</strong><br />
+        {period.label}<br />
+        <small>{message}</small>
+      </div>,
+      { autoClose: 4000, position: 'top-center' }
+    );
 
-        } catch (err) {
-            handleApiError(err, '스케줄 생성 실패');
-        }
-    };
+    setFormData(prev => ({ ...prev, week_start: '' }));
+    await fetchSchedules(token, selectedStoreId);
+
+  } catch (err) {
+    handleApiError(err, '스케줄 생성 실패');
+  }
+};
 
     const handleAutoSchedule = async (scheduleId) => {
         const token = getToken();

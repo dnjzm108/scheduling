@@ -1,15 +1,18 @@
-// src/pages/Apply/index.jsx
+// src/component/apply/index.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
 import { getToken } from '../../utils/auth';
 import './index.css';
+import Header from '../Header'
 
 function Apply() {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [storeId, setStoreId] = useState('');
   const [storeName, setStoreName] = useState('');
   const [weekStart, setWeekStart] = useState('');
@@ -27,68 +30,60 @@ function Apply() {
     { key: 'sun', label: '일요일' }
   ];
 
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      toast.error('로그인이 필요합니다.');
-      setTimeout(() => navigate('/'), 2000);
-      return;
+// src/component/apply/index.jsx
+useEffect(() => {
+  const token = getToken();
+  if (!token) {
+    toast.error('로그인이 필요합니다.');
+    return setTimeout(() => navigate('/'), 2000);
+  }
+
+  const state = location.state;
+  if (!state || !state.schedule_id) {
+    toast.error('잘못된 접근입니다.');
+    return navigate('/myschedules');
+  }
+
+  const { schedule_id, store_name } = state;
+
+  setSchedules(Object.fromEntries(days.map(d => [d.key, { type: 'off', start: '', end: '' }])));
+
+  const fetchSchedule = async () => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/schedules/${schedule_id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const data = response.data;
+      console.log("==============",data);
+      
+      setStoreId(data.store_id);
+      setStoreName(store_name || data.store_name);
+      setWeekStart(data.week_start); // 이제 정확한 2025-11-17
+      setWeekEnd(data.week_end);     // 정확한 2025-11-23
+
+    } catch (err) {
+      toast.error('스케줄 정보를 불러올 수 없습니다.');
+      navigate('/myschedules');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // schedules 초기화
-    setSchedules(Object.fromEntries(days.map(d => [d.key, { type: 'off', start: '', end: '' }])));
+  fetchSchedule();
+}, [navigate, location.state]);
 
-    const fetchUserStore = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/api/auth/user-store`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setStoreId(response.data.store_id);
-        setStoreName(response.data.store_name);
-      } catch (err) {
-        toast.error('매장 정보 불러오기 실패');
-      }
-    };
-
-    const fetchOpenPeriod = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/api/schedules/check-schedule-open`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (!response.data.is_open) {
-          toast.error('신청 기간이 아닙니다.');
-          setTimeout(() => navigate('/myschedules'), 2000);
-          return;
-        }
-
-        const { start, end } = response.data.period;
-
-        // 백엔드 기준: 월요일 ~ 일요일
-        const startDate = new Date(start);
-        const correctedStart = new Date(startDate);
-        correctedStart.setDate(startDate.getDate() - startDate.getDay() + 1); // 월요일 보정
-        const correctedEnd = new Date(correctedStart);
-        correctedEnd.setDate(correctedStart.getDate() + 6);
-
-        setWeekStart(correctedStart.toISOString().split('T')[0]);
-        setWeekEnd(correctedEnd.toISOString().split('T')[0]);
-
-      } catch (err) {
-        toast.error('신청 기간 확인 실패');
-        setTimeout(() => navigate('/myschedules'), 2000);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserStore();
-    fetchOpenPeriod();
-  }, [navigate]);
 
   const handleTypeChange = (day, value) => {
     setSchedules(prev => ({
       ...prev,
-      [day]: { ...prev[day], type: value, start: value === 'part' ? prev[day].start : '', end: value === 'part' ? prev[day].end : '' }
+      [day]: { 
+        ...prev[day], 
+        type: value, 
+        start: value === 'part' ? prev[day].start : '', 
+        end: value === 'part' ? prev[day].end : '' 
+      }
     }));
   };
 
@@ -102,18 +97,9 @@ function Apply() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = getToken();
-    if (!token) {
-      toast.error('로그인이 필요합니다.');
-      navigate('/');
-      return;
-    }
+    if (!token) return navigate('/');
 
-    // 필수값 검증
-    if (!weekStart || !storeId || !schedules || Object.keys(schedules).length === 0) {
-      toast.error('필수 정보를 모두 입력해주세요.');
-      return;
-    }
-
+    // 유효성 검사
     for (const day of Object.keys(schedules)) {
       if (schedules[day].type === 'part' && (!schedules[day].start || !schedules[day].end)) {
         toast.error(`${day}의 출근/퇴근 시간을 입력하세요.`);
@@ -125,8 +111,8 @@ function Apply() {
       await axios.post(
         `${BASE_URL}/api/schedules/schedule`,
         { 
-          week_start: weekStart, 
-          store_id: storeId, // 정확히 전달
+          week_start: weekStart,
+          store_id: storeId,
           schedules 
         },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -134,15 +120,18 @@ function Apply() {
       toast.success('스케줄 신청 완료!');
       setTimeout(() => navigate('/myschedules'), 2000);
     } catch (err) {
-      toast.error(err.response?.data?.message || '스케줄 신청 실패');
+      toast.error(err.response?.data?.message || '신청 실패');
     }
   };
 
   return (
-    <div className="apply-container">
+    <div className="apply-container ">
+      <Header />
+      <div className="apply-container "/>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
       <h1 className="apply-title">출근 스케줄 신청 ({weekStart} ~ {weekEnd})</h1>
       <div className="apply-store-info">매장: {storeName || '로딩 중...'}</div>
+      
       {loading ? (
         <p className="apply-loading">로딩 중...</p>
       ) : (

@@ -11,3 +11,9 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.page-with-header {
+  margin-top: 80px; /* Header 높이 */
+  padding: 20px;
+  min-height: calc(100vh - 80px);
+}

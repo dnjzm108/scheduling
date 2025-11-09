@@ -1,72 +1,97 @@
+// src/index.js
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-// import App from './App';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import reportWebVitals from './reportWebVitals';
-import { BrowserRouter , Router, Routes, Route, Navigate } from 'react-router-dom';
-
-import Main from './pages/Apply'
-import Login from './pages/Login'
-import Join from './pages/Signup'
-import Admin from './pages/Admin'
-import EmployeeManagement from './pages/EmployeeManagement'
-import ScheduleManagement from './pages/ScheduleManagement'
-import StoreManagement from './pages/StoreManagement'
-import Myschedules from './pages/Myschedules'
-import Notices from './pages/Notices'
-import NoticeCreate from './pages/NoticeCreate'
-import Requests from './pages/Requests'
-import RequestsList from './pages/RequestsList'
-import ScheduleSettings from './pages/ScheduleSettings'
-import DaySettings from './pages/DaySettings'
-import SchedulePreview from './pages/SchedulePreview'
 import { getToken } from './utils/auth';
+import { jwtDecode } from 'jwt-decode';
+
+// 페이지 임포트
+import Login from './pages/Login';
+import Join from './pages/Signup';
+import Main from './pages/Apply';
+import Admin from './pages/Admin';
+import EmployeeManagement from './pages/EmployeeManagement';
+import ScheduleManagement from './pages/ScheduleManagement';
+import StoreManagement from './pages/StoreManagement';
+import Myschedules from './pages/Myschedules';
+import Notices from './pages/Notices';
+import NoticeCreate from './pages/NoticeCreate';
+import Requests from './pages/Requests';
+import RequestsList from './pages/RequestsList';
+import ScheduleSettings from './pages/ScheduleSettings';
+import DaySettings from './pages/DaySettings';
+import SchedulePreview from './pages/SchedulePreview';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
-function ProtectedRoute({ children, isAdmin }) {
+// level 기반 권한 체크 컴포넌트
+const ProtectedRoute = ({ children, minLevel = 1 }) => {
   const token = getToken();
-  if (!token) return <Navigate to="/" />;
-  if (isAdmin) {
-    const decoded = require('jwt-decode')(token);
-    if (!decoded.isAdmin) return <Navigate to="/myschedules" />;
+  if (!token) return <Navigate to="/" replace />;
+
+  try {
+    const { level } = jwtDecode(token);
+    if (level < minLevel) {
+      return <Navigate to="/myschedules" replace />;
+    }
+    return children;
+  } catch (err) {
+    return <Navigate to="/" replace />;
   }
-  return children;
-}
+};
+
+// 페이지별 최소 level
+const routes = [
+  { path: '/', element: <Login /> },
+  { path: '/signup', element: <Join /> },
+  { path: '/apply', element: <Main /> },
+  { path: '/myschedules', element: <Myschedules />, minLevel: 1 },
+
+  // 직원 이상 (level >= 1)
+  { path: '/notices', element: <Notices />, minLevel: 1 },
+  { path: '/NoticeCreate', element: <NoticeCreate />, minLevel: 2 },
+  { path: '/requests', element: <Requests />, minLevel: 1 },
+  { path: '/RequestsList', element: <RequestsList />, minLevel: 2 },
+
+  // 매장관리자 이상 (level >= 2)
+  { path: '/ScheduleManagement', element: <ScheduleManagement />, minLevel: 2 },
+  { path: '/EmployeeManagement', element: <EmployeeManagement />, minLevel: 2 },
+  { path: '/ScheduleSettings', element: <ScheduleSettings />, minLevel: 2 },
+  { path: '/DaySettings', element: <DaySettings />, minLevel: 2 },
+
+  // 총관리자 전용 (level === 3)
+  { path: '/AdminDashboard', element: <Admin />, minLevel: 3 },
+  { path: '/StoreManagement', element: <StoreManagement />, minLevel: 3 },
+
+  // 미리보기 (매장관리자 이상)
+  { path: '/SchedulePreview', element: <SchedulePreview />, minLevel: 2 },
+
+  // 404
+  { path: '*', element: <Navigate to="/" replace /> }
+];
 
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-
       <Routes>
-        <Route path='/Apply' exact={true} element={<Main />}></Route>
-
-        <Route path='/AdminDashboard' exact={true} element={<Admin />}></Route>
-        <Route path='/EmployeeManagement' exact={true} element={<EmployeeManagement />}></Route>
-        <Route path='/ScheduleManagement' exact={true} element={<ScheduleManagement />}></Route>
-        <Route path='/StoreManagement' exact={true} element={<StoreManagement />}></Route>
-
-        <Route path='/SchedulePreview' exact={true} element={<SchedulePreview />}></Route>
-        <Route path='/DaySettings' exact={true} element={<DaySettings />}></Route>
-        <Route path='/ScheduleSettings' exact={true} element={<ScheduleSettings />}></Route>
-        <Route path='/' exact={true} element={<Login />}></Route>
-        <Route path='/signup' exact={true} element={<Join />}></Route>
-        <Route path='/Myschedules' exact={true} element={<Myschedules />}></Route>
-
-        <Route path="/notices" element={<ProtectedRoute><Notices /></ProtectedRoute>} />
-        <Route path="/NoticeCreate" element={<ProtectedRoute><NoticeCreate /></ProtectedRoute>} />
-
-        <Route path="/requests" element={<ProtectedRoute><Requests /></ProtectedRoute>} />
-        <Route path="/RequestsList" element={<ProtectedRoute><RequestsList /></ProtectedRoute>} />
-        <Route path="*" element={<Navigate to="/" />} />
-
-
+        {routes.map(({ path, element, minLevel = 0 }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              minLevel > 0 ? (
+                <ProtectedRoute minLevel={minLevel}>{element}</ProtectedRoute>
+              ) : (
+                element
+              )
+            }
+          />
+        ))}
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

@@ -12,11 +12,8 @@ import './index.css';
 function MySchedules() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState('');
-  const [schedules, setSchedules] = useState([]);
+  const [weeklyData, setWeeklyData] = useState([]);
   const [openSchedules, setOpenSchedules] = useState([]);
-  const [details, setDetails] = useState({});
-  const [expandedItems, setExpandedItems] = useState(new Set());
-  const [loadingDetails, setLoadingDetails] = useState(new Set());
   const [selectedOpenSchedule, setSelectedOpenSchedule] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -24,118 +21,60 @@ function MySchedules() {
     const token = getToken();
     if (!token) {
       toast.error('로그인이 필요합니다.');
-      setTimeout(() => navigate('/'), 2000);
-      return;
+      return setTimeout(() => navigate('/'), 2000);
     }
 
     try {
       const decoded = jwtDecode(token);
       setUserName(decoded.name || '사용자님');
     } catch (err) {
-      console.error('Token decode error:', err);
-      toast.error('세션 오류가 발생했습니다.');
+      toast.error('세션 오류');
       removeToken();
-      setTimeout(() => navigate('/'), 2000);
-      return;
+      return setTimeout(() => navigate('/'), 2000);
     }
 
-    const fetchOpenSchedules = async () => {
+    const fetchData = async () => {
       try {
-        const response = await axios.get(`${BASE_URL}/api/schedules/open`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setOpenSchedules(response.data || []);
-      } catch (err) {
-        console.error('오픈 스케줄 조회 실패');
-      }
-    };
+        const [openRes, myRes] = await Promise.all([
+          axios.get(`${BASE_URL}/api/schedules/open`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${BASE_URL}/api/schedules/my-schedules`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
 
-    const fetchMySchedules = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}/api/schedules/my-schedules`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setSchedules(response.data || []);
+        setOpenSchedules(openRes.data || []);
+        setWeeklyData(myRes.data || []);
       } catch (err) {
-        toast.error('내 스케줄 불러오기 실패');
+        toast.error('데이터 로드 실패');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOpenSchedules();
-    fetchMySchedules();
+    fetchData();
   }, [navigate]);
 
-  const handleDetailClick = async (schedule) => {
-    const key = schedule.id;
-
-    if (expandedItems.has(key)) {
-      setExpandedItems(prev => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
-      return;
-    }
-
-    if (details[key]) {
-      setExpandedItems(prev => new Set(prev).add(key));
-      return;
-    }
-
-    setLoadingDetails(prev => new Set(prev).add(key));
-
-    const token = getToken();
-    try {
-      const response = await axios.get(
-        `${BASE_URL}/api/schedules/my-schedule-details?schedule_id=${schedule.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setDetails(prev => ({ ...prev, [key]: response.data }));
-      setExpandedItems(prev => new Set(prev).add(key));
-    } catch (err) {
-      toast.error(err.response?.data?.message || '상세 스케줄 불러오기 실패');
-    } finally {
-      setLoadingDetails(prev => {
-        const next = new Set(prev);
-        next.delete(key);
-        return next;
-      });
-    }
-  };
-
   const handleApply = () => {
-    if (!selectedOpenSchedule) {
-      toast.warn('신청할 스케줄을 선택해주세요.');
-      return;
-    }
+    if (!selectedOpenSchedule) return toast.warn('신청할 스케줄을 선택해주세요.');
 
     const schedule = openSchedules.find(s => s.id === parseInt(selectedOpenSchedule));
-    if (!schedule) {
-      toast.error('선택한 스케줄을 찾을 수 없습니다.');
-      return;
-    }
-
-    if (schedule.has_applied) {
-      toast.info('이미 신청한 스케줄입니다.');
-      return;
-    }
+    if (!schedule) return toast.error('스케줄을 찾을 수 없습니다.');
+    if (schedule.has_applied) return toast.info('이미 신청한 스케줄입니다.');
 
     navigate('/apply', {
-      state: {
-        week_start: schedule.period.week_start,
-        store_name: schedule.store_name
-      }
+      state: { schedule_id: schedule.id, store_name: schedule.store_name }
     });
   };
 
-  const handleNoticesClick = () => navigate('/notices');
-  const handleSuggestionsClick = () => navigate('/requests');
   const handleLogout = () => {
     removeToken();
     toast.success('로그아웃되었습니다.');
     navigate('/');
+  };
+
+  const getTypeText = (type) => {
+    if (!type || type === 'off') return '휴무';
+    if (type === 'full') return '풀타임';
+    if (type === 'part') return '파트타임';
+    return '휴무';
   };
 
   return (
@@ -144,16 +83,17 @@ function MySchedules() {
         <h1 className="myschedules-title">신청 내역 확인</h1>
         <div className="myschedules-user-info">
           <span className="myschedules-user-name">{userName}님</span>
-          <button className="myschedules-button myschedules-logout-button" onClick={handleLogout}>로그아웃</button>
+          <button className="myschedules-button myschedules-logout-button" onClick={handleLogout}>
+            로그아웃
+          </button>
         </div>
       </div>
 
-      {/* 신청 가능한 스케줄 선택 */}
       {openSchedules.length > 0 ? (
         <div className="myschedules-schedule-apply">
           <select
             value={selectedOpenSchedule}
-            onChange={(e) => setSelectedOpenSchedule(e.target.value)}
+            onChange={e => setSelectedOpenSchedule(e.target.value)}
             className="myschedules-select"
           >
             <option value="">-- 신청할 스케줄 선택 --</option>
@@ -176,73 +116,49 @@ function MySchedules() {
       )}
 
       <div className="myschedules-button-group">
-        <button className="myschedules-button myschedules-notice-button" onClick={handleNoticesClick}>
+        <button className="myschedules-button myschedules-notice-button" onClick={() => navigate('/notices')}>
           공지사항
         </button>
-        <button className="myschedules-button myschedules-suggestion-button" onClick={handleSuggestionsClick}>
+        <button className="myschedules-button myschedules-suggestion-button" onClick={() => navigate('/requests')}>
           건의사항
         </button>
       </div>
 
       {loading ? (
         <p className="myschedules-loading">로딩 중...</p>
-      ) : schedules.length === 0 ? (
+      ) : weeklyData.length === 0 ? (
         <p className="myschedules-no-schedules">신청한 스케줄이 없습니다.</p>
       ) : (
-        <ul className="myschedules-schedule-list">
-          {schedules.map((schedule) => (
-            <li key={schedule.id} className="myschedules-schedule-item">
-              <div className="schedule-header">
-                <strong>{schedule.store_name}</strong> - {schedule.period.label}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDetailClick(schedule);
-                  }}
-                  className="myschedules-button myschedules-detail-button"
-                  disabled={loadingDetails.has(schedule.id)}
-                >
-                  {loadingDetails.has(schedule.id) ? '로딩 중...' :
-                    expandedItems.has(schedule.id) ? '접기' : '상세 더 보기'}
-                </button>
+        <div className="weekly-schedule-container">
+          {weeklyData.map((week, idx) => (
+            <div key={week.id || idx} className="weekly-schedule-card">
+              <div className="weekly-header">
+                <strong>{week.store_name}</strong>
+                <span className="week-range">{week.label}</span>
+                <span className="status-badge">{week.status?.text || '신청됨'}</span>
               </div>
-
-              {expandedItems.has(schedule.id) && (
-                <div className="myschedules-details">
-                  {loadingDetails.has(schedule.id) ? (
-                    <p>불러오는 중...</p>
-                  ) : details[schedule.id] ? (
-                    <>
-                      <p><strong>상태:</strong> {details[schedule.id].status.text}</p>
-                      <div className="assignment-summary">
-                        {details[schedule.id].assignments.length > 0 ? (
-                          details[schedule.id].assignments
-                            .sort((a, b) => new Date(a.date) - new Date(b.date))
-                            .map((ass, idx) => {
-                              const timeText = ass.status.text === '배정됨'
-                                ? ass.time.label
-                                : ass.status.text;
-                              return (
-                                <span key={idx}>
-                                  <strong>{ass.day}</strong> {timeText}
-                                  {idx < details[schedule.id].assignments.length - 1 && ' | '}
-                                </span>
-                              );
-                            })
-                        ) : (
-                          <span>신청 내역 없음</span>
+              <div className="weekly-days">
+                {['월', '화', '수', '목', '금', '토', '일'].map(day => {
+                  const data = week.daily?.[day] || { type: 'off', time: '휴무' };
+                  
+                  return (
+                    <div key={day} className={`day-item ${data.type || 'off'}`}>
+                      <div className="day-label">{day}</div>
+                      <div className="day-content">
+                        <span className="type">{getTypeText(data.type)}</span>
+                        {data.type === 'part' && data.time && data.time !== '휴무' && (
+                          <span className="time">{data.time}</span>
                         )}
                       </div>
-                    </>
-                  ) : (
-                    <p>데이터 없음</p>
-                  )}
-                </div>
-              )}
-            </li>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
+
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );

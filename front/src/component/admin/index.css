@@ -1,175 +1,66 @@
-/* src/pages/AdminDashboard.css - 스케줄 관리 페이지와 동일한 깔끔한 화이트/인디고 스타일 */
-* { box-sizing: border-box; }
-
-/* 🚨 배경색과 전체 레이아웃을 스케줄 관리 페이지처럼 깔끔하게 변경 */
+/* src/pages/AdminDashboard/index.css */
 .admin-container {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    font-family: Arial, sans-serif;
-    min-height: 100vh;
-    display: block; /* 컨테이너를 중앙 정렬 대신 일반 블록으로 설정 */
-    background-color: #f7f7f7; /* 은은한 회색 배경 */
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Pretendard', -apple-system, sans-serif;
 }
 
-/* 🚨 배경 오버레이 및 카드 스타일 제거. 대신 깔끔한 단일 컨테이너 사용 */
-.admin-bg-overlay {
-    display: none;
+.admin-content {
+  margin-top: 80px;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
 }
 
 .admin-card {
-    /* 카드 스타일 제거하고 컨테이너에 직접 스타일 적용 */
-    width: 100%;
-    padding: 0;
-    background: transparent;
-    backdrop-filter: none;
-    border-radius: 0;
-    box-shadow: none;
-    border: none;
-    animation: none;
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  width: 100%;
+  max-width: 900px;
+  text-align: center;
 }
 
-.admin-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #ddd;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-/* 타이틀 스타일 (스케줄 관리 페이지와 동일) */
 .admin-title {
-    font-size: 1.75rem;
-    font-weight: bold;
-    color: #333;
-    /* 그라데이션 제거, 단색 사용 */
-    background: none;
-    -webkit-background-clip: unset;
-    background-clip: unset;
-    -webkit-text-fill-color: initial;
-    margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 16px;
 }
 
-.admin-user-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.admin-welcome {
+  font-size: 18px;
+  color: #636e72;
+  margin-bottom: 40px;
 }
 
-.admin-user-name {
-    font-size: 1rem;
-    color: #555;
-    font-weight: 500;
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
 }
 
-/* 로그아웃 버튼 (스케줄 관리 페이지의 대시보드 버튼 스타일과 유사하게) */
-.admin-logout-button {
-    padding: 0.5rem 1rem;
-    background-color: #eee;
-    border: none;
-    color: #333;
-    font-weight: 500;
-    border-radius: 0.5rem;
-    cursor: pointer;
-    transition: background-color 0.15s;
-    font-size: 0.875rem;
+.admin-menu-btn {
+  padding: 24px;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
 }
 
-.admin-logout-button:hover {
-    background: #ddd;
-    color: #333;
-    transform: none;
-}
-
-.admin-button-group {
-    display: grid; /* 버튼 그룹을 그리드 레이아웃으로 변경 */
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* PC에서 유연한 배치 */
-    gap: 1.5rem;
-    margin-top: 2rem;
-}
-
-/* 버튼 스타일 (스케줄 관리 페이지의 '오픈' 버튼 스타일 기반) */
-.admin-button {
-    width: 100%;
-    padding: 2rem; /* 넓은 카드 형태로 변경 */
-    background-color: #ffffff;
-    border: 1px solid #e0e7ff; /* 은은한 인디고 테두리 */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    color: #4f46e5; /* 인디고 텍스트 */
-    font-size: 1.25rem;
-    font-weight: 700;
-    border-radius: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-    min-height: 80px;
-}
-
-.admin-button:hover:not(:disabled) {
-    transform: translateY(-4px); /* 조금 더 눈에 띄는 호버 효과 */
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    background-color: #f9f9ff;
-}
-
-.admin-button:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-/* 건의사항 버튼 (오렌지/노란색 계열로 차별화 - 깔끔한 버전) */
-.admin-suggestion {
-    color: #d97706; /* 오렌지 텍스트 */
-    border: 1px solid #fee3b9;
-    background-color: #fffaf0;
-}
-
-.admin-suggestion:hover:not(:disabled) {
-    box-shadow: 0 8px 15px rgba(245, 158, 11, 0.2);
-    background-color: #fff5e0;
+.admin-menu-btn:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 32px rgba(102, 126, 234, 0.4);
 }
 
 .admin-loading {
-    text-align: center;
-    color: #4f46e5;
-    font-size: 1.125rem;
-    font-weight: 500;
-    padding: 3rem;
-}
-
-/* --- 📱 모바일 반응형 --- */
-@media (max-width: 768px) {
-    .admin-container {
-        padding: 1rem;
-    }
-
-    .admin-header {
-        flex-direction: column;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
-    }
-
-    .admin-title {
-        font-size: 1.5rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .admin-user-info {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .admin-button-group {
-        grid-template-columns: 1fr; /* 모바일에서는 1열로 */
-        gap: 1rem;
-        margin-top: 1.5rem;
-    }
-
-    .admin-button {
-        padding: 1.5rem; /* 모바일 버튼 크기 조정 */
-        font-size: 1.125rem;
-    }
+  font-size: 20px;
+  color: white;
+  padding: 40px;
 }

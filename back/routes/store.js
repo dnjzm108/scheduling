@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
-const adminMiddleware = require('../middleware/admin');
+const { storeAdmin, globalAdmin,employee } = require('../middleware/levelMiddleware');
 
 const pool = (req) => req.app.get('db');
 
@@ -22,7 +22,7 @@ router.get('/', async (req, res) => {
 });
 
 // 매장 생성
-router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
+router.post('/', authMiddleware, storeAdmin, async (req, res) => {
   const { name, address, manager_id } = req.body;
   try {
     const [result] = await pool(req).query(
@@ -37,7 +37,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // 매장 수정
-router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, storeAdmin, async (req, res) => {
   const { id } = req.params;
   const { name, address, manager_id } = req.body;
   try {
@@ -56,7 +56,7 @@ router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // 매장 삭제
-router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, storeAdmin, async (req, res) => {
   const { id } = req.params;
   try {
     const [result] = await pool(req).query('DELETE FROM stores WHERE id = ?', [id]);
@@ -71,7 +71,7 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // server/routes/store.js
-router.put('/:id/settings', authMiddleware, adminMiddleware, async (req, res) => {
+router.put('/:id/settings', authMiddleware, storeAdmin, async (req, res) => {
   const { id } = req.params;
   const {
     open_time, close_time, break_start, break_end,

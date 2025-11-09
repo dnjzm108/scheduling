@@ -6,7 +6,7 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { createDatabaseAndPool } = require('./config/db');
 const initDB = require('./utils/initDB');
-const { assignWorkers } = require('./utils/assigner');
+// const { assignWorkers } = require('./utils/assigner');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -16,7 +16,7 @@ app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json({ limit: '10mb' }));
 app.use('/Uploads', express.static(path.join(__dirname, 'Uploads')));
 app.use('/api', rateLimit({
-  windowMs: 15 * 60 * 1000, // 15분
+  windowMs: 1 * 60 * 1000, // 15분
   max: 100, // IP당 100회
   message: { message: '너무 많은 요청입니다. 잠시 후 다시 시도하세요.' },
   standardHeaders: true,

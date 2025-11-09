@@ -30,7 +30,7 @@ function SignUp() {
     const fetchStores = async () => {
       setStoresLoading(true);
       try {
-        const res = await axios.get(`${BASE_URL}/api/admin/stores`);
+        const res = await axios.get(`${BASE_URL}/api/stores`);
         setStores(res.data || []);
       } catch {
         toast.error('매장 정보를 불러오지 못했습니다.');

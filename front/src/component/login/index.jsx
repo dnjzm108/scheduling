@@ -1,4 +1,4 @@
-// src/pages/Login.jsx (초록 + 한국어 에러 완벽!)
+// src/pages/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -14,20 +14,20 @@ function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 한국어 에러 매핑 (백엔드 메시지 → 사용자 친화적)
-  const getErrorMessage = (backendMsg) => {
-    const messages = {
+  // 한국어 에러 매핑
+  const getErrorMessage = (msg) => {
+    const map = {
       '존재하지 않는 아이디입니다.': '존재하지 않는 아이디입니다.',
       '비밀번호가 틀립니다.': '비밀번호를 확인해주세요.',
-      '관리자 승인을 기다려주세요.': '관리자에게 승인을 요청하세요.',
-      '승인 대기중이거나 잘못된 자격증명입니다.': '관리자에게 승인을 요청하세요.'
+      '관리자 승인 대기 중입니다.': '관리자 승인 후 로그인 가능합니다.',
+      '관리자에게 승인을 요청하세요.': '관리자 승인 대기 중입니다.'
     };
-    return messages[backendMsg] || backendMsg;
+    return map[msg] || msg;
   };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    if (error) setError('');  // 입력 시 에러 초기화
+    if (error) setError('');
   };
 
   const handleSubmit = async (e) => {
@@ -45,15 +45,27 @@ function Login() {
       const response = await axios.post(`${BASE_URL}/api/auth/login`, formData, {
         headers: { 'Content-Type': 'application/json' }
       });
-      
-      setToken(response.data.token);
+
+      const { token, user } = response.data;
+      setToken(token);
+
       toast.success('로그인 성공!');
-      
+
+      // level 기반 페이지 이동
       setTimeout(() => {
-        navigate(response.data.isAdmin ? '/AdminDashboard' : '/myschedules');
+        if (user.level >= 3) {
+          navigate('/AdminDashboard');           // 총관리자
+        } else if (user.level === 2) {
+          navigate('/ScheduleManagement');       // 매장관리자
+        } else if (user.level === 1) {
+          navigate('/myschedules');              // 직원
+        } else {
+          navigate('/myschedules');              // level 0도 일단 직원 페이지
+        }
       }, 1500);
+
     } catch (err) {
-      const backendMsg = err.response?.data?.message || '로그인에 실패했습니다.';
+      const backendMsg = err.response?.data?.message || '로그인 실패';
       const userMsg = getErrorMessage(backendMsg);
       setError(userMsg);
       toast.error(userMsg);
@@ -68,7 +80,7 @@ function Login() {
       
       <div className="login-card">
         <div className="login-header">
-          <h1 className="login-title">🍽️ km company</h1>
+          <h1 className="login-title">KM Company</h1>
           <p className="login-subtitle">로그인하여 시작하세요</p>
         </div>
 
@@ -103,7 +115,6 @@ function Login() {
 
           {error && (
             <div className="login-error">
-              <span className="login-error-icon">⚠️</span>
               {error}
             </div>
           )}
@@ -116,7 +127,7 @@ function Login() {
             {loading ? (
               <>
                 <div className="login-spinner" />
-                로그인 중입니다...
+                로그인 중...
               </>
             ) : (
               '로그인하기'
@@ -133,14 +144,13 @@ function Login() {
         position="top-center"
         autoClose={4000}
         hideProgressBar={false}
-        newestOnTop={false}
+        newestOnTop
         closeOnClick
         rtl={false}
         pauseOnFocusLoss
         draggable
         pauseOnHover
         theme="colored"
-        toastClassName="login-toast"
       />
     </div>
   );

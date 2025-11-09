@@ -1,4 +1,4 @@
-// src/component/notices/index.jsx - 공지사항 100% 로드 + 로그인 CSS 통일
+// src/component/notices/index.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -16,93 +16,71 @@ function Notices() {
   const [selectedStore, setSelectedStore] = useState('');
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [selectedNotice, setSelectedNotice] = useState(null);
+  const [userLevel, setUserLevel] = useState(0);
+  const [expandedId, setExpandedId] = useState(null);
+  const errorShown = useRef({});
 
-  const errorShownRef = useRef({});
-
-  const showErrorOnce = useCallback((key, message) => {
-    if (!errorShownRef.current[key]) {
-      errorShownRef.current[key] = true;
-      toast.error(message);
-      setTimeout(() => {
-        errorShownRef.current[key] = false;
-      }, 3000);
+  const showErrorOnce = useCallback((key, msg) => {
+    if (!errorShown.current[key]) {
+      errorShown.current[key] = true;
+      toast.error(msg);
+      setTimeout(() => errorShown.current[key] = false, 3000);
     }
   }, []);
 
-  const fetchNotices = useCallback(
-    async (storeId = '') => {
-      const token = getToken();
-      if (!token) return;
+  const fetchNotices = useCallback(async (storeId = '') => {
+    const token = getToken();
+    if (!token) return;
 
-      const key = `notices-${storeId || 'all'}`;
-      setLoading(true);
-
-      try {
-        const url = `${BASE_URL}/api/notices${storeId ? `?store_id=${storeId}` : ''}`;
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setNotices(response.data || []);
-        errorShownRef.current[key] = false;
-      } catch (err) {
-        console.error('[/notices] Error:', err.response || err);
-        if (!errorShownRef.current[key]) {
-          showErrorOnce(key, '공지사항을 불러오지 못했습니다.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [showErrorOnce]
-  );
+    setLoading(true);
+    try {
+      const url = `${BASE_URL}/api/notices${storeId ? `?store_id=${storeId}` : ''}`;
+      const { data } = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+      setNotices(data.map(n => ({
+        ...n,
+        attachments: n.attachments ? JSON.parse(n.attachments) : []
+      })));
+    } catch (err) {
+      showErrorOnce('notices', '공지사항 로드 실패');
+    } finally {
+      setLoading(false);
+    }
+  }, [showErrorOnce]);
 
   const fetchStores = useCallback(async () => {
     const token = getToken();
     if (!token) return;
 
     try {
-      const response = await axios.get(`${BASE_URL}/api/stores`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const { data } = await axios.get(`${BASE_URL}/api/stores`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setStores(response.data || []);
+      setStores(data);
     } catch (err) {
-      console.error('[/stores] Error:', err);
-      showErrorOnce('stores', '매장 목록을 불러오지 못했습니다.');
+      showErrorOnce('stores', '매장 목록 로드 실패');
     }
   }, [showErrorOnce]);
 
   useEffect(() => {
     const token = getToken();
     if (!token) {
-      showErrorOnce('auth', '로그인이 필요합니다.');
-      setTimeout(() => navigate('/'), 2000);
-      return;
+      showErrorOnce('auth', '로그인 필요');
+      return setTimeout(() => navigate('/'), 2000);
     }
 
-    let decoded;
     try {
-      decoded = jwtDecode(token);
-      setUserName(decoded.name || '사용자님');
-      setIsAdmin(!!decoded.isAdmin);
+      const decoded = jwtDecode(token);
+      setUserName(decoded.name || '사용자');
+      setUserLevel(decoded.level || 0);
+
+      if (decoded.level >= 2) fetchStores(); // 매장관리자 이상
+      fetchNotices();
     } catch (err) {
-      showErrorOnce('token', '세션이 만료되었거나 유효하지 않습니다.');
+      showErrorOnce('token', '세션 만료');
       removeToken();
       setTimeout(() => navigate('/'), 2000);
-      return;
     }
-
-    if (decoded.isAdmin) {
-      fetchStores();
-    }
-
-    fetchNotices();
-
-    return () => {
-      errorShownRef.current = {};
-    };
-  }, [navigate, fetchStores, fetchNotices, showErrorOnce]);
+  }, [navigate, fetchNotices, fetchStores, showErrorOnce]);
 
   const handleStoreChange = (e) => {
     const storeId = e.target.value;
@@ -110,26 +88,29 @@ function Notices() {
     fetchNotices(storeId);
   };
 
-  const handleDeleteNotice = async (id) => {
+  const handleDelete = async (id) => {
+    if (!window.confirm('정말 삭제하시겠습니까?')) return;
     const token = getToken();
-    if (!token) return;
-
     try {
       await axios.delete(`${BASE_URL}/api/notices/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setNotices((prev) => prev.filter((n) => n.id !== id));
-      toast.success('공지사항이 삭제되었습니다.');
+      setNotices(prev => prev.filter(n => n.id !== id));
+      toast.success('삭제 완료');
     } catch (err) {
-      showErrorOnce(`delete-${id}`, '공지사항 삭제에 실패했습니다.');
+      showErrorOnce(`delete-${id}`, '삭제 실패');
     }
   };
 
-  
   const handleLogout = () => {
     removeToken();
-    toast.success('로그아웃되었습니다.');
+    toast.success('로그아웃');
     navigate('/');
+  };
+
+  const getLevelText = (level) => {
+    const levels = ['승인대기', '직원', '매장관리자', '총관리자'];
+    return levels[level] || '알 수 없음';
   };
 
   return (
@@ -137,12 +118,12 @@ function Notices() {
       <header className="notices-header">
         <button
           className="notices-back-button"
-          onClick={() => navigate(isAdmin ? '/AdminDashboard' : '/myschedules')}
+          onClick={() => navigate(userLevel >= 2 ? '/AdminDashboard' : '/myschedules')}
         >
-          이전 페이지
+          이전
         </button>
         <div className="notices-user-info">
-          <span className="notices-user-name">{userName}님</span>
+          <span>{userName}님 ({getLevelText(userLevel)})</span>
           <button className="notices-logout-button" onClick={handleLogout}>
             로그아웃
           </button>
@@ -152,7 +133,7 @@ function Notices() {
       <main className="notices-main-content">
         <h1 className="notices-title">공지사항</h1>
 
-        {isAdmin && (
+        {userLevel >= 2 && (
           <button
             className="notices-create-button"
             onClick={() => navigate('/NoticeCreate')}
@@ -161,19 +142,12 @@ function Notices() {
           </button>
         )}
 
-        {isAdmin && (
+        {userLevel >= 2 && (
           <div className="notices-store-selector">
-            <label htmlFor="store-select">매장 선택</label>
-            <select
-              id="store-select"
-              value={selectedStore}
-              onChange={handleStoreChange}
-            >
+            <select value={selectedStore} onChange={handleStoreChange}>
               <option value="">모든 매장</option>
-              {stores.map((store) => (
-                <option key={store.id} value={store.id}>
-                  {store.name}
-                </option>
+              {stores.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
           </div>
@@ -185,39 +159,26 @@ function Notices() {
           <p className="notices-no-notices">공지사항이 없습니다.</p>
         ) : (
           <ul className="notices-list">
-            {notices.map((notice) => (
+            {notices.map(notice => (
               <li
                 key={notice.id}
-                className={`notices-item ${
-                  selectedNotice === notice.id ? 'expanded' : ''
-                }`}
-                onClick={() =>
-                  setSelectedNotice(
-                    selectedNotice === notice.id ? null : notice.id
-                  )
-                }
+                className={`notices-item ${expandedId === notice.id ? 'expanded' : ''}`}
+                onClick={() => setExpandedId(expandedId === notice.id ? null : notice.id)}
               >
                 <h3>{notice.title}</h3>
-                {selectedNotice === notice.id && (
+                {expandedId === notice.id && (
                   <div className="notices-details">
                     <p>{notice.body}</p>
-                    {notice.attachments &&
-                      JSON.parse(notice.attachments).map((url, idx) => (
-                        <img
-                          key={idx}
-                          src={url}
-                          alt={`첨부 이미지 ${idx + 1}`}
-                          className="notices-attachment"
-                        />
-                      ))}
+                    {notice.attachments.map((url, i) => (
+                      <img key={i} src={url} alt={`첨부 ${i + 1}`} className="notices-attachment" />
+                    ))}
                     <p>
                       작성자: {notice.author_name} |{' '}
                       {new Date(notice.published_at).toLocaleDateString('ko-KR')}
                     </p>
-                    {isAdmin && (
+                    {userLevel >= 2 && (
                       <div className="notices-admin-actions">
                         <button
-                          className="notices-edit-button"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/notice-edit/${notice.id}`);
@@ -226,13 +187,11 @@ function Notices() {
                           수정
                         </button>
                         <button
-                          className="notices-delete-button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (window.confirm('정말 삭제하시겠습니까?')) {
-                              handleDeleteNotice(notice.id);
-                            }
+                            handleDelete(notice.id);
                           }}
+                          className="notices-delete-button"
                         >
                           삭제
                         </button>
@@ -246,17 +205,7 @@ function Notices() {
         )}
       </main>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <ToastContainer position="top-center" theme="colored" autoClose={4000} />
     </div>
   );
 }
