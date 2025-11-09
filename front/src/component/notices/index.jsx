@@ -7,6 +7,7 @@ import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
 import { getToken, removeToken } from '../../utils/auth';
+import Header from '../Header'; 
 import './index.css';
 
 function Notices() {
@@ -114,24 +115,10 @@ function Notices() {
   };
 
   return (
+    <>
+    <Header title="공지사항" backTo="/AdminDashboard" />
     <div className="notices-container">
-      <header className="notices-header">
-        <button
-          className="notices-back-button"
-          onClick={() => navigate(userLevel >= 2 ? '/AdminDashboard' : '/myschedules')}
-        >
-          이전
-        </button>
-        <div className="notices-user-info">
-          <span>{userName}님 ({getLevelText(userLevel)})</span>
-          <button className="notices-logout-button" onClick={handleLogout}>
-            로그아웃
-          </button>
-        </div>
-      </header>
-
       <main className="notices-main-content">
-        <h1 className="notices-title">공지사항</h1>
 
         {userLevel >= 2 && (
           <button
@@ -207,6 +194,7 @@ function Notices() {
 
       <ToastContainer position="top-center" theme="colored" autoClose={4000} />
     </div>
+    </>
   );
 }
 

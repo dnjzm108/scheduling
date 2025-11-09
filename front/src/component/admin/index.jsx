@@ -1,5 +1,5 @@
 // src/pages/AdminDashboard.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
@@ -42,14 +42,11 @@ function AdminDashboard() {
 
   return (
     <div className="admin-container">
-      <Header />
+     <Header title="관리자 대시보드" showBack={false} />
 
       {/* 이 클래스가 핵심! */}
       <div className="admin-content page-with-header">
         <div className="admin-card">
-          <h1 className="admin-title">관리자 대시보드</h1>
-          <p className="admin-welcome">안녕하세요, {userName}님</p>
-
           {loading ? (
             <div className="admin-loading">로딩 중...</div>
           ) : (

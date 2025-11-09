@@ -6,6 +6,7 @@ import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
 import { getToken, removeToken } from '../../utils/auth';
+import Header from '../Header'; 
 import './index.css';
 
 function Requests() {
@@ -111,20 +112,10 @@ function Requests() {
   };
 
   return (
+    <>
+    <Header title="건의사항 작성" backTo="/myschedules"/>
     <div className="request-container">
-      <header className="request-header">
-        <button className="request-back-button" onClick={() => navigate(-1)}>
-          이전 페이지
-        </button>
-        <div className="request-user-info">
-          <span className="request-user-name">{userInfo.name}님</span>
-          <button className="request-logout-button" onClick={handleLogout}>
-            로그아웃
-          </button>
-        </div>
-      </header>
       <main className="request-main-content">
-        <h1 className="request-title">건의사항</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>제목</label>
@@ -163,6 +154,7 @@ function Requests() {
       </main>
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
+    </>
   );
 }
 

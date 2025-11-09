@@ -7,6 +7,7 @@ import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
 import { getToken, removeToken } from '../../utils/auth';
+import Header from '../Header';
 import './index.css';
 
 function MySchedules() {
@@ -78,17 +79,9 @@ function MySchedules() {
   };
 
   return (
+    <>
+    <Header title="MY PAGE" showBack={false}/>
     <div className="myschedules-container">
-      <div className="myschedules-header">
-        <h1 className="myschedules-title">신청 내역 확인</h1>
-        <div className="myschedules-user-info">
-          <span className="myschedules-user-name">{userName}님</span>
-          <button className="myschedules-button myschedules-logout-button" onClick={handleLogout}>
-            로그아웃
-          </button>
-        </div>
-      </div>
-
       {openSchedules.length > 0 ? (
         <div className="myschedules-schedule-apply">
           <select
@@ -161,6 +154,7 @@ function MySchedules() {
 
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
+    </>
   );
 }
 

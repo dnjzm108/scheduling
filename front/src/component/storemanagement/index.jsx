@@ -7,6 +7,7 @@ import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
 import { getToken, removeToken } from '../../utils/auth';
+import Header from '../Header';
 import './index.css';
 
 function StoreManage() {
@@ -125,22 +126,12 @@ function StoreManage() {
   };
 
   return (
+    <>
+    <Header title="매장관리" backTo="/AdminDashboard"/>
     <div className="store-manage-container">
       <div className="store-manage-bg-overlay" />
       
       <div className="store-manage-card">
-        <div className="store-manage-header">
-          <button className="store-manage-back-button" onClick={() => navigate(-1)}>
-            이전
-          </button>
-          <h1 className="store-manage-title">매장 관리</h1>
-          <div className="store-manage-user-info">
-            <span>{userName}님 (총관리자)</span>
-            <button className="store-manage-logout-button" onClick={handleLogout}>
-              로그아웃
-            </button>
-          </div>
-        </div>
 
         <form onSubmit={handleSubmit} className="store-manage-form">
           <input
@@ -206,6 +197,7 @@ function StoreManage() {
 
       <ToastContainer position="top-center" theme="colored" autoClose={4000} />
     </div>
+    </>
   );
 }
 

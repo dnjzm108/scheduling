@@ -125,11 +125,9 @@ useEffect(() => {
   };
 
   return (
+    <>
+      <Header title={<>스케줄 신청 ({weekStart} ~ {weekEnd})</>} backTo="/myschedules" />
     <div className="apply-container ">
-      <Header />
-      <div className="apply-container "/>
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
-      <h1 className="apply-title">출근 스케줄 신청 ({weekStart} ~ {weekEnd})</h1>
       <div className="apply-store-info">매장: {storeName || '로딩 중...'}</div>
       
       {loading ? (
@@ -183,6 +181,7 @@ useEffect(() => {
         </form>
       )}
     </div>
+    </>
   );
 }
 

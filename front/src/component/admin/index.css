@@ -1,66 +1,93 @@
-/* src/pages/AdminDashboard/index.css */
+/* src/pages/AdminDashboard/index.css (화이트/보라 스타일 적용) */
+
+:root {
+  /* 화이트/보라 계열 변수 */
+  --white-background: #ffffff;
+  --page-background: #f9fafb; /* 아주 연한 배경 */
+  --primary-accent: #4f46e5;
+  --primary-light: #6b46ef;
+  --text-dark: #1f2937;
+  --text-subtle: #6b7280;
+}
+
 .admin-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* 배경: 아주 연한 회색 */
+  background: var(--page-background);
   font-family: 'Pretendard', -apple-system, sans-serif;
+  padding-top: 1px;
 }
 
 .admin-content {
-  margin-top: 80px;
+  margin-top: 0; /* 헤더가 fixed가 아니므로 마진 제거 */
   padding: 2rem;
   display: flex;
   justify-content: center;
 }
 
 .admin-card {
-  background: white;
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  /* 카드 스타일: 화이트 배경, 부드러운 모서리, 은은한 그림자 */
+  background: var(--white-background);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* 은은한 그림자 */
   width: 100%;
   max-width: 900px;
   text-align: center;
 }
 
 .admin-title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
-  color: #2c3e50;
-  margin-bottom: 16px;
+  color: var(--text-dark);
+  margin-bottom: 12px;
 }
 
 .admin-welcome {
-  font-size: 18px;
-  color: #636e72;
-  margin-bottom: 40px;
+  font-size: 16px;
+  color: var(--text-subtle);
+  margin-bottom: 30px;
 }
 
 .admin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
 }
 
 .admin-menu-btn {
-  padding: 24px;
-  font-size: 18px;
-  font-weight: 700;
+  padding: 20px;
+  font-size: 17px;
+  font-weight: 600;
   color: white;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  /* 버튼 배경: 보라색 그라데이션 */
+  background: linear-gradient(135deg, var(--primary-accent), var(--primary-light));
   border: none;
-  border-radius: 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); 
 }
 
 .admin-menu-btn:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 16px 32px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px); /* 호버 시 살짝만 띄우기 */
+  box-shadow: 0 6px 15px rgba(79, 70, 229, 0.35);
+  filter: brightness(1.05);
 }
 
 .admin-loading {
-  font-size: 20px;
-  color: white;
+  font-size: 18px;
+  color: var(--text-subtle);
   padding: 40px;
+}
+
+/* --- 📱 모바일 대응 (@media) --- */
+@media (max-width: 600px) {
+  .admin-content {
+    padding: 1rem;
+  }
+  .admin-grid {
+    grid-template-columns: 1fr; 
+    gap: 15px;
+  }
 }

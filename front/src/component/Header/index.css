@@ -1,71 +1,149 @@
-/* src/components/Header/index.css */
+/* src/components/Header/index.css - Minimal White Page Header (Final, Mobile-Optimized) */
+
+:root {
+  /* 미니멀 화이트/보라 테마 변수 정의 */
+  --header-height-desktop: 80px;
+  --header-height-mobile: 60px; /* 모바일 높이 변수화 */
+  --white-background: #ffffff;
+  --light-gray: #f0f0f0; 
+  --text-dark: #1f2937; 
+  --text-subtle: #6b7280; 
+  --primary-accent: #4f46e5; 
+  --subtle-border: 1px solid #e5e7eb;
+}
+
 .global-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: linear-gradient(135deg, #2c3e50, #34495e);
-  color: white;
+  position: relative; 
+  height: var(--header-height-desktop);
+  background: var(--white-background);
+  color: var(--text-dark);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 0;
+  border-bottom: var(--subtle-border); 
+  box-shadow: none; 
   z-index: 1000;
-  font-family: 'Pretendard', sans-serif;
+  font-family: 'Pretendard', sans-serif, Arial, sans-serif;
 }
 
 .header-left, .header-right {
-  flex: 1;
   display: flex;
   align-items: center;
+  flex: 0 0 auto; 
 }
 
+.header-left {
+  justify-content: flex-start;
+  padding-left: 25px; 
+}
+
+.header-right {
+  justify-content: flex-end;
+  padding-right: 25px; 
+  gap: 15px;
+}
+
+/* 데스크톱 중앙 제목 스타일 유지 */
 .header-center {
-  flex: 2;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  max-width: 50%; /* 제목이 너무 길어서 좌우 버튼 침범 방지 */
   text-align: center;
 }
 
-.header-back-btn {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.header-back-btn:hover {
-  background: rgba(255,255,255,0.1);
-}
-
 .header-title {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
+  color: var(--text-dark);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* 텍스트가 길 경우 ... 처리 */
+  white-space: nowrap; 
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+/* --- 사용자 정보 및 버튼 스타일 (기존 유지) --- */
 
 .header-user {
-  font-size: 14px;
-  margin-right: 16px;
-  opacity: 0.9;
+  font-size: 15px;
+  color: var(--text-subtle);
+  font-weight: 400;
+  white-space: nowrap;
 }
 
+.header-back-btn,
 .header-logout-btn {
-  background: #e74c3c;
-  color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: bold;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  padding: 8px 15px;
+  border-radius: 6px;
+  background-color: var(--light-gray); 
+  color: var(--text-dark);
+  transition: background-color 0.15s ease-in-out;
 }
 
-.header-logout-btn:hover {
-  background: #c0392b;
+.header-back-btn:hover:not(:disabled),
+.header-logout-btn:hover:not(:disabled) {
+  background: #e5e5e5;
+}
+
+.header-back-btn:disabled,
+.header-logout-btn:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  background-color: var(--light-gray); 
+  color: var(--text-subtle);
+}
+
+/* --- 📱 모바일 대응 (@media) --- */
+@media (max-width: 600px) {
+  .global-header {
+    height: var(--header-height-mobile);
+  }
+  
+  .header-left { 
+    padding-left: 15px; 
+  }
+  .header-right { 
+    padding-right: 15px; 
+    gap: 10px; /* 버튼 간격 줄이기 */
+  }
+
+  /* 모바일에서 제목 중앙 정렬 해제 및 유연하게 만듦 */
+  .header-center {
+    position: relative; 
+    left: initial;
+    transform: none;
+    pointer-events: auto; /* 다시 클릭 가능하게 (혹시 모를) */
+    flex: 1; /* 남은 공간을 제목이 채우도록 */
+    text-align: center;
+    padding: 0 10px; /* 좌우 버튼과의 간격 확보 */
+    max-width: none;
+  }
+
+  .header-title { 
+    font-size: 18px; /* 모바일 제목 크기 줄이기 */
+    white-space: normal; /* 텍스트가 길면 줄바꿈 허용 */
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+  }
+
+  .header-user { 
+    display: none; /* 사용자 정보 숨기기 */
+  } 
+  
+  .header-back-btn, 
+  .header-logout-btn { 
+    font-size: 13px; 
+    padding: 6px 10px;
+  }
 }

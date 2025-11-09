@@ -4,18 +4,19 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { 
-    FaPlus, 
+import {
+    FaPlus,
     FaTrash,
-    FaSyncAlt, 
-    FaCalendarAlt, 
-    FaStore, 
-    FaFilter 
+    FaSyncAlt,
+    FaCalendarAlt,
+    FaStore,
+    FaFilter
 } from 'react-icons/fa';
 
 import './index.css';
 import { BASE_URL } from '../../config';
 import { getToken } from '../../utils/auth';
+import Header from '../Header';
 
 // SchedulePreview 컴포넌트 임포트
 import SchedulePreview from '../SchedulePreview';
@@ -131,55 +132,55 @@ function ScheduleManagement() {
         await fetchSchedules(token, storeId);
     };
 
- // src/component/schedulemanagement/index.jsx
-const handleOpenSchedule = async (e) => {
-  e.preventDefault();
-  const token = getToken();
-  if (!token) return;
+    // src/component/schedulemanagement/index.jsx
+    const handleOpenSchedule = async (e) => {
+        e.preventDefault();
+        const token = getToken();
+        if (!token) return;
 
-  if (!formData.store_id || !formData.week_start) {
-    toast.warn('매장과 시작 날짜를 선택해주세요.');
-    return;
-  }
+        if (!formData.store_id || !formData.week_start) {
+            toast.warn('매장과 시작 날짜를 선택해주세요.');
+            return;
+        }
 
-  // 1. 선택한 날짜를 UTC 0시 기준으로 변환 (하루 전 오류 방지)
-  const localDate = new Date(formData.week_start);
-  const utcDateStr = new Date(Date.UTC(
-    localDate.getFullYear(),
-    localDate.getMonth(),
-    localDate.getDate()
-  )).toISOString().split('T')[0]; // YYYY-MM-DD
+        // 1. 선택한 날짜를 UTC 0시 기준으로 변환 (하루 전 오류 방지)
+        const localDate = new Date(formData.week_start);
+        const utcDateStr = new Date(Date.UTC(
+            localDate.getFullYear(),
+            localDate.getMonth(),
+            localDate.getDate()
+        )).toISOString().split('T')[0]; // YYYY-MM-DD
 
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/api/schedules`,
-      {
-        week_start: utcDateStr,  // 정확한 월요일 날짜
-        store_id: formData.store_id
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    );
+        try {
+            const response = await axios.post(
+                `${BASE_URL}/api/schedules`,
+                {
+                    week_start: utcDateStr,  // 정확한 월요일 날짜
+                    store_id: formData.store_id
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
 
-    const { message, store_name, period } = response.data;
+            const { message, store_name, period } = response.data;
 
-    toast.success(
-      <div style={{ lineHeight: '1.5', textAlign: 'center' }}>
-        <strong>{store_name}</strong><br />
-        {period.label}<br />
-        <small>{message}</small>
-      </div>,
-      { autoClose: 4000, position: 'top-center' }
-    );
+            toast.success(
+                <div style={{ lineHeight: '1.5', textAlign: 'center' }}>
+                    <strong>{store_name}</strong><br />
+                    {period.label}<br />
+                    <small>{message}</small>
+                </div>,
+                { autoClose: 4000, position: 'top-center' }
+            );
 
-    setFormData(prev => ({ ...prev, week_start: '' }));
-    await fetchSchedules(token, selectedStoreId);
+            setFormData(prev => ({ ...prev, week_start: '' }));
+            await fetchSchedules(token, selectedStoreId);
 
-  } catch (err) {
-    handleApiError(err, '스케줄 생성 실패');
-  }
-};
+        } catch (err) {
+            handleApiError(err, '스케줄 생성 실패');
+        }
+    };
 
     const handleAutoSchedule = async (scheduleId) => {
         const token = getToken();
@@ -220,167 +221,161 @@ const handleOpenSchedule = async (e) => {
     }
 
     return (
-        <div className="schedule-management">
-            <ToastContainer
-                position="top-center"
-                autoClose={4000}
-                hideProgressBar={false}
-                newestOnTop
-                closeOnClick
-                rtl={false}
-                pauseOnFocusLoss
-                draggable
-                pauseOnHover
-                theme="colored"
-            />
+        <>
+            <Header title={
+                <>
+                    <FaCalendarAlt className="icon-calendar" />
+                    스케줄 관리
+                </>
+            } backTo="/AdminDashboard" />
 
-            <header className="header">
-                <h1 className="title">
-                    <FaCalendarAlt className="icon-calendar" /> 스케줄 관리
-                </h1>
-                <div className="user-info">
-                    <span className="username">{userName} 님</span>
-                    <button
-                        onClick={() => navigate('/AdminDashboard')}
-                        className="button-dashboard"
-                    >
-                        이전페이지
-                    </button>
-                </div>
-            </header>
+            <div className="schedule-management">
+                <ToastContainer
+                    position="top-center"
+                    autoClose={4000}
+                    hideProgressBar={false}
+                    newestOnTop
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="colored"
+                />
 
-            <section className="form-section">
-                <h2 className="section-title">
-                    <FaPlus className="icon-plus" /> 신규 스케줄 기간 오픈
-                </h2>
-                <form onSubmit={handleOpenSchedule} className="schedule-form">
-                    <div className="form-group">
-                        <label htmlFor="store_id_form" className="form-label">매장 선택</label>
-                        <select
-                            id="store_id_form"
-                            name="store_id"
-                            required
-                            value={formData.store_id}
-                            onChange={handleChange}
-                            className="form-select"
+                <section className="form-section">
+                    <h2 className="section-title">
+                        <FaPlus className="icon-plus" /> 신규 스케줄 기간 오픈
+                    </h2>
+                    <form onSubmit={handleOpenSchedule} className="schedule-form">
+                        <div className="form-group">
+                            <label htmlFor="store_id_form" className="form-label">매장 선택</label>
+                            <select
+                                id="store_id_form"
+                                name="store_id"
+                                required
+                                value={formData.store_id}
+                                onChange={handleChange}
+                                className="form-select"
+                            >
+                                <option value="" disabled>-- 매장 선택 --</option>
+                                {stores.map(store => (
+                                    <option key={store.id} value={store.id}>{store.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="week_start" className="form-label">시작 날짜 (해당 주 월요일)</label>
+                            <input
+                                type="date"
+                                id="week_start"
+                                name="week_start"
+                                required
+                                value={formData.week_start}
+                                onChange={handleChange}
+                                className="form-input"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="button-submit"
+                            disabled={stores.length === 0 || !formData.store_id}
                         >
-                            <option value="" disabled>-- 매장 선택 --</option>
-                            {stores.map(store => (
-                                <option key={store.id} value={store.id}>{store.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="week_start" className="form-label">시작 날짜 (해당 주 월요일)</label>
-                        <input
-                            type="date"
-                            id="week_start"
-                            name="week_start"
-                            required
-                            value={formData.week_start}
-                            onChange={handleChange}
-                            className="form-input"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="button-submit"
-                        disabled={stores.length === 0 || !formData.store_id}
-                    >
-                        스케줄 오픈
-                    </button>
-                </form>
-            </section>
+                            스케줄 오픈
+                        </button>
+                    </form>
+                </section>
 
-            <section className="list-section">
-                <div className="list-header">
-                    <h2 className="list-title">오픈된 스케줄 목록 ({schedules.length}개)</h2>
-                    <div className="filter-group">
-                        <FaFilter className="icon-filter" />
-                        <select
-                            value={selectedStoreId}
-                            onChange={handleStoreFilterChange}
-                            className="form-select filter-select"
-                        >
-                            <option value="">전체 매장</option>
-                            {stores.map(store => (
-                                <option key={store.id} value={store.id}>{store.name}</option>
-                            ))}
-                        </select>
+                <section className="list-section">
+                    <div className="list-header">
+                        <h2 className="list-title">오픈된 스케줄 목록 ({schedules.length}개)</h2>
+                        <div className="filter-group">
+                            <FaFilter className="icon-filter" />
+                            <select
+                                value={selectedStoreId}
+                                onChange={handleStoreFilterChange}
+                                className="form-select filter-select"
+                            >
+                                <option value="">전체 매장</option>
+                                {stores.map(store => (
+                                    <option key={store.id} value={store.id}>{store.name}</option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                </div>
 
-                <div className="table-container">
-                    <table className="schedule-table">
-                        <thead>
-                            <tr>
-                                <th><FaStore className="inline-icon" /> 매장명</th>
-                                <th><FaCalendarAlt className="inline-icon" /> 기간 (시작 ~ 종료)</th>
-                                <th>상태</th>
-                                <th className="actions-header">액션</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {schedules.length > 0 ? (
-                                schedules.map((schedule) => (
-                                    <tr key={schedule.id}>
-                                        <td data-label="매장명">{schedule.store_name}</td>
-                                        <td data-label="기간">{schedule.period?.label || schedule.date}</td>
-                                        <td data-label="상태">
-                                            <span className={`status-badge status-${schedule.status}`}>
-                                                {schedule.status === 'assigned' ? '배치 완료' :
-                                                 schedule.status === 'open' ? '신청 대기 중' :
-                                                 '마감'}
-                                            </span>
-                                        </td>
-                                        <td data-label="액션" className="actions-cell">
-                                            <button
-                                                onClick={() => handleViewDetails(schedule.id)}
-                                                className="button-action button-preview"
-                                            >
-                                                미리보기
-                                            </button>
-                                            <button
-                                                onClick={() => handleAutoSchedule(schedule.id)}
-                                                disabled={schedule.status !== 'open'}
-                                                className={`button-action button-auto-assign ${schedule.status !== 'open' ? 'disabled' : ''}`}
-                                            >
-                                                <FaSyncAlt className="inline-icon" /> 자동 배치
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteSchedule(schedule.id)}
-                                                className="button-action button-delete"
-                                            >
-                                                <FaTrash className="inline-icon" /> 삭제
-                                            </button>
+                    <div className="table-container">
+                        <table className="schedule-table">
+                            <thead>
+                                <tr>
+                                    <th><FaStore className="inline-icon" /> 매장명</th>
+                                    <th><FaCalendarAlt className="inline-icon" /> 기간 (시작 ~ 종료)</th>
+                                    <th>상태</th>
+                                    <th className="actions-header">액션</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {schedules.length > 0 ? (
+                                    schedules.map((schedule) => (
+                                        <tr key={schedule.id}>
+                                            <td data-label="매장명">{schedule.store_name}</td>
+                                            <td data-label="기간">{schedule.period?.label || schedule.date}</td>
+                                            <td data-label="상태">
+                                                <span className={`status-badge status-${schedule.status}`}>
+                                                    {schedule.status === 'assigned' ? '배치 완료' :
+                                                        schedule.status === 'open' ? '신청 대기 중' :
+                                                            '마감'}
+                                                </span>
+                                            </td>
+                                            <td data-label="액션" className="actions-cell">
+                                                <button
+                                                    onClick={() => handleViewDetails(schedule.id)}
+                                                    className="button-action button-preview"
+                                                >
+                                                    미리보기
+                                                </button>
+                                                <button
+                                                    onClick={() => handleAutoSchedule(schedule.id)}
+                                                    disabled={schedule.status !== 'open'}
+                                                    className={`button-action button-auto-assign ${schedule.status !== 'open' ? 'disabled' : ''}`}
+                                                >
+                                                    <FaSyncAlt className="inline-icon" /> 자동 배치
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteSchedule(schedule.id)}
+                                                    className="button-action button-delete"
+                                                >
+                                                    <FaTrash className="inline-icon" /> 삭제
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="no-schedules">
+                                            오픈된 스케줄이 없습니다.
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4" className="no-schedules">
-                                        오픈된 스케줄이 없습니다.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            {/* 미리보기 모달 (tbody 밖으로 이동) */}
-            {previewId && (
-                <div className="modal-overlay" onClick={() => setPreviewId(null)}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setPreviewId(null)}>×</button>
-                        <SchedulePreview 
-                            scheduleId={previewId} 
-                            onClose={() => setPreviewId(null)} 
-                        />
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-            )}
-        </div>
+                </section>
+
+                {/* 미리보기 모달 (tbody 밖으로 이동) */}
+                {previewId && (
+                    <div className="modal-overlay" onClick={() => setPreviewId(null)}>
+                        <div className="modal-content" onClick={e => e.stopPropagation()}>
+                            <button className="modal-close" onClick={() => setPreviewId(null)}>×</button>
+                            <SchedulePreview
+                                scheduleId={previewId}
+                                onClose={() => setPreviewId(null)}
+                            />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
     );
 }
 

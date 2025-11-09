@@ -7,6 +7,7 @@ import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
 import { getToken, removeToken } from '../../utils/auth';
+import Header from '../Header'; 
 import './index.css';
 
 function RequestsList() {
@@ -113,23 +114,12 @@ function RequestsList() {
   };
 
   return (
+    <>
+    <Header title="건의사항" backTo="/AdminDashboard"/>
     <div className="suggestion-container">
       <div className="suggestion-bg-overlay" />
       
       <div className="suggestion-card">
-        <div className="suggestion-header">
-          <button className="suggestion-back-button" onClick={() => navigate(-1)}>
-            이전
-          </button>
-          <h1 className="suggestion-title">건의사항</h1>
-          <div className="suggestion-user-info">
-            <span>{userName}님 ({getLevelText(userLevel)})</span>
-            <button className="suggestion-logout-button" onClick={handleLogout}>
-              로그아웃
-            </button>
-          </div>
-        </div>
-
         {/* 매장관리자 이상만 매장 필터 표시 */}
         {userLevel >= 2 && (
           <div className="suggestion-store-selector">
@@ -183,6 +173,7 @@ function RequestsList() {
 
       <ToastContainer position="top-center" theme="colored" autoClose={4000} />
     </div>
+    </>
   );
 }
 
