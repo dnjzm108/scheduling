@@ -70,16 +70,26 @@ router.get('/employees', authMiddleware, storeAdmin, async (req, res) => {
 // 3. 승인 대기 (level 0)
 router.get('/pending-users', authMiddleware, storeAdmin, async (req, res) => {
   try {
-    const [rows] = await pool(req).query(
-      `SELECT id, name, userId, phone, signup_date AS created_at 
-       FROM users WHERE level = 0`
-    );
+    const [rows] = await pool(req).query(`
+      SELECT 
+        u.id, 
+        u.name, 
+        u.userId, 
+        u.phone, 
+        u.signup_date AS created_at,
+        u.store_id,
+        s.name AS store_name
+      FROM users u
+      LEFT JOIN stores s ON u.store_id = s.id
+      WHERE u.level = 0
+    `);
+    
     res.json(rows);
   } catch (err) {
+    console.error('승인 대기 조회 실패:', err);
     res.status(500).json({ message: '승인 대기 조회 실패' });
   }
 });
-
 // 4. 관리자 목록 (level 2~3)
 router.get('/admins', authMiddleware, globalAdmin, async (req, res) => {
   const { store_id } = req.query;

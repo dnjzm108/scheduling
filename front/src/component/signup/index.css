@@ -1,4 +1,8 @@
 /* index.css (회원가입 페이지 - SignUp 컴포넌트용) */
+* {
+    box-sizing: border-box;
+}
+
 /* --- 전체 배경 및 컨테이너 --- */
 .signup-container {
     display: flex;
@@ -6,105 +10,106 @@
     align-items: center;
     min-height: 100vh;
     padding: 1rem;
-    background-color: #e0e7ff; /* 연한 인디고 배경 (로그인 페이지와 통일) */
-    font-family: Arial, sans-serif;
+    background-color:#e0e7ff; /* 밝은 회색 계열 배경 */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .signup-bg-overlay {
-    /* 배경 오버레이는 사용하지 않으므로 투명 처리 */
-    display: none; 
+    display: none;
 }
 
 /* --- 회원가입 카드 --- */
 .signup-card {
     background-color: #fff;
-    padding: 2rem;
+    padding: 2.5rem 2rem; /* 패딩 증가 */
     border-radius: 1rem;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* 그림자 강조 */
     width: 100%;
-    max-width: 450px; /* 로그인보다 약간 넓게 설정 가능 */
+    max-width: 480px; /* 적당한 크기 */
 }
 
-.signup-header {
+/* 회원가입 타이틀 추가 (JSX에 없지만 가이드라인에 따라 추가) */
+.signup-card::before {
+    content: "회원가입";
+    display: block;
     text-align: center;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1e3a8a; /* 짙은 파랑 계열 */
     margin-bottom: 2rem;
-}
-
-.signup-title {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #4f46e5; /* 인디고 메인 색상 */
-    margin: 0;
-}
-
-.signup-subtitle {
-    font-size: 1rem;
-    color: #6b7280;
-    margin-top: 0.5rem;
 }
 
 /* --- 폼 및 입력 필드 --- */
 .signup-form {
     display: flex;
     flex-direction: column;
-    gap: 1rem; /* 간격 축소 */
+    gap: 1.25rem; /* 간격 충분히 확보 */
 }
 
 .signup-input-group {
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
-.signup-label {
+.signup-input-group label {
     font-weight: 600;
-    margin-bottom: 0.3rem;
-    color: #333;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
     font-size: 0.95rem;
 }
 
 .signup-input,
-.signup-select {
-    padding: 0.75rem 1rem;
-    border: 1px solid #ccc;
+.signup-input-group input:not([type="checkbox"]),
+.signup-input-group select {
+    padding: 0.8rem 1rem;
+    border: 1px solid #cbd5e0;
     border-radius: 0.5rem;
     font-size: 1rem;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
 }
 
 .signup-input:focus,
-.signup-select:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+.signup-input-group input:focus:not([type="checkbox"]),
+.signup-input-group select:focus {
+    border-color: #4c51bf; /* 짙은 인디고 */
+    box-shadow: 0 0 0 3px rgba(76, 81, 191, 0.1);
     outline: none;
 }
 
 .signup-input-error {
-    border-color: #ef4444 !important; /* 빨간색 경고 테두리 */
+    border-color: #e53e3e !important;
 }
 
 /* --- 상태 메시지 (아이디 중복, 비밀번호 불일치) --- */
-.signup-success {
+.signup-success,
+.signup-error {
     font-size: 0.85rem;
-    color: #10b981; /* 녹색 */
-    margin-top: 0.25rem;
+    margin-top: 0.3rem;
+    padding-left: 0.2rem;
+    transition: all 0.3s ease;
+}
+
+.signup-success {
+    color: #38a169; /* 진한 녹색 */
+    font-weight: 600;
 }
 
 .signup-error {
-    font-size: 0.85rem;
-    color: #ef4444; /* 빨간색 */
-    margin-top: 0.25rem;
-    font-weight: 500;
+    color: #e53e3e; /* 진한 빨강 */
+    font-weight: 600;
 }
 
-/* --- 매장 로딩 --- */
+/* --- 매장 로딩/선택 필드 --- */
 .signup-loading {
     padding: 0.75rem 1rem;
     font-size: 1rem;
-    color: #6b7280;
+    color: #718096;
     text-align: center;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
-    background-color: #f9fafb;
+    background-color: #f7fafc;
 }
 
 /* --- 동의 체크박스 그룹 --- */
@@ -112,8 +117,8 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    padding: 0.75rem 0;
-    border-top: 1px solid #eee;
+    padding: 1rem 0;
+    border-top: 1px solid #e2e8f0;
 }
 
 .signup-checkbox {
@@ -121,14 +126,15 @@
     align-items: center;
     cursor: pointer;
     font-size: 0.95rem;
-    color: #444;
+    color: #4a5568;
 }
 
 .signup-checkbox input[type="checkbox"] {
-    margin-right: 0.5rem;
-    width: 1rem;
-    height: 1rem;
-    accent-color: #4f46e5; /* 체크박스 색상 */
+    margin-right: 0.6rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #4c51bf;
+    min-width: 1.1rem; /* 모바일에서 깨짐 방지 */
 }
 
 /* --- 가입 버튼 --- */
@@ -136,29 +142,38 @@
     padding: 1rem;
     border: none;
     border-radius: 0.5rem;
-    background-color: #4f46e5;
+    background-color: #4c51bf; /* 짙은 인디고 */
     color: #fff;
     font-size: 1.1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.2s, opacity 0.2s;
+    transition: background-color 0.2s, box-shadow 0.2s;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
+    box-shadow: 0 4px 6px rgba(76, 81, 191, 0.2);
 }
 
 .signup-button:hover:not(:disabled) {
-    background-color: #4338ca;
+    background-color: #434190;
+    box-shadow: 0 6px 8px rgba(76, 81, 191, 0.3);
 }
 
 .signup-button:disabled {
-    background-color: #a5b4fc;
+    background-color: #a0aec0; /* 회색 비활성화 */
     cursor: not-allowed;
+    box-shadow: none;
 }
 
-/* --- 로딩 스피너 (로그인 페이지와 동일) --- */
+/* --- 로딩 스피너 (JSX에 '가입 중...' 텍스트만 있으므로 스피너 스타일은 유지) --- */
+.signup-button.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+/* 스피너 스타일 (JSX에 사용되는 경우를 대비) */
 .signup-spinner {
     border: 3px solid rgba(255, 255, 255, 0.3);
     border-top: 3px solid #fff;
@@ -176,15 +191,15 @@
 /* --- 로그인 링크 --- */
 .signup-login-link {
     text-align: center;
-    margin-top: 1.5rem;
+    margin-top: 2rem;
     font-size: 0.95rem;
-    color: #6b7280;
+    color: #718096;
 }
 
 .signup-login-link a {
-    color: #4f46e5;
+    color: #4c51bf;
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .signup-login-link a:hover {
@@ -194,14 +209,29 @@
 /* --- 📱 모바일 대응 (@media) --- */
 @media (max-width: 500px) {
     .signup-container {
-        padding: 0.5rem;
+        padding: 0; /* 모바일에서 전체 너비 사용 */
     }
 
     .signup-card {
-        padding: 1.5rem 1rem;
+        padding: 1.5rem;
+        border-radius: 0; /* 모바일에서는 모서리 둥글게 하지 않음 */
+        box-shadow: none;
+        min-height: 100vh; /* 전체 화면 사용 */
+        max-width: 100%;
+    }
+    
+    .signup-card::before {
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .signup-input-group {
+        gap: 0.3rem;
     }
 
-    .signup-title {
-        font-size: 1.5rem;
+    .signup-input,
+    .signup-input-group input:not([type="checkbox"]),
+    .signup-input-group select {
+        padding: 0.7rem 0.8rem;
     }
 }

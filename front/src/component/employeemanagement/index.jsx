@@ -12,7 +12,7 @@ import './index.css';
 function EmployeeManagement() {
   const navigate = useNavigate();
   const isProcessing = useRef(false);
-  const hasLoaded = useRef(false); // 중복 로드 방지
+  const hasLoaded = useRef(false);
 
   const [userInfo, setUserInfo] = useState({ level: 0, store_id: null });
   const [employees, setEmployees] = useState([]);
@@ -25,7 +25,7 @@ function EmployeeManagement() {
 
   const getLevelText = (level) => ['승인대기', '직원', '매장관리자', '총관리자'][level] || '알 수 없음';
 
-  // 딱 한 번만 로드
+  // 첫 로드 1회만
   useEffect(() => {
     if (hasLoaded.current) return;
     hasLoaded.current = true;
@@ -36,7 +36,7 @@ function EmployeeManagement() {
       return setTimeout(() => navigate('/'), 2000);
     }
 
-    const fetchAll = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
         const [userRes, empRes, storeRes, pendingRes] = await Promise.all([
@@ -51,14 +51,13 @@ function EmployeeManagement() {
         setStores(storeRes.data || []);
         setPendingUsers(pendingRes.data || []);
 
-        // 승인대기 0명이면 자동으로 직원 탭
-        if (pendingRes.data?.length === 0) {
-          setActiveTab('employees');
+        if (pendingRes.data?.length > 0) {
+          setActiveTab('pending');
         }
       } catch (err) {
         if (!axios.isCancel(err)) {
-          toast.error('데이터 로드 실패');
-          if (err.response?.status === 401) {
+          toast.error(err.response?.data?.message || '데이터 로드 실패');
+          if (err.response?.status === 401 || err.response?.status === 403) {
             removeToken();
             navigate('/');
           }
@@ -68,10 +67,16 @@ function EmployeeManagement() {
       }
     };
 
-    fetchAll();
+    loadData();
   }, [navigate]);
 
-  // 필터링된 직원
+  // 매장 필터링된 승인대기자
+  const filteredPendingUsers = pendingUsers.filter(u => {
+    if (selectedStore === 'all') return true;
+    return u.store_id === parseInt(selectedStore);
+  });
+
+  // 매장 필터링된 직원
   const visibleEmployees = employees
     .filter(e => e.level >= 1)
     .filter(e => userInfo.level === 2 ? e.store_id === userInfo.store_id : true)
@@ -88,7 +93,10 @@ function EmployeeManagement() {
       setPendingUsers(prev => prev.filter(u => u.id !== id));
       setEmployees(prev => [...prev, { ...user, level: 1 }]);
       toast.success('승인 완료');
-      if (pendingUsers.length === 1) setActiveTab('employees');
+
+      if (filteredPendingUsers.length === 1) {
+        setActiveTab('employees');
+      }
     } catch (err) {
       if (!axios.isCancel(err)) toast.error(err.response?.data?.message || '승인 실패');
     } finally {
@@ -98,15 +106,17 @@ function EmployeeManagement() {
 
   // 거부
   const handleReject = async (id) => {
-    if (!window.confirm('거부하시겠습니까?')) return;
-    if (isProcessing.current) return;
+    if (isProcessing.current || !window.confirm('거부하시겠습니까?')) return;
     isProcessing.current = true;
 
     try {
       await api.put(`/api/user/${id}/reject`);
       setPendingUsers(prev => prev.filter(u => u.id !== id));
       toast.success('거부 완료');
-      if (pendingUsers.length === 1) setActiveTab('employees');
+
+      if (filteredPendingUsers.length === 1) {
+        setActiveTab('employees');
+      }
     } catch (err) {
       if (!axios.isCancel(err)) toast.error(err.response?.data?.message || '거부 실패');
     } finally {
@@ -160,13 +170,17 @@ function EmployeeManagement() {
 
   // 삭제
   const handleDelete = async (id) => {
-    if (!window.confirm('삭제하시겠습니까?')) return;
+    if (isProcessing.current || !window.confirm('삭제하시겠습니까?')) return;
+    isProcessing.current = true;
+
     try {
       await api.delete(`/api/user/${id}`);
       setEmployees(prev => prev.filter(e => e.id !== id));
       toast.success('삭제 완료');
     } catch (err) {
       toast.error(err.response?.data?.message || '삭제 실패');
+    } finally {
+      isProcessing.current = false;
     }
   };
 
@@ -182,25 +196,27 @@ function EmployeeManagement() {
             <div className="emp-filter">
               <select value={selectedStore} onChange={e => setSelectedStore(e.target.value)}>
                 <option value="all">모든 매장</option>
-                {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                {stores.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
               </select>
             </div>
           )}
 
-          {/* 탭 */}
+          {/* 탭 - 선택된 탭 색상 강조 */}
           <div className="emp-tabs">
             <button
-              className={`emp-tab ${activeTab === 'employees' ? 'active' : ''}`}
+              className={`emp-tab ${activeTab === 'employees' ? 'emp-tab-active' : ''}`}
               onClick={() => setActiveTab('employees')}
             >
               직원 목록 ({visibleEmployees.length})
             </button>
             <button
-              className={`emp-tab ${activeTab === 'pending' ? 'active' : ''}`}
+              className={`emp-tab ${activeTab === 'pending' ? 'emp-tab-active' : ''}`}
               onClick={() => setActiveTab('pending')}
-              disabled={pendingUsers.length === 0}
+              disabled={filteredPendingUsers.length === 0}
             >
-              승인 대기 ({pendingUsers.length})
+              승인 대기 ({filteredPendingUsers.length})
             </button>
           </div>
 
@@ -214,7 +230,9 @@ function EmployeeManagement() {
                 <input value={editing.data.phone} onChange={e => setEditing(p => ({ ...p, data: { ...p.data, phone: e.target.value } }))} placeholder="전화번호" required />
                 <select value={editing.data.store_id || ''} onChange={e => setEditing(p => ({ ...p, data: { ...p.data, store_id: parseInt(e.target.value) || null } }))}>
                   <option value="">매장 선택</option>
-                  {stores.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  {stores.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
                 </select>
                 <div className="emp-form-actions">
                   <button type="submit">저장</button>
@@ -230,26 +248,29 @@ function EmployeeManagement() {
                 </div>
               </form>
             )
-          ) : activeTab === 'pending' && pendingUsers.length > 0 ? (
-            <div className="emp-list">
-              {pendingUsers.map(u => (
-                <div key={u.id} className="emp-item pending">
-                  <div className="emp-info">
-                    <div>{u.name} ({u.userId})</div>
-                    <div>전화: {u.phone}</div>
-                    <div>가입: {new Date(u.created_at).toLocaleDateString()}</div>
+          ) : activeTab === 'pending' ? (
+            filteredPendingUsers.length > 0 ? (
+              <div className="emp-list">
+                {filteredPendingUsers.map(u => (
+                  <div key={u.id} className="emp-item pending">
+                    <div className="emp-info">
+                      <div>{u.name} ({u.userId})</div>
+                      <div>전화: {u.phone}</div>
+                      <div>매장: {stores.find(s => s.id === u.store_id)?.name || '없음'}</div>
+                      <div>가입: {new Date(u.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <div className="emp-actions">
+                      <button onClick={() => handleApprove(u.id)}>승인</button>
+                      <button onClick={() => handleReject(u.id)} className="delete">거부</button>
+                    </div>
                   </div>
-                  <div className="emp-actions">
-                    <button onClick={() => handleApprove(u.id)}>승인</button>
-                    <button onClick={() => handleReject(u.id)} className="delete">거부</button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="emp-no-data">선택한 매장의 승인 대기 인원이 없습니다.</p>
+            )
           ) : visibleEmployees.length === 0 ? (
-            <p className="emp-no-data">
-              {activeTab === 'pending' ? '승인 대기 인원이 없습니다.' : '표시할 직원이 없습니다.'}
-            </p>
+            <p className="emp-no-data">선택한 매장의 직원이 없습니다.</p>
           ) : (
             <div className="emp-list">
               {visibleEmployees.map(emp => (

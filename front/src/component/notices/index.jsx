@@ -1,17 +1,20 @@
 // src/component/notices/index.jsx
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
-import { jwtDecode } from 'jwt-decode';
 import 'react-toastify/dist/ReactToastify.css';
-import { BASE_URL } from '../../config';
+import Header from '../Header';
+import api from '../../utils/api';
+import axios from 'axios';
 import { getToken, removeToken } from '../../utils/auth';
-import Header from '../Header'; 
+import { jwtDecode } from 'jwt-decode';
 import './index.css';
 
 function Notices() {
   const navigate = useNavigate();
+  const isProcessing = useRef(false);
+  const hasLoaded = useRef(false); // 첫 로드 1회만
+
   const [notices, setNotices] = useState([]);
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState('');
@@ -19,94 +22,93 @@ function Notices() {
   const [userName, setUserName] = useState('');
   const [userLevel, setUserLevel] = useState(0);
   const [expandedId, setExpandedId] = useState(null);
-  const errorShown = useRef({});
 
-  const showErrorOnce = useCallback((key, msg) => {
-    if (!errorShown.current[key]) {
-      errorShown.current[key] = true;
-      toast.error(msg);
-      setTimeout(() => errorShown.current[key] = false, 3000);
-    }
-  }, []);
+  // 첫 로드 1회만 실행
+  useEffect(() => {
+    if (hasLoaded.current) return;
+    hasLoaded.current = true;
 
-  const fetchNotices = useCallback(async (storeId = '') => {
     const token = getToken();
-    if (!token) return;
+    if (!token) {
+      toast.error('로그인 필요');
+      return setTimeout(() => navigate('/'), 2000);
+    }
 
-    setLoading(true);
+    let decoded;
     try {
-      const url = `${BASE_URL}/api/notices${storeId ? `?store_id=${storeId}` : ''}`;
-      const { data } = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
-      setNotices(data.map(n => ({
+      decoded = jwtDecode(token);
+      setUserName(decoded.name || '사용자');
+      setUserLevel(decoded.level || 0);
+    } catch (err) {
+      toast.error('세션 만료');
+      removeToken();
+      return setTimeout(() => navigate('/'), 2000);
+    }
+
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const requests = [
+          api.get('/api/notices')
+        ];
+
+        if (decoded.level >= 2) {
+          requests.push(api.get('/api/stores'));
+        }
+
+        const [noticesRes, storesRes] = await Promise.all(requests);
+
+        setNotices((noticesRes.data || []).map(n => ({
+          ...n,
+          attachments: n.attachments ? JSON.parse(n.attachments) : []
+        })));
+
+        if (storesRes) {
+          setStores(storesRes.data || []);
+        }
+      } catch (err) {
+        if (!axios.isCancel(err)) {
+          toast.error('데이터 로드 실패');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [navigate]);
+
+  // 매장 변경 시 공지사항만 재요청
+  const handleStoreChange = async (e) => {
+    const storeId = e.target.value;
+    setSelectedStore(storeId);
+
+    try {
+      // const url = `${BASE_URL}/api/notices${storeId ? `?store_id=${storeId}` : ''}`;
+      const { data } = await api.get(`/api/notices${storeId ? `?store_id=${storeId}` : ''}`);
+      setNotices((data || []).map(n => ({
         ...n,
         attachments: n.attachments ? JSON.parse(n.attachments) : []
       })));
     } catch (err) {
-      showErrorOnce('notices', '공지사항 로드 실패');
-    } finally {
-      setLoading(false);
+      if (!axios.isCancel(err)) toast.error('공지사항 로드 실패');
     }
-  }, [showErrorOnce]);
-
-  const fetchStores = useCallback(async () => {
-    const token = getToken();
-    if (!token) return;
-
-    try {
-      const { data } = await axios.get(`${BASE_URL}/api/stores`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setStores(data);
-    } catch (err) {
-      showErrorOnce('stores', '매장 목록 로드 실패');
-    }
-  }, [showErrorOnce]);
-
-  useEffect(() => {
-    const token = getToken();
-    if (!token) {
-      showErrorOnce('auth', '로그인 필요');
-      return setTimeout(() => navigate('/'), 2000);
-    }
-
-    try {
-      const decoded = jwtDecode(token);
-      setUserName(decoded.name || '사용자');
-      setUserLevel(decoded.level || 0);
-
-      if (decoded.level >= 2) fetchStores(); // 매장관리자 이상
-      fetchNotices();
-    } catch (err) {
-      showErrorOnce('token', '세션 만료');
-      removeToken();
-      setTimeout(() => navigate('/'), 2000);
-    }
-  }, [navigate, fetchNotices, fetchStores, showErrorOnce]);
-
-  const handleStoreChange = (e) => {
-    const storeId = e.target.value;
-    setSelectedStore(storeId);
-    fetchNotices(storeId);
   };
 
+  // 삭제 (중복 방지)
   const handleDelete = async (id) => {
-    if (!window.confirm('정말 삭제하시겠습니까?')) return;
-    const token = getToken();
+    if (isProcessing.current || !window.confirm('정말 삭제하시겠습니까?')) return;
+    isProcessing.current = true;
+
     try {
-      await axios.delete(`${BASE_URL}/api/notices/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/api/notices/${id}`);
       setNotices(prev => prev.filter(n => n.id !== id));
       toast.success('삭제 완료');
     } catch (err) {
-      showErrorOnce(`delete-${id}`, '삭제 실패');
+      if (!axios.isCancel(err)) toast.error('삭제 실패');
+    } finally {
+      isProcessing.current = false;
     }
-  };
-
-  const handleLogout = () => {
-    removeToken();
-    toast.success('로그아웃');
-    navigate('/');
   };
 
   const getLevelText = (level) => {
@@ -116,84 +118,90 @@ function Notices() {
 
   return (
     <>
-    <Header title="공지사항" backTo="/AdminDashboard" />
-    <div className="notices-container">
-      <main className="notices-main-content">
+      <Header title="공지사항" backTo="/AdminDashboard" />
 
-        {userLevel >= 2 && (
-          <button
-            className="notices-create-button"
-            onClick={() => navigate('/NoticeCreate')}
-          >
-            공지사항 작성
-          </button>
-        )}
+      <div className="page-with-header">
+        <div className="notices-container">
+          <main className="notices-main-content">
 
-        {userLevel >= 2 && (
-          <div className="notices-store-selector">
-            <select value={selectedStore} onChange={handleStoreChange}>
-              <option value="">모든 매장</option>
-              {stores.map(s => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {loading ? (
-          <p className="notices-loading">로딩 중...</p>
-        ) : notices.length === 0 ? (
-          <p className="notices-no-notices">공지사항이 없습니다.</p>
-        ) : (
-          <ul className="notices-list">
-            {notices.map(notice => (
-              <li
-                key={notice.id}
-                className={`notices-item ${expandedId === notice.id ? 'expanded' : ''}`}
-                onClick={() => setExpandedId(expandedId === notice.id ? null : notice.id)}
+            {/* 작성 버튼 */}
+            {userLevel >= 2 && (
+              <button
+                className="notices-create-button"
+                onClick={() => navigate('/NoticeCreate')}
               >
-                <h3>{notice.title}</h3>
-                {expandedId === notice.id && (
-                  <div className="notices-details">
-                    <p>{notice.body}</p>
-                    {notice.attachments.map((url, i) => (
-                      <img key={i} src={url} alt={`첨부 ${i + 1}`} className="notices-attachment" />
-                    ))}
-                    <p>
-                      작성자: {notice.author_name} |{' '}
-                      {new Date(notice.published_at).toLocaleDateString('ko-KR')}
-                    </p>
-                    {userLevel >= 2 && (
-                      <div className="notices-admin-actions">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/notice-edit/${notice.id}`);
-                          }}
-                        >
-                          수정
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(notice.id);
-                          }}
-                          className="notices-delete-button"
-                        >
-                          삭제
-                        </button>
+                공지사항 작성
+              </button>
+            )}
+
+            {/* 매장 선택 */}
+            {userLevel >= 2 && stores.length > 0 && (
+              <div className="notices-store-selector">
+                <select value={selectedStore} onChange={handleStoreChange}>
+                  <option value="">모든 매장</option>
+                  {stores.map(s => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 로딩 */}
+            {loading ? (
+              <p className="notices-loading">로딩 중...</p>
+            ) : notices.length === 0 ? (
+              <p className="notices-no-notices">공지사항이 없습니다.</p>
+            ) : (
+              <ul className="notices-list">
+                {notices.map(notice => (
+                  <li
+                    key={notice.id}
+                    className={`notices-item ${expandedId === notice.id ? 'expanded' : ''}`}
+                    onClick={() => setExpandedId(expandedId === notice.id ? null : notice.id)}
+                  >
+                    <h3>{notice.title}</h3>
+                    {expandedId === notice.id && (
+                      <div className="notices-details">
+                        <p>{notice.body}</p>
+                        {notice.attachments.map((url, i) => (
+                          <img key={i} src={url} alt={`첨부 ${i + 1}`} className="notices-attachment" />
+                        ))}
+                        <p>
+                          작성자: {notice.author_name} |{' '}
+                          {new Date(notice.published_at).toLocaleDateString('ko-KR')}
+                        </p>
+                        {userLevel >= 2 && (
+                          <div className="notices-admin-actions">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/notice-edit/${notice.id}`);
+                              }}
+                            >
+                              수정
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(notice.id);
+                              }}
+                              className="notices-delete-button"
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </main>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </main>
+        </div>
+      </div>
 
       <ToastContainer position="top-center" theme="colored" autoClose={4000} />
-    </div>
     </>
   );
 }

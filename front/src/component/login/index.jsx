@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
@@ -12,17 +12,15 @@ function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ userId: '', password: '' });
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  
+  // 중복 제출 방지
+  const isSubmitting = useRef(false);
 
-  // 한국어 에러 매핑
-  const getErrorMessage = (msg) => {
-    const map = {
-      '존재하지 않는 아이디입니다.': '존재하지 않는 아이디입니다.',
-      '비밀번호가 틀립니다.': '비밀번호를 확인해주세요.',
-      '관리자 승인 대기 중입니다.': '관리자 승인 후 로그인 가능합니다.',
-      '관리자에게 승인을 요청하세요.': '관리자 승인 대기 중입니다.'
-    };
-    return map[msg] || msg;
+  const errorMap = {
+    '존재하지 않는 아이디입니다.': '존재하지 않는 아이디입니다.',
+    '비밀번호가 틀립니다.': '비밀번호를 확인해주세요.',
+    '관리자 승인 대기 중입니다.': '관리자 승인 후 로그인 가능합니다.',
+    '관리자에게 승인을 요청하세요.': '관리자 승인 대기 중입니다.'
   };
 
   const handleChange = (e) => {
@@ -32,45 +30,44 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    
+    // 연타 방지
+    if (isSubmitting.current) return;
+    isSubmitting.current = true;
     setError('');
 
-    if (!formData.userId.trim() || !formData.password.trim()) {
+    const { userId, password } = formData;
+    if (!userId.trim() || !password.trim()) {
       toast.error('아이디와 비밀번호를 입력해주세요.');
-      setLoading(false);
+      isSubmitting.current = false;
       return;
     }
 
     try {
-      const response = await axios.post(`${BASE_URL}/api/auth/login`, formData, {
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const { data } = await axios.post(`${BASE_URL}/api/auth/login`, 
+        { userId, password },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
 
-      const { token, user } = response.data;
+      const { token, user } = data;
       setToken(token);
-
       toast.success('로그인 성공!');
 
-      // level 기반 페이지 이동
+      // 1.5초 후 이동
       setTimeout(() => {
-        if (user.level >= 3) {
-          navigate('/AdminDashboard');           // 총관리자
-        } else if (user.level === 2) {
-          navigate('/ScheduleManagement');       // 매장관리자
-        } else if (user.level === 1) {
-          navigate('/myschedules');              // 직원
-        } else {
-          navigate('/myschedules');              // level 0도 일단 직원 페이지
-        }
+        const path = user.level >= 3 ? '/AdminDashboard'
+                   : user.level === 2 ? '/ScheduleManagement'
+                   : '/myschedules';
+        navigate(path, { replace: true });
       }, 1500);
 
     } catch (err) {
-      const backendMsg = err.response?.data?.message || '로그인 실패';
-      const userMsg = getErrorMessage(backendMsg);
+      const msg = err.response?.data?.message || '로그인 실패';
+      const userMsg = errorMap[msg] || msg;
       setError(userMsg);
       toast.error(userMsg);
     } finally {
-      setLoading(false);
+      isSubmitting.current = false;
     }
   };
 
@@ -94,7 +91,7 @@ function Login() {
               onChange={handleChange}
               className="login-input"
               placeholder="아이디를 입력하세요"
-              disabled={loading}
+              disabled={isSubmitting.current}
               autoComplete="username"
             />
           </div>
@@ -108,23 +105,19 @@ function Login() {
               onChange={handleChange}
               className="login-input"
               placeholder="비밀번호를 입력하세요"
-              disabled={loading}
+              disabled={isSubmitting.current}
               autoComplete="current-password"
             />
           </div>
 
-          {error && (
-            <div className="login-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="login-error">{error}</div>}
 
           <button
             type="submit"
-            disabled={loading}
-            className={`login-button ${loading ? 'login-loading' : ''}`}
+            disabled={isSubmitting.current}
+            className={`login-button ${isSubmitting.current ? 'login-loading' : ''}`}
           >
-            {loading ? (
+            {isSubmitting.current ? (
               <>
                 <div className="login-spinner" />
                 로그인 중...
@@ -140,18 +133,7 @@ function Login() {
         </p>
       </div>
 
-      <ToastContainer
-        position="top-center"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="colored"
-      />
+      <ToastContainer theme="colored" position="top-center" autoClose={3000} />
     </div>
   );
 }
