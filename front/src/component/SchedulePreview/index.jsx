@@ -22,7 +22,15 @@ function SchedulePreview({ scheduleId, onClose }) {
         ]);
 
         setScheduleInfo(infoRes.data);
-        setApplicants(applicantsRes.data);
+
+        // 입사일 순으로 정렬 (hire_date 오름차순)
+        const sortedApplicants = (applicantsRes.data || []).sort((a, b) => {
+          if (!a.hire_date) return 1;
+          if (!b.hire_date) return -1;
+          return a.hire_date.localeCompare(b.hire_date);
+        });
+
+        setApplicants(sortedApplicants);
       } catch (err) {
         console.error(err);
       } finally {
@@ -36,8 +44,6 @@ function SchedulePreview({ scheduleId, onClose }) {
   const exportToExcel = () => {
     const data = applicants.map(a => ({
       이름: a.name,
-      아이디: a.userId,
-      전화번호: a.phone,
       월: formatDay(a.mon_type, a.mon_start, a.mon_end),
       화: formatDay(a.tue_type, a.tue_start, a.tue_end),
       수: formatDay(a.wed_type, a.wed_start, a.wed_end),
@@ -49,6 +55,14 @@ function SchedulePreview({ scheduleId, onClose }) {
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(data);
+    
+    // 열 너비 조정
+    ws['!cols'] = [
+      { wch: 10 }, { wch: 15 }, { wch: 15 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }
+    ];
+
     XLSX.utils.book_append_sheet(wb, ws, scheduleInfo.week_start);
     
     const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -56,10 +70,11 @@ function SchedulePreview({ scheduleId, onClose }) {
     saveAs(blob, `${scheduleInfo.store_name}_${scheduleInfo.week_start}_신청내역.xlsx`);
   };
 
+  // 휴무는 빈칸으로 반환
   const formatDay = (type, start, end) => {
     if (type === 'full') return '풀타임';
     if (type === 'part') return `${start?.slice(0,5)}~${end?.slice(0,5)}`;
-    return '휴무';
+    return ''; // 휴무 → 빈칸
   };
 
   if (loading) return <div className="preview-loading">로딩 중...</div>;

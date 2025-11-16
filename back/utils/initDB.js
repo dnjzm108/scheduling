@@ -72,7 +72,7 @@ async function createTable(conn, name, schema) {
   console.log(`${name} 테이블 생성`);
 }
 
-// --- 모든 스키마 정의 (누락 없음!) ---
+//회원 정보
 const usersSchema = `CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(50) NOT NULL,
@@ -82,10 +82,12 @@ const usersSchema = `CREATE TABLE IF NOT EXISTS users (
   phone CHAR(11) UNIQUE,
   store_id INT,
   level TINYINT(1) DEFAULT 0 COMMENT '0:미승인, 1:직원, 2:매장관리자, 3:총관리자',
+  hire_date CHAR(6) DEFAULT NULL COMMENT '입사일 (YYMMDD 형식, 예: 251116)',
   signup_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   consent_records JSON,
   INDEX idx_userId (userId),
-  INDEX idx_store (store_id)
+  INDEX idx_store (store_id),
+  INDEX idx_hire_date (hire_date)  -- 입사일 순 정렬용 인덱스
 )`;
 
 const storesSchema = `CREATE TABLE IF NOT EXISTS stores (

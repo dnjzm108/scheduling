@@ -575,7 +575,7 @@ router.get('/open', authMiddleware, async (req, res) => {
   }
 });
 
-// server/routes/schedule.js
+
 // server/routes/schedule.js
 router.get('/:id', authMiddleware, async (req, res) => {
   try {
@@ -618,6 +618,7 @@ router.get('/:id/applicants', authMiddleware, async (req, res) => {
         u.name,
         u.userId,
         u.phone,
+        u.hire_date,  -- 입사일 추가
         sr.mon_type, sr.mon_start, sr.mon_end,
         sr.tue_type, sr.tue_start, sr.tue_end,
         sr.wed_type, sr.wed_start, sr.wed_end,
@@ -628,11 +629,14 @@ router.get('/:id/applicants', authMiddleware, async (req, res) => {
       FROM schedule_requests sr
       JOIN users u ON sr.user_id = u.id
       WHERE sr.schedule_id = ?
-      ORDER BY u.name
+      ORDER BY 
+        u.hire_date ASC,  -- 입사일 빠를수록 위
+        u.name ASC        -- 입사일 같으면 이름순
     `, [id]);
 
     res.json(rows);
   } catch (err) {
+    console.error('신청자 조회 오류:', err);
     res.status(500).json({ message: '신청자 조회 실패' });
   }
 });

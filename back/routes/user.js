@@ -53,7 +53,7 @@ router.get('/', authMiddleware, async (req, res) => {
 router.get('/employees', authMiddleware, storeAdmin, async (req, res) => {
   const { store_id } = req.query;
   try {
-    let sql = `SELECT id, name, userId, phone, store_id, level, signup_date 
+    let sql = `SELECT id, name, userId, phone, store_id, level, signup_date , hire_date
                FROM users WHERE level = 1`;
     const params = [];
     if (store_id && store_id !== 'all') {
@@ -153,7 +153,7 @@ router.put('/:userId/reject', authMiddleware, storeAdmin, async (req, res) => {
 // 7. 정보 수정
 router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
   const { userId } = req.params;
-  const { name, userId: newUserId, phone, store_id } = req.body;
+  const { name, userId: newUserId, phone, store_id, hire_date } = req.body;
 
   try {
     const result = await withTransaction(req, async (conn) => {
@@ -162,25 +162,53 @@ router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
       const [user] = await conn.query(`SELECT * FROM users WHERE id = ? FOR UPDATE`, [userId]);
       if (!user[0]) throw { status: 404, msg: '사용자 없음' };
 
-      // 중복 체크
+      // 중복 체크 (기존)
       for (const [field, value] of Object.entries({ userId: newUserId, phone })) {
         const [dup] = await conn.query(`SELECT id FROM users WHERE ${field} = ? AND id != ?`, [value, userId]);
         if (dup.length > 0) throw { status: 409, msg: `이미 사용 중인 ${field === 'userId' ? '아이디' : '전화번호'}` };
       }
 
+      // 매장 존재 체크 (기존)
       if (store_id != null) {
         const [store] = await conn.query('SELECT id FROM stores WHERE id = ?', [store_id]);
         if (!store[0]) throw { status: 400, msg: '존재하지 않는 매장' };
       }
 
+      // 입사일 유효성 검사 (추가)
+      if (hire_date != null) {
+        if (typeof hire_date !== 'string' || !/^\d{6}$/.test(hire_date)) {
+          throw { status: 400, msg: '입사일은 YYMMDD 형식의 6자리 숫자여야 합니다. (예: 251116)' };
+        }
+        const yy = parseInt(hire_date.substring(0, 2));
+        const mm = parseInt(hire_date.substring(2, 4));
+        const dd = parseInt(hire_date.substring(4, 6));
+        if (mm < 1 || mm > 12 || dd < 1 || dd > 31) {
+          throw { status: 400, msg: '입사일의 월 또는 일이 유효하지 않습니다.' };
+        }
+      }
+
+      // 업데이트 쿼리 (hire_date 추가)
       await conn.query(
-        `UPDATE users SET name = ?, userId = ?, phone = ?, store_id = ? WHERE id = ?`,
-        [name, newUserId, phone, store_id ?? null, userId]
+        `UPDATE users 
+         SET name = ?, userId = ?, phone = ?, store_id = ?, hire_date = ? 
+         WHERE id = ?`,
+        [name, newUserId, phone, store_id ?? null, hire_date ?? null, userId]
       );
 
-      await logAudit(conn, 'user_update', req.user.id, userId, { fields: ['name', 'userId', 'phone', 'store_id'] });
+      // 감사 로그 (hire_date 포함)
+      const changedFields = ['name', 'userId', 'phone', 'store_id'];
+      if (hire_date != null || user[0].hire_date !== hire_date) changedFields.push('hire_date');
 
-      return { id: parseInt(userId), name, userId: newUserId, phone, store_id: store_id ?? null };
+      await logAudit(conn, 'user_update', req.user.id, userId, { fields: changedFields });
+
+      return {
+        id: parseInt(userId),
+        name,
+        userId: newUserId,
+        phone,
+        store_id: store_id ?? null,
+        hire_date: hire_date ?? null  // 응답에 포함
+      };
     });
 
     res.json({ message: '수정 완료', user: result });

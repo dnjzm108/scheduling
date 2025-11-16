@@ -25,7 +25,22 @@ function EmployeeManagement() {
 
   const getLevelText = (level) => ['승인대기', '직원', '매장관리자', '총관리자'][level] || '알 수 없음';
 
-  // 첫 로드 1회만
+  // 전화번호 보기용: 01012345678 → 010-1234-5678
+  const formatPhone = (phone) => {
+    if (!phone || phone.length !== 11) return '미등록';
+    return `${phone.substring(0, 3)}-${phone.substring(3, 7)}-${phone.substring(7, 11)}`;
+  };
+
+  // 입사일 보기용: 251116 → 25-11-16
+  const formatHireDate = (dateStr) => {
+    if (!dateStr || dateStr.length !== 6) return '미등록';
+    const yy = dateStr.substring(0, 2);
+    const mm = dateStr.substring(2, 4);
+    const dd = dateStr.substring(4, 6);
+    return `${yy}-${mm}-${dd}`;
+  };
+
+  // 첫 로드
   useEffect(() => {
     if (hasLoaded.current) return;
     hasLoaded.current = true;
@@ -70,13 +85,12 @@ function EmployeeManagement() {
     loadData();
   }, [navigate]);
 
-  // 매장 필터링된 승인대기자
+  // 필터링
   const filteredPendingUsers = pendingUsers.filter(u => {
     if (selectedStore === 'all') return true;
     return u.store_id === parseInt(selectedStore);
   });
 
-  // 매장 필터링된 직원
   const visibleEmployees = employees
     .filter(e => e.level >= 1)
     .filter(e => userInfo.level === 2 ? e.store_id === userInfo.store_id : true)
@@ -86,17 +100,13 @@ function EmployeeManagement() {
   const handleApprove = async (id) => {
     if (isProcessing.current) return;
     isProcessing.current = true;
-
     try {
       await api.put(`/api/user/${id}/approve`);
       const user = pendingUsers.find(u => u.id === id);
       setPendingUsers(prev => prev.filter(u => u.id !== id));
       setEmployees(prev => [...prev, { ...user, level: 1 }]);
       toast.success('승인 완료');
-
-      if (filteredPendingUsers.length === 1) {
-        setActiveTab('employees');
-      }
+      if (filteredPendingUsers.length === 1) setActiveTab('employees');
     } catch (err) {
       if (!axios.isCancel(err)) toast.error(err.response?.data?.message || '승인 실패');
     } finally {
@@ -108,15 +118,11 @@ function EmployeeManagement() {
   const handleReject = async (id) => {
     if (isProcessing.current || !window.confirm('거부하시겠습니까?')) return;
     isProcessing.current = true;
-
     try {
       await api.put(`/api/user/${id}/reject`);
       setPendingUsers(prev => prev.filter(u => u.id !== id));
       toast.success('거부 완료');
-
-      if (filteredPendingUsers.length === 1) {
-        setActiveTab('employees');
-      }
+      if (filteredPendingUsers.length === 1) setActiveTab('employees');
     } catch (err) {
       if (!axios.isCancel(err)) toast.error(err.response?.data?.message || '거부 실패');
     } finally {
@@ -124,16 +130,44 @@ function EmployeeManagement() {
     }
   };
 
-  // 정보 수정
-  const startEdit = (emp) => setEditing({ type: 'info', data: { ...emp } });
+  // 수정 시작
+  const startEdit = (emp) => setEditing({
+    type: 'info',
+    data: {
+      ...emp,
+      phone: emp.phone || '',           // DB 값 그대로 (01012345678)
+      hire_date: emp.hire_date || ''    // DB 값 그대로 (251116)
+    }
+  });
+
+  // 수정 저장
   const saveEdit = async (e) => {
     e.preventDefault();
     const d = editing.data;
     if (!d.name || !d.userId || !d.phone) return toast.error('필수 항목 입력');
 
+    // 전화번호: 하이픈 제거 후 11자리 검증
+    const phoneDB = d.phone.replace(/-/g, '');
+    if (phoneDB.length !== 11 || !/^\d{11}$/.test(phoneDB)) {
+      return toast.error('전화번호는 11자리 숫자여야 합니다.');
+    }
+
+    // 입사일: 하이픈 제거 후 6자리 검증
+    const hireDateDB = d.hire_date?.replace(/-/g, '') || null;
+    if (hireDateDB && (hireDateDB.length !== 6 || !/^\d{6}$/.test(hireDateDB))) {
+      return toast.error('입사일은 YYMMDD 형식 (예: 251116) 이어야 합니다.');
+    }
+
     try {
-      await api.put(`/api/user/${d.id}`, d);
-      setEmployees(prev => prev.map(e => e.id === d.id ? d : e));
+      await api.put(`/api/user/${d.id}`, {
+        name: d.name,
+        userId: d.userId,
+        phone: phoneDB,           // 01012345678
+        store_id: d.store_id || null,
+        hire_date: hireDateDB     // 251116
+      });
+
+      setEmployees(prev => prev.map(e => e.id === d.id ? { ...d, phone: phoneDB, hire_date: hireDateDB } : e));
       setEditing(null);
       toast.success('수정 완료');
     } catch (err) {
@@ -146,7 +180,6 @@ function EmployeeManagement() {
   const savePassword = async (e) => {
     e.preventDefault();
     if (!editing.data.newPassword) return toast.error('비밀번호 입력');
-
     try {
       await api.put(`/api/user/${editing.data.id}/password`, { password: editing.data.newPassword });
       setEditing(null);
@@ -172,7 +205,6 @@ function EmployeeManagement() {
   const handleDelete = async (id) => {
     if (isProcessing.current || !window.confirm('삭제하시겠습니까?')) return;
     isProcessing.current = true;
-
     try {
       await api.delete(`/api/user/${id}`);
       setEmployees(prev => prev.filter(e => e.id !== id));
@@ -203,7 +235,7 @@ function EmployeeManagement() {
             </div>
           )}
 
-          {/* 탭 - 선택된 탭 색상 강조 */}
+          {/* 탭 */}
           <div className="emp-tabs">
             <button
               className={`emp-tab ${activeTab === 'employees' ? 'emp-tab-active' : ''}`}
@@ -227,13 +259,40 @@ function EmployeeManagement() {
               <form onSubmit={saveEdit} className="emp-edit-form">
                 <input value={editing.data.name} onChange={e => setEditing(p => ({ ...p, data: { ...p.data, name: e.target.value } }))} placeholder="이름" required />
                 <input value={editing.data.userId} onChange={e => setEditing(p => ({ ...p, data: { ...p.data, userId: e.target.value } }))} placeholder="아이디" required />
-                <input value={editing.data.phone} onChange={e => setEditing(p => ({ ...p, data: { ...p.data, phone: e.target.value } }))} placeholder="전화번호" required />
+
+                {/* 전화번호 입력: 자동 하이픈 */}
+                <input
+                  value={editing.data.phone || ''}
+                  onChange={e => {
+                    let val = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+                    if (val.length >= 8) val = val.slice(0, 3) + '-' + val.slice(3, 7) + '-' + val.slice(7);
+                    else if (val.length >= 4) val = val.slice(0, 3) + '-' + val.slice(3);
+                    setEditing(p => ({ ...p, data: { ...p.data, phone: val } }));
+                  }}
+                  placeholder="전화번호 (010-1234-5678)"
+                  maxLength="13"
+                />
+
+                {/* 입사일 입력: 자동 하이픈 */}
+                <input
+                  value={editing.data.hire_date || ''}
+                  onChange={e => {
+                    let val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                    if (val.length >= 5) val = val.slice(0, 2) + '-' + val.slice(2, 4) + '-' + val.slice(4);
+                    else if (val.length >= 3) val = val.slice(0, 2) + '-' + val.slice(2);
+                    setEditing(p => ({ ...p, data: { ...p.data, hire_date: val } }));
+                  }}
+                  placeholder="입사일 (25-11-16)"
+                  maxLength="8"
+                />
+
                 <select value={editing.data.store_id || ''} onChange={e => setEditing(p => ({ ...p, data: { ...p.data, store_id: parseInt(e.target.value) || null } }))}>
                   <option value="">매장 선택</option>
                   {stores.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
+
                 <div className="emp-form-actions">
                   <button type="submit">저장</button>
                   <button type="button" onClick={() => setEditing(null)}>취소</button>
@@ -255,7 +314,7 @@ function EmployeeManagement() {
                   <div key={u.id} className="emp-item pending">
                     <div className="emp-info">
                       <div>{u.name} ({u.userId})</div>
-                      <div>전화: {u.phone}</div>
+                      <div>전화: {formatPhone(u.phone)}</div>
                       <div>매장: {stores.find(s => s.id === u.store_id)?.name || '없음'}</div>
                       <div>가입: {new Date(u.created_at).toLocaleDateString()}</div>
                     </div>
@@ -277,10 +336,11 @@ function EmployeeManagement() {
                 <div key={emp.id} className="emp-item">
                   <div className="emp-info">
                     <div>{emp.name} ({emp.userId})</div>
-                    <div>전화: {emp.phone}</div>
+                    <div>전화: {formatPhone(emp.phone)}</div>
                     <div>매장: {stores.find(s => s.id === emp.store_id)?.name || '없음'}</div>
                     <div>권한: {getLevelText(emp.level)}</div>
                     <div>가입: {new Date(emp.signup_date).toLocaleDateString()}</div>
+                    <div>입사일: {formatHireDate(emp.hire_date)}</div>
                   </div>
                   <div className="emp-actions">
                     <button onClick={() => startEdit(emp)}>수정</button>
