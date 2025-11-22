@@ -1,348 +1,412 @@
-/* src/pages/MySchedules/index.css */
+/* ---------------------------------------------------------
+    MySchedules Page - 전체 스타일
+---------------------------------------------------------- */
 * {
     box-sizing: border-box;
 }
 
-/* --- 기본 레이아웃 및 컨테이너 --- */
+/* 메인 페이지 래퍼 */
 .myschedules-container {
     padding: 2rem;
-    max-width: 800px;
+    max-width: 850px;
     margin: 0 auto;
-    font-family: Arial, sans-serif;
+    background: #f7f7f7;
     min-height: 100vh;
-    background-color: #f7f7f7; 
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
 
-/* --- 페이지 헤더 --- */
-.myschedules-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* -----------------------------
+    상단 인사말 및 탭 섹션
+------------------------------ */
+.myschedules-top {
     margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #ddd;
-    flex-wrap: wrap;
-    gap: 1rem;
 }
 
-.myschedules-title {
-    font-size: 1.75rem;
-    font-weight: bold;
-    color: #333;
-    margin: 0;
+.myschedules-greeting {
+    font-size: 1.5rem;
+    font-weight: 300;
+    margin-bottom: 1.5rem;
+    color: #374151; /* Darker text for greeting */
 }
 
-.myschedules-user-info {
+.myschedules-greeting .hello {
+    margin-right: 0.25rem;
+}
+
+.myschedules-greeting .name {
+    font-weight: 700;
+    color: #4f46e5; /* Primary color for name */
+}
+
+.myschedules-tab-row {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    margin-bottom: 1.5rem; /* 버튼 그룹과 분리 */
+    border-bottom: 2px solid #e5e7eb;
 }
 
-.myschedules-user-name {
+.myschedules-tab {
+    padding: 0.75rem 1.25rem;
     font-size: 1rem;
-    font-weight: 500;
-    color: #555;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    flex-grow: 1; /* 너비 균등 분할 */
+    text-align: center;
 }
 
-/* --- 버튼 그룹 --- */
+.myschedules-tab.active {
+    color: #4f46e5;
+    border-bottom: 2px solid #4f46e5;
+    background: #fff; /* 활성화된 탭 배경 */
+}
+
+.myschedules-tab:not(.active):hover {
+    color: #4338ca;
+    background: #f3f4f6;
+}
+
+/* -----------------------------
+    상단 버튼 그룹 (공지/건의)
+------------------------------ */
 .myschedules-button-group {
     display: flex;
-    flex-wrap: wrap;
     gap: 0.75rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end; /* 오른쪽 정렬 */
 }
 
 .myschedules-button {
     padding: 0.75rem 1.25rem;
-    border: none;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.2s, box-shadow 0.2s;
     font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+    white-space: nowrap; /* 버튼 내용 줄바꿈 방지 */
 }
 
-/* 보조 버튼: 공지사항, 건의사항 (회색/연한 인디고) */
+/* 공지/건의 버튼 */
 .myschedules-notice-button,
-.myschedules-suggestion-button,
-.myschedules-logout-button {
-    background-color: #eef2ff;
+.myschedules-suggestion-button {
+    background: #eef2ff;
     color: #4f46e5;
+    flex-grow: 1; /* 탭 밑에 있을 때 유동적으로 늘어나게 */
 }
 
 .myschedules-notice-button:hover,
 .myschedules-suggestion-button:hover {
-    background-color: #e0e7ff;
+    background: #e0e7ff;
 }
 
-.myschedules-logout-button {
-    background-color: #f0f0f0;
-    color: #333;
-}
-.myschedules-logout-button:hover {
-    background-color: #ddd;
-}
-
-/* --- 스케줄 신청 영역 (Select + Button) --- */
+/* -----------------------------
+    스케줄 신청 박스
+------------------------------ */
 .myschedules-schedule-apply {
-    margin: 16px 0 24px 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    background: white;
     padding: 1rem;
-    background-color: #fff;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 12px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
 }
 
 .myschedules-select {
     flex-grow: 1;
-    padding: 10px 12px;
+    min-width: 200px;
     border: 1px solid #ddd;
     border-radius: 6px;
-    font-size: 0.95rem;
-    min-width: 200px;
+    padding: 10px 12px;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
 }
 
 .myschedules-apply-button {
+    /* 기존 스타일 유지 */
     background: #4f46e5;
     color: white;
-    padding: 10px 15px;
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: none;
     font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
 }
 
 .myschedules-apply-button:hover {
-    background-color: #4338ca;
+    background: #4338ca;
 }
 
 .myschedules-apply-button:disabled {
     background: #ccc;
     cursor: not-allowed;
-    color: #888;
+    color: #777;
 }
 
-/* --- 신청 가능한 스케줄 없음 메시지 --- */
+/* 신청 가능한 스케줄 없음 */
 .myschedules-no-open {
-    margin: 16px 0;
-    padding: 12px;
+    margin: 16px 0 2rem;
+    padding: 14px;
     background: #fff3cd;
-    color: #856404;
     border: 1px solid #ffeeba;
-    border-radius: 6px;
-    font-size: 1rem;
+    border-radius: 8px;
+    color: #856404;
     text-align: center;
 }
 
-/* --- 로딩/데이터 없음 --- */
+/* -----------------------------
+    로딩, 데이터 없음
+------------------------------ */
 .myschedules-loading,
 .myschedules-no-schedules {
-    text-align: center;
-    padding: 2rem;
-    color: #4f46e5;
-    font-size: 1.125rem;
-    font-weight: 500;
-    border: 1px dashed #e0e7ff;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px dashed #c7d2fe;
     border-radius: 0.75rem;
-    margin-top: 1.5rem;
-    background-color: #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    background: #eef2ff;
+    text-align: center;
+    color: #4f46e5;
+    font-size: 1.1rem;
 }
 
-/* --- 🌟 주간 스케줄 카드 스타일 --- */
-
+/* ---------------------------------------------------------
+    주간 스케줄 카드
+---------------------------------------------------------- */
 .weekly-schedule-container {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-    margin-top: 1.5rem;
 }
 
+/* 카드 */
 .weekly-schedule-card {
-    background-color: #fff;
+    background: white;
     border: 1px solid #e5e7eb;
-    border-radius: 0.75rem;
     padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s;
+    border-radius: 12px;
+    box-shadow: 0px 3px 8px rgba(0,0,0,0.05);
+    transition: 0.2s;
 }
 
 .weekly-schedule-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.08);
 }
 
+/* 카드 헤더 */
 .weekly-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    /* 모바일에서는 아래로 내려가도록 flex-wrap: wrap; 추가 */
-    flex-wrap: wrap; 
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
+    align-items: center; /* 세로 중앙 정렬 */
+    flex-wrap: wrap;
+    gap: 0.6rem;
     border-bottom: 1px solid #eee;
-    gap: 0.5rem; /* 헤더 요소 간 간격 추가 */
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .weekly-header strong {
     font-size: 1.25rem;
+    font-weight: bold;
     color: #1f2937;
-    flex-grow: 1;
-    min-width: 50%; /* 좁은 화면에서 매장 이름이 길 경우 한 줄 차지하도록 */
+    flex-basis: 100%; /* 작은 화면에서 제목이 줄바꿈되도록 */
+    order: 1;
 }
 
 .week-range {
     font-size: 0.9rem;
     color: #6b7280;
-    margin-left: 0.5rem;
+    order: 2;
 }
 
+/* 배지 */
 .status-badge {
-    padding: 0.3rem 0.7rem;
-    border-radius: 1rem;
+    padding: 4px 10px;
+    color: white;
+    border-radius: 12px;
     font-size: 0.8rem;
     font-weight: bold;
-    color: #fff;
-    background-color: #4f46e5;
-    margin-left: auto; /* 우측 정렬 */
+    background: #4f46e5;
+    order: 3;
 }
 
-/* 상태별 배지 색상 (백엔드 status 필드에 따라 조정) */
-.status-badge:contains('신청 완료'), 
-.status-badge:contains('요청됨') {
-    background-color: #f59e0b;
-}
-.status-badge:contains('배정됨'), 
-.status-badge:contains('승인됨') {
-    background-color: #10b981;
-}
-.status-badge:contains('거절됨'),
-.status-badge:contains('취소됨') {
-    background-color: #ef4444;
-}
-
-/* --- 일별 상세 내용 (Weekly Days) --- */
+/* -----------------------------
+    일별 스케줄
+------------------------------ */
 .weekly-days {
-    /* 모바일 깨짐 방지를 위해 최소 너비 대신 1fr (1개 열) 혹은 2열 위주로 조정 */
     display: grid;
-    /* 모바일에서 2열로 시작하고, 공간이 충분하면 최대 7열까지 확장 */
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); 
+    /* 850px 기준 7개 (일주일) -> minmax(85px, 1fr)로 반응형 대응 */
+    grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
     gap: 0.75rem;
 }
 
 .day-item {
-    padding: 0.75rem 0.5rem; /* 좌우 패딩 줄여서 좁은 공간 활용 */
-    border-radius: 0.5rem;
     text-align: center;
+    padding: 0.75rem 0.5rem; /* 좌우 패딩 줄임 */
+    border-radius: 8px;
+    background: #f9fafb;
     border: 1px solid #f3f4f6;
-    transition: background-color 0.1s;
-    min-width: 70px; /* 아이템 최소 너비 보장 */
 }
 
 .day-label {
     font-weight: bold;
-    margin-bottom: 0.25rem;
     color: #4b5563;
-    font-size: 0.9rem;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
 }
 
 .day-content {
+    font-size: 0.85rem;
     display: flex;
     flex-direction: column;
-    font-size: 0.85rem; /* 모바일에서 폰트 크기 조정 */
+    gap: 2px;
 }
 
 .day-content .type {
     font-weight: 600;
-    margin-bottom: 2px;
 }
 
 .day-content .time {
-    color: #374151;
-    line-height: 1.2;
+    color: #4b5563;
 }
 
-/* 타입별 스타일 */
+/* 타입별 구분 */
 .day-item.full {
-    background-color: #d1fae5;
-    border-color: #34d399;
+    background: #d1fae5; /* Green Light */
+    border-color: #34d399; /* Green Normal */
+    color: #065f46; /* Green Dark */
 }
 
 .day-item.part {
-    background-color: #e0f2fe;
-    border-color: #60a5fa;
+    background: #e0f2fe; /* Blue Light */
+    border-color: #60a5fa; /* Blue Normal */
+    color: #1e40af; /* Blue Dark */
 }
 
 .day-item.off {
-    background-color: #f3f4f6;
+    background: #f3f4f6;
     color: #9ca3af;
 }
 
 .day-item.off .day-label,
-.day-item.off .type {
+.day-item.off .day-content {
     color: #9ca3af;
 }
 
+.day-item.full .day-content .time,
+.day-item.part .day-content .time {
+    color: inherit; /* 상위 요소의 어두운 색상 상속 */
+}
 
-/* --- 📱 모바일 대응 (@media) --- */
+
+/* ---------------------------------------------------------
+    반응형
+---------------------------------------------------------- */
+@media (max-width: 768px) {
+    /* 주간 스케줄 카드 헤더 레이아웃 조정 */
+    .weekly-header strong {
+        flex-basis: auto; /* 줄바꿈 해제 시 유동적으로 */
+        margin-right: 0.5rem;
+        order: 1;
+    }
+    .week-range {
+        order: 2;
+        flex-grow: 1; /* 남은 공간 차지 */
+        text-align: left;
+    }
+    .status-badge {
+        order: 3;
+    }
+}
+
+
 @media (max-width: 600px) {
     .myschedules-container {
         padding: 1rem;
     }
-
-    /* 헤더 요소가 좁은 화면에서 자연스럽게 줄바꿈 */
-    .myschedules-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-
-    .myschedules-title {
-        font-size: 1.5rem;
+    
+    .myschedules-greeting {
+        font-size: 1.35rem;
+        margin-bottom: 1rem;
     }
     
-    .myschedules-user-info {
-        width: 100%;
-        justify-content: space-between; /* 로그아웃 버튼과 사용자 이름 간격 유지 */
+    /* 탭 너비 고정 */
+    .myschedules-tab {
+        flex-grow: 1; 
     }
 
+    /* 공지/건의 버튼 그룹 세로 정렬 */
     .myschedules-button-group {
         flex-direction: column;
         gap: 0.5rem;
-        width: 100%;
     }
-    
+
     .myschedules-button {
         width: 100%;
-        padding: 0.75rem;
     }
-    
-    /* 신청 영역 (Select + Button) */
+
+    /* 스케줄 신청 박스 세로 정렬 */
     .myschedules-schedule-apply {
         flex-direction: column;
         align-items: stretch;
+        margin-bottom: 1.5rem;
     }
     
     .myschedules-select {
-        width: 100%;
+        min-width: 100%;
     }
-    
+
     .myschedules-apply-button {
         width: 100%;
+        padding: 12px 18px; /* 버튼 높이 증가 */
     }
 
-    /* 주간 카드 헤더 조정 */
     .weekly-header strong {
         font-size: 1.1rem;
+        flex-basis: 100%; /* 다시 줄바꿈 */
+        margin-bottom: 0.5rem;
+    }
+    .week-range {
+        font-size: 0.85rem;
+        flex-grow: 0;
+    }
+    .status-badge {
+        font-size: 0.75rem;
     }
     
-    .status-badge {
-        margin-left: 0; /* 모바일에서 좌측 정렬 */
-    }
-
-    /* 주간 상세 내역: 좁은 화면에서는 2열로 고정 */
+    /* 일별 스케줄 2열로 */
     .weekly-days {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.5rem;
+    }
+    
+    .day-item {
+        padding: 0.6rem;
+    }
+
+    .day-label {
+        font-size: 0.9rem;
+    }
+    
+    .day-content {
+        font-size: 0.8rem;
+    }
+}
+
+/* 400px 이하 추가 최적화 */
+@media (max-width: 400px) {
+    .weekly-days {
+        /* 필요하다면 1열로 전환 가능, 현재 2열 유지 */
+        grid-template-columns: repeat(2, 1fr);
     }
 }

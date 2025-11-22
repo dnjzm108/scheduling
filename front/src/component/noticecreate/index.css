@@ -1,265 +1,171 @@
-/* 전체 레이아웃 및 배경 */
-.notice-create-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 20px;
-    box-sizing: border-box;
-    position: relative;
-    overflow: hidden;
-    font-family: 'Arial', sans-serif;
+/* ==============================
+    공지사항 작성 페이지 스타일
+    ============================== */
+
+:root {
+  --primary-color: #007bff;
+  --border-color: #dcdcdc;
+  --bg-light: #f5f7fa;
+  --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --radius: 10px;
+  --header-height: 56px;
 }
 
-/* 배경 오버레이 (블러 처리 효과) */
-.notice-create-bg-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* 배경색 조정 및 투명도 */
-    background: linear-gradient(135deg, #f0f4f8, #c8d3e6); 
-    opacity: 0.95;
-    z-index: 1;
+/* 📌 Header 공간 확보 (겹침 방지) */
+.notice-create-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  /* padding-top: var(--header-height); 헤더 높이만큼 아래로 밀어냄 */
+  background: var(--bg-light);
+  display: block; 
+  /* React 컴포넌트의 최상위 Wrapper입니다.
+    이곳에 padding을 주어 Header를 밀어냅니다.
+  */
 }
 
-/* 카드 영역 */
-.notice-create-card {
-    background-color: #ffffff;
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    width: 100%;
-    max-width: 700px; /* 작성 페이지는 폭을 넓게 */
-    z-index: 10;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* 헤더: 제목, 뒤로가기, 사용자 정보 */
-.notice-create-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #e0e0e0;
-}
-
-.notice-create-title {
-    font-size: 1.8rem;
-    color: #333;
-    font-weight: 700;
-    margin: 0;
-    flex-grow: 1; /* 중앙 정렬을 위해 */
-    text-align: center;
-}
-
-/* 뒤로가기 버튼 */
-.notice-create-back-button {
-    background: none;
-    border: none;
-    color: #555;
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 5px 10px;
-    transition: color 0.2s;
-    font-weight: 600;
-}
-
-.notice-create-back-button:hover {
-    color: #007bff;
-}
-
-/* 사용자 정보 영역 */
-.notice-create-user-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.notice-create-user-name {
-    font-size: 0.9rem;
-    color: #666;
-}
-
-/* 로그아웃 버튼 */
-.notice-create-logout-button {
-    padding: 5px 10px;
-    border: 1px solid #dc3545;
-    background-color: #dc3545;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    transition: background-color 0.2s, opacity 0.2s;
-}
-
-.notice-create-logout-button:hover {
-    background-color: #c82333;
-}
-
-/* 로딩 상태 */
-.notice-create-loading {
-    text-align: center;
-    padding: 50px 0;
-    font-size: 1.1rem;
-    color: #999;
-}
-
-/* 폼 */
+/* 📌 폼 카드 스타일 */
 .notice-create-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  max-width: 640px;
+  width: calc(100% - 40px); /* 좌우 여백 확보 (모바일에서 중요) */
+  margin: 20px auto; /* 상하 여백 및 중앙 정렬 */
+  background: #fff;
+  padding: 20px 22px;
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
+  box-sizing: border-box; /* 패딩이 width에 포함되도록 설정 */
 }
 
-/* 입력 그룹 */
-.notice-create-input-group {
-    display: flex;
-    flex-direction: column;
+/* 📌 Label 공통 스타일 */
+.notice-create-form label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 15px 0 4px; /* 위쪽에 더 많은 여백을 주어 요소 구분 */
+  display: inline-block;
 }
 
-.notice-create-input-group label {
-    font-size: 0.95rem;
-    color: #555;
-    margin-bottom: 5px;
-    font-weight: 600;
-}
-
-/* 입력 필드 (input, textarea, select) */
-.notice-create-form input[type="text"],
+/* 📌 기본 입력 스타일 (input, textarea, select) */
+.notice-create-form input:not([type="radio"]),
 .notice-create-form textarea,
 .notice-create-form select {
-    padding: 12px;
-    border: 1px solid #ced4da;
-    border-radius: 8px;
-    font-size: 1rem;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 15px;
+  background: #fff;
+  transition: border 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
-.notice-create-form input[type="text"]:focus,
+.notice-create-form input:not([type="radio"]):focus,
 .notice-create-form textarea:focus,
 .notice-create-form select:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-    outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  outline: none;
 }
 
+/* 📌 텍스트 영역 */
 .notice-create-form textarea {
-    resize: vertical;
-    min-height: 150px; /* 내용 영역 확대 */
+  min-height: 180px;
+  resize: vertical;
 }
 
-/* 라디오 그룹 (공개 범위) */
-.notice-create-radio-group {
-    display: flex;
-    gap: 20px;
-    padding: 10px 0;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    padding-left: 15px;
-}
-
-.notice-create-radio-group label {
-    display: flex;
-    align-items: center;
-    font-weight: 400;
-    color: #333;
-    cursor: pointer;
-}
-
-.notice-create-radio-group input[type="radio"] {
-    margin-right: 5px;
-    accent-color: #007bff; /* 체크 색상 */
-}
-
-/* 파일 첨부 */
+/* 📌 파일 첨부 입력 필드 */
 .notice-create-form input[type="file"] {
-    border: 1px solid #ced4da;
-    padding: 10px;
-    border-radius: 8px;
-    background-color: #f8f9fa;
+  border: none;
+  padding: 10px 0; /* 기본 padding 재정의 */
 }
 
-/* 작성 완료 버튼 */
-.notice-create-submit-button {
-    padding: 15px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background-color 0.2s, opacity 0.2s;
-    margin-top: 10px;
+/* 📌 공개범위 라디오 그룹 */
+.notice-radio-group {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  margin-bottom: 10px;
 }
 
-.notice-create-submit-button:hover:not([disabled]) {
-    background-color: #0056b3;
+.notice-radio-group label {
+  font-size: 15px;
+  color: #444;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  margin: 0; /* 라디오 그룹 내 레이블의 상단 여백 제거 */
 }
 
-.notice-create-submit-button[disabled] {
-    background-color: #a0c4ff;
-    cursor: not-allowed;
-    opacity: 0.7;
+.notice-radio-group input[type="radio"] {
+  accent-color: var(--primary-color);
+  margin-right: 6px;
+  width: auto; /* 라디오 버튼 너비 복원 */
 }
 
-/* 반응형 디자인 */
+/* 📌 제출 버튼 */
+.notice-create-form button {
+  width: 100%;
+  margin-top: 25px; /* 위쪽 여백 조정 */
+  padding: 14px;
+  background: var(--primary-color);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.2s, background-color 0.2s;
+  box-sizing: border-box;
+}
+
+.notice-create-form button:hover:not([disabled]) {
+  opacity: 0.9;
+}
+
+.notice-create-form button[disabled] {
+  background: #a3c9ff;
+  cursor: not-allowed;
+}
+
+/* ==============================
+    📱 반응형 모바일 최적화
+    ============================== */
 @media (max-width: 768px) {
-    .notice-create-card {
-        padding: 20px;
-    }
+  .notice-create-form {
+    max-width: 100%; /* 모바일에서 화면 전체 너비 사용 */
+    width: 100%;
+    margin: 0 auto; /* 상하 여백 제거 */
+    padding: 18px;
+    border-radius: 0; /* 그림자 제거 및 모서리 둥글기 제거 */
+    box-shadow: none;
+  }
 
-    .notice-create-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-        border-bottom: none;
-    }
-    
-    .notice-create-title {
-        text-align: left;
-        font-size: 1.5rem;
-        width: 100%;
-    }
-    
-    .notice-create-user-info {
-        width: 100%;
-        justify-content: space-between;
-        padding-top: 10px;
-        border-top: 1px solid #eee;
-    }
-    
-    .notice-create-back-button {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-    }
-    
-    .notice-create-input-group label {
-        font-size: 0.9rem;
-    }
-    
-    .notice-create-form input[type="text"],
-    .notice-create-form textarea,
-    .notice-create-form select {
-        padding: 10px;
-        font-size: 0.95rem;
-    }
-    
-    .notice-create-submit-button {
-        padding: 12px;
-        font-size: 1rem;
-    }
-    
-    .notice-create-radio-group {
-        flex-direction: column;
-        gap: 10px;
-    }
+  /* .notice-create-wrapper {
+    padding-top: var(--header-height);
+  } */
+
+  .notice-radio-group {
+    flex-wrap: wrap; /* 라디오 그룹 줄 바꿈 */
+  }
+}
+
+@media (max-width: 480px) {
+  .notice-create-form {
+    padding: 14px;
+  }
+  
+  /* 입력 요소 모바일 최적화 */
+  .notice-create-form input:not([type="radio"]),
+  .notice-create-form textarea,
+  .notice-create-form select {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  .notice-create-form button {
+    font-size: 15px;
+    padding: 12px;
+    margin-top: 20px;
+  }
 }

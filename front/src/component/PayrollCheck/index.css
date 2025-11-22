@@ -1,0 +1,148 @@
+/* src/pages/PayrollCheck/index.css */
+
+.payroll-page {
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color: #222;
+}
+
+.page-with-header {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.payroll-container {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.payroll-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.total-payroll {
+  margin-top: 8px;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 0;
+}
+
+.no-data {
+  padding: 20px;
+  text-align: center;
+  color: #777;
+}
+
+.payroll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 직원 카드 */
+.employee-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.employee-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.emp-left h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.emp-type { font-size: 0.9rem; color: #666; font-weight: normal; margin-left: 6px; }
+.emp-sub { color: #555; font-size: 0.9rem; margin-top: 4px; }
+
+.emp-right { text-align: right; color: #444; font-size: 0.95rem; }
+
+/* 주 블록 */
+.week-block {
+  margin-top: 8px;
+  border-top: 1px dashed #e6e6e6;
+  padding-top: 8px;
+}
+
+.week-summary {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border: 0;
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.week-summary:hover { background: #f7f7f7; }
+
+.week-left strong { font-size: 1rem; }
+.week-sub { color: #666; font-size: 0.9rem; margin-top: 4px; }
+
+.week-right { text-align: right; min-width: 120px; color: #333; }
+
+.week-details {
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+/* 일별 테이블 */
+.daily-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.daily-table th, .daily-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f0f0f0;
+  text-align: left;
+}
+.daily-table th {
+  background: #fbfbfb;
+  font-weight: 600;
+  color: #333;
+}
+.chev {
+  font-size: 0.9rem;
+  color: #777;
+}
+
+.excel-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #1976d2;
+  background: #2196f3;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.excel-btn:hover {
+  background: #1976d2;
+}
+

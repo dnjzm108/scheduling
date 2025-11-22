@@ -56,7 +56,7 @@ function Login() {
       // 1.5초 후 이동
       setTimeout(() => {
         const path = user.level >= 3 ? '/AdminDashboard'
-                   : user.level === 2 ? '/ScheduleManagement'
+                   : user.level === 2 || 1 ? '/myschedules'
                    : '/myschedules';
         navigate(path, { replace: true });
       }, 1500);

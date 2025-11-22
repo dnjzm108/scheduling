@@ -2,97 +2,75 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
-const { storeAdmin, globalAdmin,employee } = require('../middleware/levelMiddleware');
+const { globalAdmin } = require('../middleware/levelMiddleware');
 
 const pool = (req) => req.app.get('db');
 
-// 매장 목록 (전체 페이지 사용)
+// 매장 목록 조회
 router.get('/', async (req, res) => {
   try {
     const [rows] = await pool(req).query(`
-      SELECT s.id, s.name, s.address, s.manager_id, u.name AS manager_name
-      FROM stores s
-      LEFT JOIN users u ON s.manager_id = u.id
+      SELECT id, name, address, manager_id, open_time, close_time
+      FROM stores
     `);
     res.json(rows);
   } catch (err) {
-    console.error('[/admin/stores] Error:', err.message);
     res.status(500).json({ message: '매장 목록 조회 실패' });
   }
 });
 
-// 매장 생성
-router.post('/', authMiddleware, storeAdmin, async (req, res) => {
-  const { name, address, manager_id } = req.body;
+// 매장 생성 (총관리자만)
+router.post('/', authMiddleware, globalAdmin, async (req, res) => {
+  const { name, address, manager_id, open_time, close_time } = req.body;
   try {
-    const [result] = await pool(req).query(
-      'INSERT INTO stores (name, address, manager_id) VALUES (?, ?, ?)',
-      [name, address || null, manager_id || null]
+    await pool(req).query(
+      `INSERT INTO stores (name, address, manager_id, open_time, close_time)
+       VALUES (?, ?, ?, ?, ?)`,
+      [name, address || null, manager_id || null, open_time || null, close_time || null]
     );
-    res.status(201).json({ id: result.insertId, message: '매장 생성 완료' });
+    res.status(201).json({ message: '매장 생성 완료' });
   } catch (err) {
-    console.error('[/admin/stores POST] Error:', err.message);
     res.status(500).json({ message: '매장 생성 실패' });
   }
 });
 
-// 매장 수정
-router.put('/:id', authMiddleware, storeAdmin, async (req, res) => {
+// 매장 수정 (총관리자만)
+router.put('/:id', authMiddleware, globalAdmin, async (req, res) => {
   const { id } = req.params;
-  const { name, address, manager_id } = req.body;
+  const { name, address, manager_id, open_time, close_time } = req.body;
+
   try {
     const [result] = await pool(req).query(
-      'UPDATE stores SET name = ?, address = ?, manager_id = ? WHERE id = ?',
-      [name, address || null, manager_id || null, id]
+      `UPDATE stores
+       SET name=?, address=?, manager_id=?, open_time=?, close_time=?
+       WHERE id=?`,
+      [name, address || null, manager_id || null, open_time || null, close_time || null, id]
     );
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: '매장을 찾을 수 없습니다.' });
     }
+
     res.json({ message: '매장 수정 완료' });
   } catch (err) {
-    console.error('[/admin/stores PUT] Error:', err.message);
     res.status(500).json({ message: '매장 수정 실패' });
   }
 });
 
-// 매장 삭제
-router.delete('/:id', authMiddleware, storeAdmin, async (req, res) => {
+// 매장 삭제 (총관리자만)
+router.delete('/:id', authMiddleware, globalAdmin, async (req, res) => {
   const { id } = req.params;
+
   try {
-    const [result] = await pool(req).query('DELETE FROM stores WHERE id = ?', [id]);
+    const [result] = await pool(req).query(`DELETE FROM stores WHERE id=?`, [id]);
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: '매장을 찾을 수 없습니다.' });
     }
+
     res.json({ message: '매장 삭제 완료' });
   } catch (err) {
-    console.error('[/admin/stores DELETE] Error:', err.message);
     res.status(500).json({ message: '매장 삭제 실패' });
-  }
-});
-
-// server/routes/store.js
-router.put('/:id/settings', authMiddleware, storeAdmin, async (req, res) => {
-  const { id } = req.params;
-  const {
-    open_time, close_time, break_start, break_end,
-    lunch_staff, dinner_staff, is_weekend_break
-  } = req.body;
-
-  try {
-    await pool(req).query(
-      `UPDATE stores SET 
-         open_time = ?, close_time = ?, break_start = ?, break_end = ?,
-         lunch_staff = ?, dinner_staff = ?, is_weekend_break = ?
-       WHERE id = ?`,
-      [
-        open_time || null, close_time || null, break_start || null, break_end || null,
-        lunch_staff || 0, dinner_staff || 0, is_weekend_break ? 1 : 0, id
-      ]
-    );
-    res.json({ message: '매장 설정 저장 완료' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: '설정 저장 실패' });
   }
 });
 

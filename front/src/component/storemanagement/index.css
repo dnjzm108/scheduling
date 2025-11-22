@@ -4,69 +4,27 @@
 }
 
 /* --- 기본 레이아웃 및 컨테이너 --- */
+.page-with-header {
+    /* Header 높이에 따라 조정 */
+    padding-top: 50px; 
+}
+
 .store-manage-container {
     padding: 2rem;
-    max-width: 800px; /* 중앙 집중형 */
+    max-width: 900px; /* 중앙 집중형 너비 확대 */
     margin: 0 auto;
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     min-height: 100vh;
     background-color: #f7f7f7;
 }
 
-.store-manage-bg-overlay, 
-.store-manage-card {
-    /* 배경 오버레이 및 카드 스타일 제거하여 깔끔한 컨테이너에 맞춤 */
-    background: transparent;
-    box-shadow: none;
-    padding: 0;
-}
-
-/* --- 페이지 헤더 --- */
-.store-manage-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #ddd;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.store-manage-back-button,
-.store-manage-logout-button {
-    background-color: #eee;
-    color: #333;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.15s;
-    font-weight: 500;
-}
-
-.store-manage-back-button:hover,
-.store-manage-logout-button:hover {
-    background-color: #ddd;
-}
-
-.store-manage-title {
-    font-size: 1.75rem;
+h2 {
+    font-size: 1.5rem;
     font-weight: bold;
     color: #333;
-    margin: 0;
-}
-
-.store-manage-user-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.store-manage-user-name {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #555;
+    margin: 2rem 0 1rem 0;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 0.5rem;
 }
 
 /* --- 매장 등록/수정 폼 --- */
@@ -76,95 +34,84 @@
     border-radius: 0.75rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     margin-bottom: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    
+    /* PC: 2열 그리드 레이아웃 적용 */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem 1.5rem; /* 행 간격, 열 간격 */
+    align-items: end; /* 버튼이 아래에 위치하도록 정렬 */
 }
 
-.store-manage-input-group {
-    display: flex;
-    flex-direction: column;
+/* 폼 그룹 스타일링 (input, select, label을 포함하는 모든 요소) */
+.store-manage-form > input, 
+.store-manage-form > select, 
+.store-manage-form > label {
+    /* 기본적으로 폼 항목들은 자동으로 그리드 칸을 차지함 */
+    display: block; /* label의 경우 */
 }
 
-.store-manage-input-group label {
-    font-weight: 600;
-    margin-bottom: 0.3rem;
-    color: #4f46e5; /* 인디고 */
-    font-size: 0.95rem;
-}
-
-.store-manage-form input,
+/* label에 상응하는 input/select 스타일 */
+.store-manage-form input[type="text"],
+.store-manage-form input[type="time"],
 .store-manage-form select {
+    /* 폼 아이템 자체 */
     padding: 0.75rem 1rem;
     border: 1px solid #ccc;
     border-radius: 0.5rem;
     font-size: 1rem;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
 }
 
-.store-manage-form input:focus,
-.store-manage-form select:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
-    outline: none;
+.store-manage-form label {
+    /* label 텍스트 자체 */
+    font-weight: 600;
+    color: #4f46e5; 
+    font-size: 0.95rem;
+    padding-top: 0.5rem; /* time input 위에 여백 */
 }
 
+/* 매장 이름, 주소 입력 필드 (label 없이 바로 시작하는 필드) */
+.store-manage-form > input:first-child,
+.store-manage-form > input:nth-child(2) {
+    /* 레이블 없이 placeholder만 사용하는 input을 위한 스타일 */
+    grid-column: span 1; 
+    margin-top: 0; 
+}
+
+
+/* 폼 버튼 그룹 (전체 너비 차지 및 오른쪽 정렬) */
 .store-manage-form-buttons {
+    grid-column: 1 / -1; /* 전체 너비 */
     display: flex;
     gap: 1rem;
     margin-top: 1rem;
-    padding-top: 0.5rem;
+    justify-content: flex-end; /* 오른쪽 정렬 */
+    padding-top: 0;
 }
 
-.store-manage-submit-button {
-    flex: 1;
-    padding: 0.75rem;
+.store-manage-form-buttons button {
+    padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    flex-grow: 0;
+}
+
+.store-manage-form-buttons button[type="submit"] {
     background-color: #4f46e5;
     color: #fff;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.15s;
 }
 
-.store-manage-submit-button:hover:not(:disabled) {
-    background-color: #4338ca;
-}
-
-.store-manage-submit-button:disabled {
-    background-color: #9ca3af;
-    cursor: not-allowed;
-}
-
-.store-manage-cancel-button {
-    padding: 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 0.5rem;
-    background-color: #fff;
-    color: #333;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.15s;
-}
-
-.store-manage-cancel-button:hover:not(:disabled) {
-    background-color: #f0f0f0;
+.store-manage-form-buttons button[type="button"] { /* 취소 버튼 */
+    background-color: #e5e7eb;
+    color: #374151;
 }
 
 /* --- 매장 목록 --- */
-.store-manage-list-title {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 1rem;
-    border-bottom: 2px solid #ddd;
-    padding-bottom: 0.5rem;
-}
-
-.store-manage-list {
+ul {
     list-style: none;
     padding: 0;
     display: flex;
@@ -172,7 +119,7 @@
     gap: 0.75rem;
 }
 
-.store-manage-item {
+li {
     background-color: #fff;
     padding: 1rem 1.5rem;
     border: 1px solid #e5e7eb;
@@ -181,108 +128,80 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: border-left 0.15s;
-    border-left: 5px solid transparent;
+    border-left: 5px solid #4f46e5; /* 매장 항목 강조 색상 */
 }
 
-.store-manage-item:hover {
-    border-left: 5px solid #a5b4fc; /* 호버 시 연한 인디고 */
-}
-
-.store-manage-item-details strong {
+li strong {
     font-size: 1.125rem;
-    color: #4f46e5;
+    color: #333;
     display: block;
     margin-bottom: 0.25rem;
 }
 
-.store-manage-item-details p {
+li p {
     font-size: 0.9rem;
     color: #666;
     margin: 0;
 }
 
-.store-manage-item-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.store-manage-edit-button,
-.store-manage-delete-button {
+li button {
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 0.375rem;
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.15s;
+    margin-left: 0.5rem;
 }
 
-.store-manage-edit-button {
-    background-color: #e0f2fe; /* 연한 파란색 */
+li button:first-of-type { /* 수정 버튼 */
+    background-color: #e0f2fe; 
     color: #0c4a6e;
 }
-.store-manage-edit-button:hover {
-    background-color: #bae6fd;
-}
 
-.store-manage-delete-button {
-    background-color: #fee2e2; /* 연한 빨간색 */
+li button:last-of-type { /* 삭제 버튼 */
+    background-color: #fee2e2; 
     color: #991b1b;
-}
-.store-manage-delete-button:hover {
-    background-color: #fca5a5;
-}
-
-/* --- 로딩/데이터 없음 --- */
-.store-manage-loading,
-.store-manage-no-stores {
-    text-align: center;
-    padding: 2rem;
-    color: #4f46e5;
-    font-size: 1.125rem;
-    font-weight: 500;
-    border: 1px dashed #e0e7ff;
-    border-radius: 0.75rem;
-    margin-top: 1.5rem;
-    background-color: #fff;
 }
 
 /* --- 📱 모바일 대응 (@media) --- */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     .store-manage-container {
         padding: 1rem;
     }
-
-    .store-manage-header {
-        flex-direction: column;
-        align-items: flex-start;
-        margin-bottom: 1.5rem;
-    }
-
-    .store-manage-user-info {
-        width: 100%;
-        justify-content: space-between;
-        margin-top: 0.5rem;
-    }
-
-    .store-manage-form {
-        padding: 1.5rem;
-    }
     
-    .store-manage-item {
+    /* 폼: 모바일에서는 1열로 변경 */
+    .store-manage-form {
+        grid-template-columns: 1fr; 
+        gap: 1rem;
+    }
+
+    /* 폼 버튼 그룹: 모바일에서 전체 너비 확장 */
+    .store-manage-form-buttons {
+        flex-direction: column;
+        gap: 0.75rem;
+        justify-content: stretch;
+    }
+
+    .store-manage-form-buttons button {
+        flex-grow: 1;
+    }
+
+    /* 목록 */
+    li {
         flex-direction: column;
         align-items: flex-start;
         gap: 0.75rem;
     }
 
-    .store-manage-item-actions {
-        width: 100%;
-        justify-content: space-around;
-        gap: 0.25rem;
+    li p {
+        /* 주소 및 시간 정보를 모바일에서 좀 더 명확하게 */
+        margin-left: 0.25rem; 
     }
-    
-    .store-manage-edit-button,
-    .store-manage-delete-button {
-        flex: 1; /* 모바일에서 버튼 너비 확장 */
+
+    li button {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        flex: 1;
     }
 }

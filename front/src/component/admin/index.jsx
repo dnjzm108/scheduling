@@ -38,6 +38,9 @@ function AdminDashboard() {
     { label: '공지사항 관리', path: '/notices' },
     { label: '매장 관리', path: '/StoreManagement' },
     { label: '건의사항 관리', path: '/RequestsList' },
+    // { label: '스케줄 확정 관리', path: '/ScheduleFinalize' },
+    { label: '월급정산 관리', path: '/PayrollCheck' },
+    { label: '섹션 관리', path: '/SectionManagement' },
   ];
 
   return (

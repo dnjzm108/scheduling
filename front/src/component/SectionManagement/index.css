@@ -1,0 +1,262 @@
+/* index.css (SectionManagement 컴포넌트용) */
+* {
+    box-sizing: border-box;
+}
+
+/* --- 1. 기본 레이아웃 및 컨테이너 --- */
+.page-with-header {
+    /* Header 높이에 따라 조정 */
+    padding-top: 50px; 
+    min-height: 100vh;
+    background-color: #f7f7f7;
+}
+
+.section-container {
+    padding: 2rem;
+    max-width: 800px; /* 섹션 관리는 800px로 조금 더 좁게 설정 */
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+    margin: 2rem 0 1rem 0;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 0.5rem;
+}
+
+/* --- 2. 매장 선택 영역 (Selector Card) --- */
+.section-store-selector {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.section-store-selector label {
+    font-weight: 600;
+    color: #4f46e5; /* 인디고 */
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+}
+
+.section-store-selector select {
+    padding: 0.75rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    width: 100%;
+}
+
+.section-store-selector select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+    outline: none;
+}
+
+.section-store-selector .no-store {
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb;
+    border: 1px solid #eee;
+    border-radius: 0.5rem;
+    color: #777;
+    text-align: center;
+}
+
+/* --- 3. 탭 버튼 (Hall/Kitchen) --- */
+.section-tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e0e7ff;
+}
+
+.section-tabs .tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6b7280;
+    transition: color 0.15s, border-bottom 0.15s;
+    border-bottom: 3px solid transparent;
+}
+
+.section-tabs .tab.active {
+    color: #4f46e5; /* 인디고 */
+    border-bottom: 3px solid #4f46e5;
+}
+
+/* --- 4. 섹션 추가 폼 --- */
+.section-add-form {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05); 
+}
+
+.section-add-form input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+
+.section-add-form button {
+    padding: 0.75rem 1.25rem;
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    flex-shrink: 0;
+}
+
+.section-add-form button:hover:not(:disabled) {
+    background-color: #4338ca;
+}
+
+.section-add-form button:disabled {
+    background-color: #9ca3af !important;
+    cursor: not-allowed !important;
+}
+
+/* --- 5. 섹션 목록 --- */
+.section-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.section-list .section-item {
+    display: grid;
+    /* PC: 이름 영역, 체크박스 영역, 삭제 버튼 영역 */
+    grid-template-columns: 1fr auto auto; 
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background-color: #fff;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-left: 5px solid #a5b4fc; /* 연한 인디고 */
+}
+
+.section-name-input {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 0.3rem;
+    font-size: 1rem;
+    transition: border-color 0.15s;
+}
+
+.section-name-input:focus {
+    border-color: #4f46e5;
+    outline: none;
+}
+
+.section-active {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+}
+
+.section-active input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.btn-delete {
+    padding: 0.6rem 1rem;
+    background-color: #dc2626; /* 빨간색 */
+    color: #fff;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    flex-shrink: 0;
+}
+
+.btn-delete:hover {
+    background-color: #b91c1c;
+}
+
+.no-data {
+    padding: 2rem;
+    text-align: center;
+    color: #777;
+    font-size: 1.125rem;
+    border: 1px dashed #e0e7ff;
+    border-radius: 0.75rem;
+    background-color: #fff;
+}
+
+
+/* --- 6. 📱 모바일 대응 (@media) --- */
+@media (max-width: 600px) {
+    .section-container {
+        padding: 1rem;
+    }
+    
+    .section-store-selector {
+        padding: 1rem;
+    }
+
+    /* 탭 버튼 */
+    .section-tabs {
+        gap: 0.5rem;
+    }
+    .section-tabs .tab {
+        padding: 0.6rem 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    /* 섹션 추가 폼 */
+    .section-add-form {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    /* 섹션 목록 */
+    .section-list .section-item {
+        /* 모바일에서는 세로로 쌓이도록 재조정 */
+        grid-template-columns: 1fr auto; 
+        gap: 0.5rem 1rem;
+        padding: 0.75rem 1rem;
+    }
+
+    .section-name-input {
+        grid-column: 1 / -1; /* 이름 입력창 전체 너비 */
+        font-size: 0.95rem;
+        padding: 0.4rem;
+    }
+
+    .section-active {
+        grid-column: 1 / 2; /* 왼쪽에 배치 */
+        justify-content: flex-start;
+    }
+
+    .btn-delete {
+        grid-column: 2 / 3; /* 오른쪽에 배치 */
+        padding: 0.5rem 0.8rem;
+    }
+}

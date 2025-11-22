@@ -20,49 +20,46 @@ function RequestsList() {
   const [expandedId, setExpandedId] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const [allowedStoreIds, setAllowedStoreIds] = useState([]);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
   // 중복 방지용 ref
   const isFetching = useRef(false);
   const isDeleting = useRef(false);
   const hasInitialized = useRef(false);
 
   const showToast = useCallback((type, msg) => {
-    toast[type](msg, { position: "top-center", autoClose: 3000 });
+    toast[type](msg, { position: 'top-center', autoClose: 3000 });
   }, []);
 
-  // 매장 목록 불러오기 (관리자 이상만)
-  const fetchStores = async (token) => {
-    try {
-      const { data } = await axios.get(`${BASE_URL}/api/stores`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setStores(data);
-    } catch {
-      showToast('error', '매장 목록 로드 실패');
-    }
-  };
-
-  // 건의사항 불러오기
-  const fetchSuggestions = async (token, storeId = '') => {
+  // 건의사항 불러오기 (서버에서 attachments는 이미 배열)
+  const fetchSuggestions = useCallback(async (token, storeId = '') => {
     if (isFetching.current) return;
     isFetching.current = true;
     setLoading(true);
 
     try {
       const url = `${BASE_URL}/api/requests${storeId ? `?store_id=${storeId}` : ''}`;
-      const { data } = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
-      setSuggestions(data.map(s => ({
-        ...s,
-        attachments: s.attachments ? JSON.parse(s.attachments) : []
-      })));
-    } catch {
+      const { data } = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setSuggestions(
+        (data || []).map(s => ({
+          ...s,
+          attachments: Array.isArray(s.attachments) ? s.attachments : []
+        }))
+      );
+    } catch (err) {
+      console.error('fetchSuggestions error:', err.response?.data || err.message);
       showToast('error', '건의사항 로드 실패');
     } finally {
       setLoading(false);
       isFetching.current = false;
     }
-  };
+  }, [showToast]);
 
-  // 초기 데이터 로드 (딱 한 번만!)
+  // 초기 데이터 로드 (딱 한 번만)
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
@@ -85,21 +82,60 @@ function RequestsList() {
     setUserName(decoded.name || '사용자');
     setUserLevel(decoded.level || 0);
 
-    // 병렬로 불러오기
     const loadData = async () => {
-      if (decoded.level >= 2) await fetchStores(token);
-      await fetchSuggestions(token);
+      try {
+        // 관리자 이상: 권한 있는 매장 + 전체 매장 정보
+        if (decoded.level >= 2) {
+          const [allowedRes, storesRes] = await Promise.all([
+            axios.get(`${BASE_URL}/api/user/allowed-stores`, {
+              headers: { Authorization: `Bearer ${token}` }
+            }),
+            axios.get(`${BASE_URL}/api/stores`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+          ]);
+
+          const allowed = allowedRes.data?.allowedStores || [];
+          const superAdmin = !!allowedRes.data?.isSuperAdmin;
+          setAllowedStoreIds(allowed);
+          setIsSuperAdmin(superAdmin);
+
+          let allStores = storesRes.data || [];
+
+          // 총관리자는 모든 매장 선택 가능
+          if (!superAdmin && allowed.length > 0) {
+            // 매장관리자: 본인 + 권한받은 매장만
+            allStores = allStores.filter(s => allowed.includes(s.id));
+          }
+
+          setStores(allStores);
+
+          // 매장관리자(또는 제한된 관리자)가 매장 하나만 있으면 기본 선택
+          if (!superAdmin && allStores.length === 1) {
+            setSelectedStore(allStores[0].id.toString());
+          }
+        }
+
+        // 건의사항 목록 로드 (필터 없이 호출하면 서버가 알아서 권한 체크)
+        await fetchSuggestions(token);
+      } catch (err) {
+        console.error('init loadData error:', err.response?.data || err.message);
+        showToast('error', '초기 데이터 로드 실패');
+        setLoading(false);
+      }
     };
 
     loadData();
-  }, [navigate, showToast]);
+  }, [navigate, showToast, fetchSuggestions]);
 
   // 매장 변경 시 건의사항만 다시 불러오기
   const handleStoreChange = (e) => {
     const storeId = e.target.value;
     setSelectedStore(storeId);
     const token = getToken();
-    if (token) fetchSuggestions(token, storeId);
+    if (token) {
+      fetchSuggestions(token, storeId);
+    }
   };
 
   // 삭제 (중복 클릭 방지)
@@ -116,7 +152,8 @@ function RequestsList() {
       });
       setSuggestions(prev => prev.filter(s => s.id !== id));
       showToast('success', '삭제 완료');
-    } catch {
+    } catch (err) {
+      console.error('delete error:', err.response?.data || err.message);
       showToast('error', '삭제 실패');
     } finally {
       isDeleting.current = false;
@@ -136,15 +173,18 @@ function RequestsList() {
       <Header title="건의사항" backTo="/AdminDashboard" />
       <div className="suggestion-container">
         <div className="suggestion-bg-overlay" />
-        
+
         <div className="suggestion-card">
           {/* 매장 선택 (관리자 이상) */}
-          {userLevel >= 2 && (
+          {userLevel >= 2 && stores.length > 0 && (
             <div className="suggestion-store-selector">
               <select value={selectedStore} onChange={handleStoreChange}>
-                <option value="">모든 매장</option>
+                {/* 총관리자만 "모든 매장" 선택 가능 */}
+                {isSuperAdmin && <option value="">모든 매장</option>}
                 {stores.map(s => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -164,13 +204,37 @@ function RequestsList() {
                   onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
                 >
                   <h3>{s.title}</h3>
+
                   {expandedId === s.id && (
                     <div className="suggestion-details">
+                      {/* 어느 매장 / 누가 썼는지 */}
+                      <p className="suggestion-meta">
+                        매장: {s.store_name || '매장 없음'} | 작성자: {s.author_name || '알 수 없음'}
+                      </p>
+
                       <p>{s.body}</p>
-                      {s.attachments.map((url, i) => (
-                        <img key={i} src={url} alt={`첨부 ${i + 1}`} className="suggestion-attachment" />
-                      ))}
-                      <p>작성일: {new Date(s.created_at).toLocaleDateString('ko-KR')}</p>
+
+                      {/* 첨부 이미지 */}
+                      {Array.isArray(s.attachments) && s.attachments.length > 0 && (
+                        <div className="suggestion-attachments">
+                          {s.attachments.map((url, i) => (
+                            <img
+                              key={i}
+                              src={url}
+                              alt={`첨부 ${i + 1}`}
+                              className="suggestion-attachment"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      <p>
+                        작성일:{' '}
+                        {s.created_at
+                          ? new Date(s.created_at).toLocaleDateString('ko-KR')
+                          : ''}
+                      </p>
+
                       {userLevel >= 2 && (
                         <button
                           onClick={(e) => {

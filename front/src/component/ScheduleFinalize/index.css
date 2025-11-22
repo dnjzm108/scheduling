@@ -1,0 +1,204 @@
+/* =======================================
+ * Global & Layout Styles
+ * ======================================= */
+
+.finalize-page {
+    min-height: 100vh;
+    background-color: #f7f9fc;
+}
+
+/* Header 컴포넌트 아래의 실제 콘텐츠 영역 */
+.page-with-header {
+    padding-top: 60px; /* 헤더 높이만큼 여백 */
+    padding: 20px 10px;
+    max-width: 1400px; /* PC 최대 너비 제한 */
+    margin: 0 auto;
+}
+
+.finalize-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.loading, .off-day {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+/* =======================================
+ * Header & Info
+ * ======================================= */
+
+.finalize-header h1 {
+    font-size: 1.8rem;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.finalize-header p {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+/* =======================================
+ * Table Styles (PC/Desktop Focus)
+ * ======================================= */
+
+/* 테이블이 가로로 넘칠 경우 스크롤 가능하도록 래퍼 추가 */
+.finalize-table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.finalize-table {
+    width: 100%;
+    min-width: 900px; /* 테이블 최소 너비 (모바일에서 스크롤 유도) */
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    table-layout: fixed; /* 셀 너비를 일정하게 유지 */
+}
+
+.finalize-table th, .finalize-table td {
+    padding: 12px 8px;
+    border: 1px solid #e9ecef;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.finalize-table thead th {
+    background-color: #007bff;
+    color: white;
+    font-weight: 600;
+    position: sticky; /* 가로 스크롤 시 요일 헤더 고정 (Chrome/Firefox 지원) */
+    top: 0;
+    z-index: 10;
+}
+
+.finalize-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.employee-name {
+    font-weight: bold;
+    background-color: #e9ecef;
+    width: 120px; /* 이름 칸 너비 고정 */
+    position: sticky; /* 세로 스크롤 시 이름 칸 고정 */
+    left: 0;
+    z-index: 5;
+}
+
+/* 주말 색상 강조 */
+.finalize-table th:last-child, 
+.finalize-table td:last-child {
+    color: #dc3545; /* 일요일 (sun) */
+}
+.finalize-table th:nth-last-child(2), 
+.finalize-table td:nth-last-child(2) {
+    color: #28a745; /* 토요일 (sat) */
+}
+
+/* =======================================
+ * Shift Editor Styles (입력 요소)
+ * ======================================= */
+
+.shift-editor {
+    display: flex;
+    flex-direction: column; /* 기본은 세로 정렬 (모바일에서 유리) */
+    align-items: center;
+    gap: 5px;
+}
+
+.shift-editor select, 
+.shift-editor input[type="time"] {
+    width: 100%;
+    max-width: 100px; /* PC에서 최대 너비 제한 */
+    padding: 5px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.85rem;
+}
+
+.shift-editor span {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* =======================================
+ * Action Buttons
+ * ======================================= */
+
+.finalize-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.finalize-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-cancel {
+    background-color: #6c757d;
+    color: white;
+}
+.btn-cancel:hover {
+    background-color: #5a6268;
+}
+
+.btn-save {
+    background-color: #28a745;
+    color: white;
+}
+.btn-save:hover {
+    background-color: #1e7e34;
+}
+
+/* =======================================
+ * PC/Desktop Media Query (768px 이상)
+ * ======================================= */
+
+@media (min-width: 768px) {
+    .page-with-header {
+        padding: 30px 20px;
+    }
+
+    .finalize-header h1 {
+        font-size: 2rem;
+    }
+
+    /* Shift Editor: PC에서는 가로 정렬로 변경 */
+    .shift-editor {
+        flex-direction: row;
+        flex-wrap: wrap; /* 요소가 넘치면 다음 줄로 */
+        justify-content: center;
+        gap: 2px; /* 간격 축소 */
+    }
+
+    .shift-editor select {
+        width: 80px; /* 셀렉트 박스 너비 고정 */
+    }
+    
+    .shift-editor input[type="time"] {
+        width: 70px; /* 시간 입력 너비 축소 */
+    }
+    
+    /* 파트타임 시간 입력 시 가로 정렬 문제 해결 */
+    .shift-editor > span {
+        flex-shrink: 0; /* '~' 기호가 줄어들지 않도록 */
+    }
+}
