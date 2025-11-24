@@ -34,7 +34,7 @@ async function getAllowedStores(req) {
   const conn = pool(req);
   const user = req.user;
 
-  // 🔥 총관리자: 모든 매장 기본 허용 + 추가 등록된 매장은 중복 제거
+  // 총관리자: 모든 매장
   if (user.level === 4) {
     const [[{count}]] = await conn.query(`SELECT COUNT(*) AS count FROM stores`);
     if (count > 0) {
@@ -44,7 +44,7 @@ async function getAllowedStores(req) {
     return [];
   }
 
-  // 🔥 매장관리자: 자기 매장 + 부여받은 매장 목록
+  // 매장관리자: 자기 매장 + 부여받은 매장 목록
   if (user.level === 3) {
     const [extra] = await conn.query(
       `SELECT store_id FROM admin_store_access WHERE admin_user_id = ?`,
@@ -57,29 +57,45 @@ async function getAllowedStores(req) {
   return [user.store_id];
 }
 
-
-
 /* =========================================================
-   1. 관리자 스케줄 목록 조회 (관리 가능한 매장만)
+   1. 관리자 스케줄 목록 조회 (정렬 + 페이지네이션)
 ========================================================= */
 router.get('/', authMiddleware, storeAdmin, async (req, res) => {
   try {
-    const { store_id } = req.query;
-    const allowedStores = await getAllowedStores(req);
+    const {
+      store_id,
+      page = 1,
+      pageSize = 10,
+      sort = 'desc',  // 'desc' = 최신순, 'asc' = 오래된순
+    } = req.query;
 
-    if (!allowedStores.length) return res.json([]);
+    const allowedStores = await getAllowedStores(req);
+    if (!allowedStores.length) return res.json({ total: 0, page: 1, pageSize: Number(pageSize), pages: 0, items: [] });
 
     const filterStoreId = store_id ? Number(store_id) : null;
     if (filterStoreId && !allowedStores.includes(filterStoreId)) {
       return res.status(403).json({ message: '해당 매장 관리 권한 없음' });
     }
 
+    const sortOrder = sort === 'asc' ? 'ASC' : 'DESC';
+    const limit = Number(pageSize);
+    const offset = (Number(page) - 1) * limit;
+
     const params = [allowedStores];
-    let extraWhere = '';
+    let whereStore = 's.store_id IN (?)';
     if (filterStoreId) {
-      extraWhere = ' AND s.store_id = ?';
+      whereStore += ' AND s.store_id = ?';
       params.push(filterStoreId);
     }
+
+    // 전체 개수
+    const [[{ total }]] = await pool(req).query(
+      `SELECT COUNT(*) AS total FROM schedules s WHERE ${whereStore}`,
+      params
+    );
+
+    // 목록 조회
+    params.push(limit, offset);
 
     const [rows] = await pool(req).query(
       `
@@ -89,15 +105,19 @@ router.get('/', authMiddleware, storeAdmin, async (req, res) => {
         st.name AS store_name
       FROM schedules s
       JOIN stores st ON s.store_id = st.id
-      WHERE s.store_id IN (?)
-      ${extraWhere}
-      ORDER BY s.week_start DESC
+      WHERE ${whereStore}
+      ORDER BY s.week_start ${sortOrder}
+      LIMIT ? OFFSET ?
       `,
       params
     );
 
-    res.json(
-      rows.map((r) => ({
+    res.json({
+      total,
+      page: Number(page),
+      pageSize: limit,
+      pages: Math.ceil(total / limit),
+      items: rows.map((r) => ({
         id: r.id,
         store_name: r.store_name,
         work_area: r.work_area || 'both',
@@ -108,16 +128,17 @@ router.get('/', authMiddleware, storeAdmin, async (req, res) => {
         },
         status: { value: r.status, text: statusText(r.status) }
       }))
-    );
+    });
   } catch (err) {
     console.error('스케줄 목록 오류:', err);
     res.status(500).json({ message: '스케줄 목록 조회 실패' });
   }
 });
 
-
 /* =========================================================
    2. 관리자 스케줄 생성 (work_area: hall/kitchen/both)
+   - 같은 날짜에 (hall + kitchen) 조합만 허용
+   - (hall, both) / (kitchen, both) / (both, both) 금지
 ========================================================= */
 router.post('/', authMiddleware, storeAdmin, async (req, res) => {
   const { store_id, week_start, work_area } = req.body;
@@ -132,6 +153,38 @@ router.post('/', authMiddleware, storeAdmin, async (req, res) => {
       return res.status(403).json({ message: '해당 매장 관리 권한 없음' });
     }
 
+    const area = work_area || 'both';
+
+    // 이미 같은 매장+시작일에 존재하는 스케줄 확인
+    const [existing] = await pool(req).query(
+      'SELECT id, work_area FROM schedules WHERE store_id = ? AND week_start = ?',
+      [store_id, week_start]
+    );
+
+    if (existing.length > 0) {
+      // 이미 1개 이상 존재 → 규칙 확인
+      const existingAreas = existing.map(r => r.work_area);
+
+      // 이미 both가 있으면 어떤 area도 추가 불가
+      if (existingAreas.includes('both')) {
+        return res.status(400).json({
+          message: '이미 전체(홀+주방) 스케줄이 있어 추가 생성이 불가합니다.'
+        });
+      }
+
+      // 새로 만드는 것이 both인 경우에도 안됨
+      if (area === 'both') {
+        return res.status(400).json({
+          message: '이미 홀/주방 스케줄이 있어 전체 스케줄 생성이 불가합니다.'
+        });
+      }
+
+      // hall / kitchen 조합은 최대 2개까지만 허용 (hall, kitchen)
+      if (existingAreas.includes(area)) {
+        return res.status(409).json({ message: '이미 동일 구역 스케줄이 존재합니다.' });
+      }
+    }
+
     const start = new Date(`${week_start}T00:00:00Z`);
     if (start.getUTCDay() !== 1) {
       return res.status(400).json({ message: '월요일을 선택하세요.' });
@@ -140,17 +193,6 @@ router.post('/', authMiddleware, storeAdmin, async (req, res) => {
     const end = new Date(start);
     end.setUTCDate(end.getUTCDate() + 6);
     const weekEndStr = end.toISOString().split('T')[0];
-
-    const [dup] = await pool(req).query(
-      'SELECT id FROM schedules WHERE store_id = ? AND week_start = ?',
-      [store_id, week_start]
-    );
-
-    if (dup.length > 0) {
-      return res.status(409).json({ message: '이미 존재하는 스케줄입니다.' });
-    }
-
-    const area = work_area || 'both';
 
     const [result] = await pool(req).query(
       `
@@ -174,7 +216,6 @@ router.post('/', authMiddleware, storeAdmin, async (req, res) => {
     res.status(500).json({ message: '스케줄 생성 실패' });
   }
 });
-
 
 /* =========================================================
    3. 직원용 - 오픈된 스케줄 조회 (홀/주방 필터 반영)
@@ -240,12 +281,13 @@ router.get('/open', authMiddleware, async (req, res) => {
   }
 });
 
-
 /* =========================================================
    4. 직원 스케줄 신청
 ========================================================= */
 router.post('/schedule', authMiddleware, async (req, res) => {
-  const { week_start, store_id, schedules } = req.body;
+  const { week_start, store_id, schedules,schedule_id } = req.body;
+  console.log(week_start, store_id, schedules,schedule_id);
+  
   const userId = req.user.id;
 
   if (!week_start || !store_id || !schedules) {
@@ -270,15 +312,14 @@ router.post('/schedule', authMiddleware, async (req, res) => {
 
       if (!sched) throw { status: 404, msg: '해당 주 스케줄 없음' };
 
-      const scheduleId = sched.id;
 
       await conn.query(
         'DELETE FROM schedule_requests WHERE schedule_id = ? AND user_id = ?',
-        [scheduleId, userId]
+        [schedule_id, userId]
       );
 
       const fields = ['user_id', 'schedule_id'];
-      const values = [userId, scheduleId];
+      const values = [userId, schedule_id];
       const ph = ['?', '?'];
 
       for (const [day, v] of Object.entries(schedules)) {
@@ -301,7 +342,6 @@ router.post('/schedule', authMiddleware, async (req, res) => {
     res.status(err.status || 500).json({ message: err.msg || '신청 실패' });
   }
 });
-
 
 /* =========================================================
    5. 직원 - 내가 신청한 스케줄 조회
@@ -372,7 +412,6 @@ router.get('/my-schedules', authMiddleware, async (req, res) => {
   }
 });
 
-
 /* =========================================================
    6. 직원 - 확정된 스케줄 조회
 ========================================================= */
@@ -426,9 +465,9 @@ router.get('/my-final-schedule', authMiddleware, async (req, res) => {
   }
 });
 
-
 /* =========================================================
    7. 관리자 - 확정 스케줄 저장(배정)
+   - shifts[userId][day] 에서 work_area, section_name 도 저장
 ========================================================= */
 router.post('/:id/finalize', authMiddleware, storeAdmin, async (req, res) => {
   const scheduleId = req.params.id;
@@ -440,7 +479,7 @@ router.post('/:id/finalize', authMiddleware, storeAdmin, async (req, res) => {
     await withTx(req, async (conn) => {
       // 스케줄 + 매장 권한 확인
       const [[sched]] = await conn.query(
-        'SELECT store_id, week_start FROM schedules WHERE id = ?',
+        'SELECT store_id, week_start, work_area FROM schedules WHERE id = ?',
         [scheduleId]
       );
       if (!sched) throw { status: 404, msg: '스케줄 없음' };
@@ -466,6 +505,7 @@ router.post('/:id/finalize', authMiddleware, storeAdmin, async (req, res) => {
       };
 
       const tasks = [];
+      const scheduleArea = sched.work_area || 'both';
 
       for (const [uid, days] of Object.entries(shifts)) {
         for (const [day, info] of Object.entries(days)) {
@@ -475,20 +515,36 @@ router.post('/:id/finalize', authMiddleware, storeAdmin, async (req, res) => {
           d.setDate(start.getDate() + dayOffset[day]);
           const dateStr = d.toISOString().split('T')[0];
 
+          const shiftType = info.type === 'full' ? 'full' : 'part';
+          const startTime = info.start || '09:00:00';
+          const endTime = info.end || '18:00:00';
+
+          // 스케줄이 hall/kitchen 이면 그 값으로 고정, both일 때만 info.work_area 사용
+          let workArea = 'hall';
+          if (scheduleArea === 'hall' || scheduleArea === 'kitchen') {
+            workArea = scheduleArea;
+          } else {
+            workArea = info.work_area || 'hall';
+          }
+
+          const sectionName = info.section_name || null;
+
           tasks.push(
             conn.query(
               `
               INSERT INTO assigned_shifts
-              (schedule_id, user_id, work_date, shift_type, start_time, end_time, break_minutes)
-              VALUES (?, ?, ?, ?, ?, ?, 60)
+              (schedule_id, user_id, work_date, shift_type, start_time, end_time, break_minutes, work_area, section_name)
+              VALUES (?, ?, ?, ?, ?, ?, 60, ?, ?)
               `,
               [
                 scheduleId,
                 uid,
                 dateStr,
-                info.type === 'full' ? 'full' : 'part',
-                info.start || '09:00:00',
-                info.end || '18:00:00'
+                shiftType,
+                startTime,
+                endTime,
+                workArea,
+                sectionName
               ]
             )
           );
@@ -510,17 +566,15 @@ router.post('/:id/finalize', authMiddleware, storeAdmin, async (req, res) => {
   }
 });
 
-
 /* =========================================================
-   8. 관리자 - 신청자 확인
+   8. 관리자 - 신청자/직원 목록 조회 (해당 매장 전체 직원 + 신청 정보)
 ========================================================= */
 router.get('/:id/applicants', authMiddleware, storeAdmin, async (req, res) => {
   try {
     const scheduleId = req.params.id;
 
-    // 스케줄/매장 권한 체크
     const [[sched]] = await pool(req).query(
-      'SELECT store_id FROM schedules WHERE id = ?',
+      'SELECT store_id, work_area FROM schedules WHERE id = ?',
       [scheduleId]
     );
     if (!sched) return res.status(404).json({ message: '스케줄 없음' });
@@ -532,7 +586,12 @@ router.get('/:id/applicants', authMiddleware, storeAdmin, async (req, res) => {
 
     const [rows] = await pool(req).query(
       `
-      SELECT u.id, u.name,
+      SELECT 
+        u.id,
+        u.name,
+        u.work_area,
+        u.level,
+        u.hire_date,
         sr.mon_type, sr.mon_start, sr.mon_end,
         sr.tue_type, sr.tue_start, sr.tue_end,
         sr.wed_type, sr.wed_start, sr.wed_end,
@@ -540,10 +599,23 @@ router.get('/:id/applicants', authMiddleware, storeAdmin, async (req, res) => {
         sr.fri_type, sr.fri_start, sr.fri_end,
         sr.sat_type, sr.sat_start, sr.sat_end,
         sr.sun_type, sr.sun_start, sr.sun_end
-      FROM schedule_requests sr
-      JOIN users u ON u.id = sr.user_id
-      WHERE schedule_id = ?
-      ORDER BY u.name
+      FROM users u
+      JOIN schedules s ON s.store_id = u.store_id AND s.id = ?
+      LEFT JOIN schedule_requests sr
+        ON sr.user_id = u.id AND sr.schedule_id = s.id
+      WHERE u.store_id = s.store_id
+        AND u.is_active = 1
+        AND u.level IN (1,2,3)
+        AND (
+          s.work_area = 'both'
+          OR u.work_area IS NULL
+          OR u.work_area = 'both'
+          OR u.work_area = s.work_area
+        )
+      ORDER BY 
+        u.level DESC,
+        (u.work_area = 'both') DESC,
+        u.hire_date ASC
       `,
       [scheduleId]
     );
@@ -555,11 +627,10 @@ router.get('/:id/applicants', authMiddleware, storeAdmin, async (req, res) => {
   }
 });
 
-
 /* =========================================================
-   9. 특정 스케줄 기본 정보 조회
+   9. 특정 스케줄 기본 정보 조회 (work_area 포함)
 ========================================================= */
-router.get('/:id', authMiddleware, storeAdmin, async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -583,6 +654,7 @@ router.get('/:id', authMiddleware, storeAdmin, async (req, res) => {
         DATE_FORMAT(s.week_start, '%Y-%m-%d') AS week_start,
         DATE_FORMAT(s.week_end, '%Y-%m-%d') AS week_end,
         s.store_id,
+        s.work_area,
         st.name AS store_name
       FROM schedules s
       JOIN stores st ON s.store_id = st.id
@@ -602,14 +674,14 @@ router.get('/:id', authMiddleware, storeAdmin, async (req, res) => {
       store_id: r.store_id,
       store_name: r.store_name,
       week_start: r.week_start,
-      week_end: r.week_end
+      week_end: r.week_end,
+      work_area: r.work_area || 'both'
     });
   } catch (err) {
     console.error('스케줄 조회 오류:', err);
     res.status(500).json({ message: '조회 실패' });
   }
 });
-
 
 /* =========================================================
    10. 자동 배치 (auto-assign) + 영업시간 제한
@@ -619,7 +691,6 @@ router.post('/:id/auto-assign', authMiddleware, storeAdmin, async (req, res) => 
 
   try {
     await withTx(req, async (conn) => {
-      // 스케줄/매장 + 영업시간 정보
       const [[sched]] = await conn.query(
         `
         SELECT s.id, s.store_id, s.week_start, st.open_time, st.close_time
@@ -632,7 +703,6 @@ router.post('/:id/auto-assign', authMiddleware, storeAdmin, async (req, res) => 
 
       if (!sched) throw { status: 404, msg: '스케줄 없음' };
 
-      // 권한 체크
       const allowedStores = await getAllowedStores({ ...req, app: { get: () => conn } });
       if (!allowedStores.includes(sched.store_id)) {
         throw { status: 403, msg: '해당 매장 관리 권한 없음' };
@@ -641,10 +711,8 @@ router.post('/:id/auto-assign', authMiddleware, storeAdmin, async (req, res) => 
       const openTime = sched.open_time || '10:00:00';
       const closeTime = sched.close_time || '22:00:00';
 
-      // 기존 배정 삭제
       await conn.query('DELETE FROM assigned_shifts WHERE schedule_id = ?', [scheduleId]);
 
-      // 신청 내역 가져오기
       const [requests] = await conn.query(
         `
         SELECT *
@@ -672,7 +740,6 @@ router.post('/:id/auto-assign', authMiddleware, storeAdmin, async (req, res) => 
 
           if (!type || type === 'off') continue;
 
-          // 풀타임 → 매장 영업시간
           if (type === 'full') {
             st = openTime;
             et = closeTime;
@@ -680,7 +747,6 @@ router.post('/:id/auto-assign', authMiddleware, storeAdmin, async (req, res) => 
 
           if (!st || !et) continue;
 
-          // 영업시간 범위로 클램프
           if (st < openTime) st = openTime;
           if (et > closeTime) et = closeTime;
           if (et <= st) continue;
@@ -721,9 +787,8 @@ router.post('/:id/auto-assign', authMiddleware, storeAdmin, async (req, res) => 
   }
 });
 
-
 /* =========================================================
-   11. 주단위 인건비율 리포트 (미리보기/엑셀용)
+   11. 주단위 인건비율 리포트
 ========================================================= */
 router.get('/:id/labor-report', authMiddleware, storeAdmin, async (req, res) => {
   const scheduleId = req.params.id;
@@ -750,7 +815,6 @@ router.get('/:id/labor-report', authMiddleware, storeAdmin, async (req, res) => 
         return res.status(403).json({ message: '해당 매장 관리 권한 없음' });
       }
 
-      // 총 근무시간/인건비 계산
       const [laborRows] = await conn.query(
         `
         SELECT 
@@ -778,13 +842,11 @@ router.get('/:id/labor-report', authMiddleware, storeAdmin, async (req, res) => 
         totalLaborCost += cost;
       }
 
-      // 매출 합계
       const [salesRows] = await conn.query(
         `
         SELECT SUM(sales_amount) AS total_sales
         FROM store_daily_sales
-        WHERE store_id = ?
-          AND sales_date BETWEEN ? AND ?
+        WHERE store_id = ? AND sales_date BETWEEN ? AND ?
         `,
         [sched.store_id, sched.week_start, sched.week_end]
       );
@@ -804,7 +866,7 @@ router.get('/:id/labor-report', authMiddleware, storeAdmin, async (req, res) => 
         totalHours: Number((totalMinutes / 60).toFixed(1)),
         totalLaborCost: Math.round(totalLaborCost),
         totalSales,
-        laborRate // 인건비율(%)
+        laborRate
       });
     } finally {
       conn.release();

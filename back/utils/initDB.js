@@ -153,8 +153,7 @@ CREATE TABLE IF NOT EXISTS schedules (
   status ENUM('draft','open','assigned','closed') DEFAULT 'draft',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   assigned_at TIMESTAMP NULL,
-  work_area ENUM('hall','kitchen','both') NOT NULL DEFAULT 'both',
-  UNIQUE KEY uniq_store_week (store_id, week_start)
+  work_area ENUM('hall','kitchen','both') NOT NULL DEFAULT 'both'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 

@@ -202,10 +202,10 @@
     color: #8b5cf6;
 }
 
-.status-assigned {
+/* .status-assigned {
     background-color: #f0fdf4;
     color: #16a34a;
-}
+} */
 
 .status-closed {
     background-color: #f3f4f6;
@@ -345,4 +345,46 @@
         margin-right: 0.5rem;
         padding: 0.25rem;
     }
+}
+
+.status-open {
+  background: #ffe08a;
+  color: #a66a00;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* .status-assigned {
+  background: #8ae68a;
+  color: #0f7a0f;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 6px;
+} */
+
+.status-closed {
+  background: #ccc;
+  color: #555;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* 상태 공통 뱃지 스타일은 기존 그대로 두고, 아래만 추가하면 됨 */
+.status-badge.status-open {
+  /* 예: 노랑 계열 (신청 중) */
+  background-color: #ffe08a;
+  color: #855000;
+}
+
+.status-badge.status-assigned {
+  /* 예: 파랑 계열 (배정 완료) */
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.status-badge.status-closed {
+  /* 예: 회색 계열 (마감) */
+  background-color: #e2e3e5;
+  color: #383d41;
 }

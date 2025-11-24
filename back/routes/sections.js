@@ -12,7 +12,7 @@ async function getAllowedStores(req) {
 
   // 🔥 총관리자: 모든 매장 기본 허용 + 추가 등록된 매장은 중복 제거
   if (user.level === 4) {
-    const [[{count}]] = await conn.query(`SELECT COUNT(*) AS count FROM stores`);
+    const [[{ count }]] = await conn.query(`SELECT COUNT(*) AS count FROM stores`);
     if (count > 0) {
       const [rows] = await conn.query(`SELECT id FROM stores`);
       return rows.map(r => r.id);
@@ -39,21 +39,27 @@ async function getAllowedStores(req) {
 ===================================================== */
 // 목록
 router.get('/:type', auth, async (req, res) => {
-  const { type } = req.params;
-  const { store_id } = req.query;
-  if (!store_id) return res.json([]);
+  try {
+    const { type } = req.params;
 
-  const table = type === 'hall' ? 'hall_sections' : 'kitchen_sections';
+    const { store_id } = req.query;
+    if (!store_id) return res.json([]);
 
-  const [rows] = await pool(req).query(
-    `SELECT id, name, is_active, store_id 
+    const table = type === 'hall' ? 'hall_sections' : 'kitchen_sections';
+
+    const [rows] = await pool(req).query(
+      `SELECT id, name, is_active, store_id 
      FROM ${table}
      WHERE store_id = ?
      ORDER BY id`,
-    [store_id]
-  );
+      [store_id]
+    );
+    res.json(rows);
+  } catch (e) {
+    console.log(e);
 
-  res.json(rows);
+  }
+
 });
 
 // 추가
@@ -79,7 +85,7 @@ router.post('/:type', auth, storeAdmin, async (req, res) => {
   const { name, store_id } = req.body;
 
   const table = type === 'hall' ? 'hall_sections' :
-                type === 'kitchen' ? 'kitchen_sections' : null;
+    type === 'kitchen' ? 'kitchen_sections' : null;
   if (!table) return res.status(400).json({ message: '잘못된 타입' });
 
   const allowedStores = await getAllowedStores(req);
@@ -103,7 +109,7 @@ router.put('/:type/:id', auth, storeAdmin, async (req, res) => {
   const { name, is_active } = req.body;
 
   const table = type === 'hall' ? 'hall_sections' :
-                type === 'kitchen' ? 'kitchen_sections' : null;
+    type === 'kitchen' ? 'kitchen_sections' : null;
   if (!table) return res.status(400).json({ message: '잘못된 타입' });
 
   const [[row]] = await pool(req).query(
@@ -132,7 +138,7 @@ router.delete('/:type/:id', auth, storeAdmin, async (req, res) => {
   const { type, id } = req.params;
 
   const table = type === 'hall' ? 'hall_sections' :
-                type === 'kitchen' ? 'kitchen_sections' : null;
+    type === 'kitchen' ? 'kitchen_sections' : null;
   if (!table) return res.status(400).json({ message: '잘못된 타입' });
 
   const [[row]] = await pool(req).query(

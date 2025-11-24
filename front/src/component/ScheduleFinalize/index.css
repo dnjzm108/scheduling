@@ -202,3 +202,14 @@
         flex-shrink: 0; /* '~' 기호가 줄어들지 않도록 */
     }
 }
+
+.time-range input[type="time"] {
+  width: 130px;
+  min-width: 90px;
+  font-size: 14px;
+  padding: 4px 6px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: small;
+}

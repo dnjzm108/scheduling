@@ -17,6 +17,7 @@ function Apply() {
   const [storeName, setStoreName] = useState('');
   const [weekStart, setWeekStart] = useState('');
   const [weekEnd, setWeekEnd] = useState('');
+  const [schedulId, setSchedulId] = useState('');
   const [schedules, setSchedules] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -43,8 +44,8 @@ useEffect(() => {
     toast.error('잘못된 접근입니다.');
     return navigate('/myschedules');
   }
-
   const { schedule_id, store_name } = state;
+setSchedulId(schedule_id)
 
   setSchedules(Object.fromEntries(days.map(d => [d.key, { type: 'off', start: '', end: '' }])));
 
@@ -56,7 +57,6 @@ useEffect(() => {
       );
 
       const data = response.data;
-      console.log("==============",data);
       
       setStoreId(data.store_id);
       setStoreName(store_name || data.store_name);
@@ -108,17 +108,26 @@ useEffect(() => {
     }
 
     try {
+      console.log(  { 
+          week_start: weekStart,
+          store_id: storeId,
+          schedule_id:schedulId,
+          schedules 
+        },);
+      
       await axios.post(
         `${BASE_URL}/api/schedules/schedule`,
         { 
           week_start: weekStart,
           store_id: storeId,
+          schedule_id:schedulId,
           schedules 
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success('스케줄 신청 완료!');
-      setTimeout(() => navigate('/myschedules'), 2000);
+
+ toast.success('스케줄 신청 완료!');
+setTimeout(() => navigate('/myschedules'), 1500);
     } catch (err) {
       toast.error(err.response?.data?.message || '신청 실패');
     }
@@ -127,6 +136,8 @@ useEffect(() => {
   return (
     <>
       <Header title={<>스케줄 신청 ({weekStart} ~ {weekEnd})</>} backTo="/myschedules" />
+       <ToastContainer position="top-center" theme="colored" autoClose={1800} />
+
     <div className="apply-container ">
       <div className="apply-store-info">매장: {storeName || '로딩 중...'}</div>
       

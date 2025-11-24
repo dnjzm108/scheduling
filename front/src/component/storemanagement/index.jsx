@@ -15,7 +15,7 @@ function StoreManage() {
   const isProcessing = useRef(false);
   const hasLoaded = useRef(false);
 
-  const [userLevel, setUserLevel] = useState(0);
+  // const [userLevel, setUserLevel] = useState(0);
   const [stores, setStores] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +45,7 @@ function StoreManage() {
         toast.error('총관리자만 접근 가능합니다.');
         return setTimeout(() => navigate('/'), 2000);
       }
-      setUserLevel(decoded.level);
+      // setUserLevel(decoded.level);
     } catch (err) {
       toast.error('세션 오류');
       removeToken();

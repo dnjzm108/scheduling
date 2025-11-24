@@ -550,14 +550,18 @@ function EmployeeManagement() {
                       </div>
                     </div>
                     <div className="emp-actions">
-                      <button onClick={() => startEdit(emp)}>수정</button>
-                      <button onClick={() => startPasswordEdit(emp)}>비밀번호</button>
-                      {emp.level < 3 && (
+
+                      {emp.level < userInfo.level && (
                         <>
-                        <button onClick={() => handleDelete(emp.id)} className="delete">퇴사처리</button>
+                          <button onClick={() => startEdit(emp)}>수정</button>
+                          <button onClick={() => startPasswordEdit(emp)}>비밀번호</button>
+                          <button onClick={() => handleDelete(emp.id)} className="delete">
+                            퇴사처리
+                          </button>
                         </>
                       )}
                     </div>
+
                   </div>
                 );
               })}

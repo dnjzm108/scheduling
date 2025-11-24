@@ -69,9 +69,9 @@ router.get('/employees', authMiddleware, async (req, res) => {
       FROM users u
       LEFT JOIN employee_salary s ON u.id = s.user_id
       WHERE u.level >= 1 AND u.is_active = 1
+        AND u.level < ?
     `;
-
-    const params = [];
+    const params = [requesterLevel];
 
     if (requesterLevel === 3) {
       sql += ' AND u.store_id = ?';
@@ -83,7 +83,12 @@ router.get('/employees', authMiddleware, async (req, res) => {
       params.push(store_id);
     }
 
-    sql += ' ORDER BY u.hire_date DESC, u.name';
+    sql += `
+  ORDER BY 
+    u.level DESC,
+    (u.work_area = 'both') DESC,
+    u.hire_date ASC,
+    u.name ASC `;
 
     const [rows] = await pool(req).query(sql, params);
 
@@ -227,7 +232,7 @@ router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
       for (const [field, value] of Object.entries({ userId: newUserId, phone })) {
         if (value && value !== oldUser[field]) {
           const [dup] = await conn.query(
-            `SELECT id FROM users WHERE ${field} = ? AND id != ?`, 
+            `SELECT id FROM users WHERE ${field} = ? AND id != ?`,
             [value, userId]
           );
           if (dup.length > 0) {
@@ -297,7 +302,7 @@ router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
           finalLevel === 1 ? 'hourly' : 'monthly',
           finalLevel === 1 ? parseInt(hourly_rate, 10) : null,
           finalLevel === 1 ? parseInt(hourly_rate_with_holiday, 10) : null,
-          [2,3].includes(finalLevel) ? parseInt(monthly_salary, 10) : null
+          [2, 3].includes(finalLevel) ? parseInt(monthly_salary, 10) : null
         ]);
       }
 

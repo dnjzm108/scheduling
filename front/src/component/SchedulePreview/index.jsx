@@ -22,15 +22,8 @@ function SchedulePreview({ scheduleId, onClose }) {
         ]);
 
         setScheduleInfo(infoRes.data);
+        setApplicants(applicantsRes.data);
 
-        // 입사일 순으로 정렬 (hire_date 오름차순)
-        const sortedApplicants = (applicantsRes.data || []).sort((a, b) => {
-          if (!a.hire_date) return 1;
-          if (!b.hire_date) return -1;
-          return a.hire_date.localeCompare(b.hire_date);
-        });
-
-        setApplicants(sortedApplicants);
       } catch (err) {
         console.error(err);
       } finally {
@@ -92,8 +85,6 @@ function SchedulePreview({ scheduleId, onClose }) {
         <thead>
           <tr>
             <th>이름</th>
-            <th>아이디</th>
-            <th>전화번호</th>
             <th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th><th>일</th>
           </tr>
         </thead>
@@ -101,8 +92,6 @@ function SchedulePreview({ scheduleId, onClose }) {
           {applicants.map((a, i) => (
             <tr key={i}>
               <td>{a.name}</td>
-              <td>{a.userId}</td>
-              <td>{a.phone}</td>
               <td>{formatDay(a.mon_type, a.mon_start, a.mon_end)}</td>
               <td>{formatDay(a.tue_type, a.tue_start, a.tue_end)}</td>
               <td>{formatDay(a.wed_type, a.wed_start, a.wed_end)}</td>
