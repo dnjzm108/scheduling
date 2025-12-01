@@ -1,93 +1,134 @@
-/* src/pages/AdminDashboard/index.css (화이트/보라 스타일 적용) */
+/* src/pages/AdminDashboard/index.css */
 
-:root {
-  /* 화이트/보라 계열 변수 */
-  --white-background: #ffffff;
-  --page-background: #f9fafb; /* 아주 연한 배경 */
-  --primary-accent: #4f46e5;
-  --primary-light: #6b46ef;
-  --text-dark: #1f2937;
-  --text-subtle: #6b7280;
-}
+/* --- 기본 레이아웃 --- */
 
 .admin-container {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  /* 배경: 아주 연한 회색 */
-  background: var(--page-background);
-  font-family: 'Pretendard', -apple-system, sans-serif;
-  padding-top: 1px;
+  background-color: #f8f9fa; /* 전체 배경색 */
+}
+
+.page-with-header {
+  flex-grow: 1;
+  padding: 20px;
 }
 
 .admin-content {
-  margin-top: 0; /* 헤더가 fixed가 아니므로 마진 제거 */
-  padding: 2rem;
   display: flex;
   justify-content: center;
+  width: 100%;
 }
 
 .admin-card {
-  /* 카드 스타일: 화이트 배경, 부드러운 모서리, 은은한 그림자 */
-  background: var(--white-background);
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05); /* 은은한 그림자 */
   width: 100%;
-  max-width: 900px;
-  text-align: center;
-}
-
-.admin-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-dark);
-  margin-bottom: 12px;
-}
-
-.admin-welcome {
-  font-size: 16px;
-  color: var(--text-subtle);
-  margin-bottom: 30px;
-}
-
-.admin-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-}
-
-.admin-menu-btn {
-  padding: 20px;
-  font-size: 17px;
-  font-weight: 600;
-  color: white;
-  /* 버튼 배경: 보라색 그라데이션 */
-  background: linear-gradient(135deg, var(--primary-accent), var(--primary-light));
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); 
-}
-
-.admin-menu-btn:hover {
-  transform: translateY(-2px); /* 호버 시 살짝만 띄우기 */
-  box-shadow: 0 6px 15px rgba(79, 70, 229, 0.35);
-  filter: brightness(1.05);
+  max-width: 1200px; /* 대시보드 최대 너비 설정 */
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .admin-loading {
-  font-size: 18px;
-  color: var(--text-subtle);
-  padding: 40px;
+  text-align: center;
+  padding: 50px;
+  font-size: 1.2rem;
+  color: #6c757d;
 }
 
-/* --- 📱 모바일 대응 (@media) --- */
-@media (max-width: 600px) {
-  .admin-content {
-    padding: 1rem;
+/* --- 카테고리 래퍼 및 그리드 레이아웃 (PC) --- */
+
+.admin-category-wrap {
+  display: grid;
+  /* PC에서는 3열로 배치 */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px; /* 카테고리 간 간격 */
+}
+
+.admin-category {
+  background-color: #f1f3f5;
+  border-radius: 8px;
+  padding: 20px;
+  border-left: 5px solid #007bff; /* 포인트 색상 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.admin-category-title {
+  font-size: 1.5rem;
+  color: #343a40;
+  margin-bottom: 15px;
+  font-weight: 700;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 10px;
+}
+
+/* --- 메뉴 버튼 그리드 --- */
+
+.admin-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-menu-btn {
+  width: 100%;
+  padding: 12px 15px;
+  text-align: left;
+  background-color: #ffffff;
+  color: #495057;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.admin-menu-btn:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+  color: #007bff;
+  transform: translateY(-1px);
+}
+
+/* --- 반응형 디자인 (모바일 및 태블릿) --- */
+
+@media (max-width: 1024px) {
+  .admin-category-wrap {
+    /* 태블릿에서는 2열로 변경 */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
-  .admin-grid {
-    grid-template-columns: 1fr; 
+}
+
+@media (max-width: 768px) {
+  .page-with-header {
+    padding: 10px;
+  }
+
+  .admin-card {
+    padding: 20px 10px;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .admin-category-wrap {
+    /* 모바일에서는 1열로 변경 */
+    grid-template-columns: 1fr;
     gap: 15px;
+  }
+
+  .admin-category {
+    padding: 15px;
+  }
+
+  .admin-category-title {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+  }
+
+  .admin-menu-btn {
+    padding: 10px 12px;
+    font-size: 0.95rem;
   }
 }

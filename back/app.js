@@ -32,6 +32,7 @@ app.use('/api/requests', require('./routes/request'));
 app.use('/api/schedules', require('./routes/schedule'));
 app.use('/api/payroll', require('./routes/payroll'));
 app.use('/api/sections', require('./routes/sections'));
+app.use('/api/store-sales', require('./routes/storeSales'));
 
 // 서버 시작
 async function startServer() {

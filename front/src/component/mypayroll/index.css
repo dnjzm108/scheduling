@@ -1,0 +1,100 @@
+.mypayroll-page {
+  width: 100%;
+}
+
+.mypayroll-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+.mypayroll-controls {
+  margin: 20px 0;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.my-week-block {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+  /* 모바일에서 테이블 스크롤을 위해 overflow-x 설정 */
+  overflow-x: auto; 
+}
+
+.week-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  white-space: nowrap; /* 모바일에서 주간 헤더가 깨지는 것을 방지 */
+  padding-right: 15px; /* 테이블 스크롤 공간 고려 */
+}
+
+.mypayroll-daily-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px; /* ✅ 모바일에서 가로 스크롤을 위한 최소 너비 */
+}
+
+.mypayroll-daily-table th,
+.mypayroll-daily-table td {
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+  text-align: center;
+  white-space: nowrap; /* 셀 내용이 강제로 줄바꿈되는 것 방지 */
+}
+
+.no-data {
+  padding: 30px;
+  text-align: center;
+  font-size: 1.2em;
+  color: #777;
+}
+
+/* --- 반응형 추가 (모바일 환경) --- */
+@media (max-width: 768px) {
+  .mypayroll-container {
+    padding: 10px; /* ✅ 패딩 감소 */
+    margin: 0; /* ✅ 좌우 마진 제거 (화면 전체 사용) */
+    max-width: 100%;
+  }
+
+  .mypayroll-controls {
+    flex-direction: column; /* ✅ 세로로 배치 */
+    align-items: flex-start;
+    margin: 15px 0;
+  }
+
+  .mypayroll-controls input[type="month"] {
+    width: 100%; /* ✅ 월 선택 input 전체 너비 사용 */
+  }
+
+  .my-week-block {
+    padding: 10px; /* ✅ 블록 내부 패딩 감소 */
+    border-radius: 5px;
+  }
+
+  .week-header {
+    flex-direction: column; /* ✅ 주간 헤더 세로로 배치 */
+    align-items: flex-start;
+    font-size: 0.9em;
+    padding-right: 0;
+  }
+  
+  .week-header span {
+    margin-top: 5px;
+    font-size: 0.9em;
+  }
+
+  .mypayroll-daily-table {
+    /* 모바일에서는 min-width를 유지하여 가로 스크롤 허용 */
+    font-size: 0.85em; /* ✅ 폰트 크기 감소 */
+  }
+
+  .mypayroll-daily-table th,
+  .mypayroll-daily-table td {
+    padding: 4px 6px; /* ✅ 셀 패딩 감소 */
+  }
+}

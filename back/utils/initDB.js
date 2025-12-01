@@ -89,6 +89,7 @@ async function createTable(conn, name, schema) {
 // 테이블 스키마
 // ----------------------------------------------------
 
+// 직원
 const usersSchema = `
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -120,7 +121,7 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
-
+// 매장 
 const storesSchema = `
 CREATE TABLE IF NOT EXISTS stores (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -133,6 +134,7 @@ CREATE TABLE IF NOT EXISTS stores (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 매장 설정
 const storeSettingsSchema = `
 CREATE TABLE IF NOT EXISTS store_settings (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -144,6 +146,7 @@ CREATE TABLE IF NOT EXISTS store_settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 스케줄(오픈)
 const schedulesSchema = `
 CREATE TABLE IF NOT EXISTS schedules (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -157,6 +160,7 @@ CREATE TABLE IF NOT EXISTS schedules (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 직원들이 신청한 스케줄 테이블
 const scheduleRequestsSchema = `
 CREATE TABLE IF NOT EXISTS schedule_requests (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -178,6 +182,7 @@ CREATE TABLE IF NOT EXISTS schedule_requests (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+
 const assignedShiftsSchema = `
 CREATE TABLE IF NOT EXISTS assigned_shifts (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -186,8 +191,8 @@ CREATE TABLE IF NOT EXISTS assigned_shifts (
 
   work_date DATE NOT NULL,
   shift_type ENUM('full','part','custom') NOT NULL DEFAULT 'custom',
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
+  start_time TIME NULL,
+  end_time TIME NULL,
   break_minutes INT DEFAULT 60,
 
   custom_hourly_rate INT NULL COMMENT '해당 날짜에 적용되는 수정 시급',
@@ -218,7 +223,7 @@ CREATE TABLE IF NOT EXISTS assigned_shifts (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
-
+// 직원 급여 테이블
 const employeeSalarySchema = `
 CREATE TABLE IF NOT EXISTS employee_salary (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -231,6 +236,7 @@ CREATE TABLE IF NOT EXISTS employee_salary (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 한달 급여 테이블
 const monthlyPayrollsSchema = `
 CREATE TABLE IF NOT EXISTS monthly_payrolls (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -261,6 +267,7 @@ CREATE TABLE IF NOT EXISTS monthly_payrolls (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 공지사항
 const noticesSchema = `
 CREATE TABLE IF NOT EXISTS notices (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -274,6 +281,7 @@ CREATE TABLE IF NOT EXISTS notices (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 건의사항
 const requestsSchema = `
 CREATE TABLE IF NOT EXISTS requests (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -286,6 +294,7 @@ CREATE TABLE IF NOT EXISTS requests (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 알림 (추후 게발 예정)
 const notificationsSchema = `
 CREATE TABLE IF NOT EXISTS notifications (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -298,6 +307,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 감사 로그
 const auditLogsSchema = `
 CREATE TABLE IF NOT EXISTS audit_logs (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -310,6 +320,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 홀 섹션
 const hallSectionsSchema = `
 CREATE TABLE IF NOT EXISTS hall_sections (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -321,7 +332,7 @@ CREATE TABLE IF NOT EXISTS hall_sections (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
-
+// 주방 섹션
 const kitchenSectionsSchema = `
 CREATE TABLE IF NOT EXISTS kitchen_sections (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -333,6 +344,7 @@ CREATE TABLE IF NOT EXISTS kitchen_sections (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
 
+// 매장 관리자 권한
 const adminStoreAccessSchema = `
 CREATE TABLE IF NOT EXISTS admin_store_access (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -341,6 +353,8 @@ CREATE TABLE IF NOT EXISTS admin_store_access (
   UNIQUE KEY uniq_admin_store (admin_user_id, store_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
+
+// 매장 매출액
 const storeDailySalesSchema = `
 CREATE TABLE IF NOT EXISTS store_daily_sales (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -351,6 +365,8 @@ CREATE TABLE IF NOT EXISTS store_daily_sales (
   UNIQUE KEY uniq_store_date (store_id, sales_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `;
+
+// 매장 BEP 
 const storeBepSchema = `
 CREATE TABLE IF NOT EXISTS store_bep (
   id INT AUTO_INCREMENT PRIMARY KEY,

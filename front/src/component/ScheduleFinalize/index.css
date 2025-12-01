@@ -1,215 +1,362 @@
-/* =======================================
- * Global & Layout Styles
- * ======================================= */
+/* src/pages/ScheduleFinalize/index.css */
+
+/* --- 기본 레이아웃 및 컨테이너 --- */
 
 .finalize-page {
-    min-height: 100vh;
-    background-color: #f7f9fc;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8f9fa;
 }
 
-/* Header 컴포넌트 아래의 실제 콘텐츠 영역 */
 .page-with-header {
-    padding-top: 60px; /* 헤더 높이만큼 여백 */
-    padding: 20px 10px;
-    max-width: 1400px; /* PC 최대 너비 제한 */
-    margin: 0 auto;
+  flex-grow: 1;
+  padding: 20px;
 }
 
 .finalize-container {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  max-width: 1400px; /* PC에서 넓게 사용 */
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.loading, .off-day {
-    text-align: center;
-    padding: 20px;
-    color: #6c757d;
+.loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 1.2rem;
+  color: #6c757d;
 }
-
-/* =======================================
- * Header & Info
- * ======================================= */
 
 .finalize-header h1 {
-    font-size: 1.8rem;
-    color: #333;
-    margin-bottom: 5px;
+  font-size: 1.8rem;
+  color: #343a40;
+  margin-bottom: 5px;
+  font-weight: 700;
 }
 
 .finalize-header p {
-    font-size: 1rem;
-    color: #888;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+  font-size: 1rem;
+  color: #6c757d;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e9ecef;
 }
 
-/* =======================================
- * Table Styles (PC/Desktop Focus)
- * ======================================= */
+/* --- 상단 컨트롤 영역 (시급/쉬는시간 설정 및 직원 추가) --- */
 
-/* 테이블이 가로로 넘칠 경우 스크롤 가능하도록 래퍼 추가 */
+.rate-controls,
+.break-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.finalize-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.finalize-controls .add-employee {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 버튼 스타일 (ON/OFF) */
+.rate-controls button,
+.break-controls button {
+  padding: 8px 15px;
+  border: 1px solid #adb5bd;
+  border-radius: 6px;
+  background-color: #f1f3f5;
+  color: #495057;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.rate-controls button.btn-on,
+.break-controls button.btn-on {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.rate-mode-select {
+  padding: 8px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+}
+
+/* 직원 추가 컨트롤 */
+.add-employee select {
+  padding: 8px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+}
+
+.btn-add {
+  padding: 8px 15px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* --- 메인 테이블 영역 --- */
+
 .finalize-table-wrapper {
-    overflow-x: auto;
-    width: 100%;
-    margin-bottom: 20px;
+  overflow-x: auto; /* 모바일/PC 모두 가로 스크롤 준비 */
+  margin-bottom: 20px;
 }
 
 .finalize-table {
-    width: 100%;
-    min-width: 900px; /* 테이블 최소 너비 (모바일에서 스크롤 유도) */
-    border-collapse: collapse;
-    font-size: 0.9rem;
-    table-layout: fixed; /* 셀 너비를 일정하게 유지 */
-}
-
-.finalize-table th, .finalize-table td {
-    padding: 12px 8px;
-    border: 1px solid #e9ecef;
-    text-align: center;
-    vertical-align: middle;
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* PC에서는 너비 고정 */
+  min-width: 1200px; /* 모바일에서 최소 너비 설정 */
 }
 
 .finalize-table thead th {
-    background-color: #007bff;
-    color: white;
-    font-weight: 600;
-    position: sticky; /* 가로 스크롤 시 요일 헤더 고정 (Chrome/Firefox 지원) */
-    top: 0;
-    z-index: 10;
+  background-color: #e9ecef;
+  color: #343a40;
+  padding: 10px 5px;
+  border: 1px solid #dee2e6;
+  font-size: 0.9rem;
+  font-weight: 600;
+  vertical-align: top;
 }
 
-.finalize-table tbody tr:nth-child(even) {
-    background-color: #f8f9fa;
+.finalize-table tbody td {
+  border: 1px solid #dee2e6;
+  padding: 5px;
+  vertical-align: top;
+  font-size: 0.85rem;
+  background-color: #ffffff;
+}
+
+/* 요일 시급/쉬는시간 행 */
+.daily-rate-row td,
+.daily-break-row td {
+  background-color: #fff3cd; /* 강조 색상 */
+  padding: 8px 5px;
+}
+
+.daily-rate-row input,
+.daily-break-row input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+/* 첫 번째 열 (직원 이름) */
+.finalize-table th:first-child,
+.finalize-table td:first-child {
+  width: 150px; /* 고정 너비 */
+  min-width: 130px;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: #f1f3f5; /* 스티키 배경색 */
+  border-right: 2px solid #adb5bd; /* 구분선 */
 }
 
 .employee-name {
-    font-weight: bold;
-    background-color: #e9ecef;
-    width: 120px; /* 이름 칸 너비 고정 */
-    position: sticky; /* 세로 스크롤 시 이름 칸 고정 */
-    left: 0;
-    z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: #343a40;
 }
 
-/* 주말 색상 강조 */
-.finalize-table th:last-child, 
-.finalize-table td:last-child {
-    color: #dc3545; /* 일요일 (sun) */
-}
-.finalize-table th:nth-last-child(2), 
-.finalize-table td:nth-last-child(2) {
-    color: #28a745; /* 토요일 (sat) */
+.btn-remove-user {
+  background: none;
+  border: none;
+  color: #dc3545;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
 }
 
-/* =======================================
- * Shift Editor Styles (입력 요소)
- * ======================================= */
+/* --- Shift Editor 내부 스타일 (수정됨) --- */
 
 .shift-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.shift-editor select,
+.shift-editor input[type="number"] {
+  width: 100%;
+  padding: 4px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.shift-editor .time-range {
+  /* 시간 입력 필드를 감싸는 컨테이너 */
+  display: flex;
+  flex-direction: column; /* ✅ 수정: 세로로 배치 */
+  gap: 2px;
+}
+
+.shift-editor .time-range input {
+  /* ✅ 수정: 시간 입력 필드가 각자 한 줄을 차지하도록 변경 */
+  flex-grow: 1; 
+  width: 100%;
+  display: block; 
+  font-size: 0.8rem;
+  padding: 4px;
+}
+
+.shift-editor .fixed-area-label {
+  display: block;
+  padding: 4px;
+  text-align: center;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  color: #495057;
+}
+
+.shift-editor .break-input {
     display: flex;
-    flex-direction: column; /* 기본은 세로 정렬 (모바일에서 유리) */
     align-items: center;
     gap: 5px;
+    font-size: 0.8rem;
 }
 
-.shift-editor select, 
-.shift-editor input[type="time"] {
-    width: 100%;
-    max-width: 100px; /* PC에서 최대 너비 제한 */
-    padding: 5px;
-    border: 1px solid #ced4da;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 0.85rem;
+.shift-editor .break-input input {
+    width: 60%;
 }
 
-.shift-editor span {
-    font-size: 0.85rem;
-    color: #6c757d;
-}
 
-/* =======================================
- * Action Buttons
- * ======================================= */
+/* --- 하단 액션 버튼 --- */
 
 .finalize-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  padding-top: 20px;
 }
 
-.finalize-actions button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s;
+.btn-cancel,
+.btn-save {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .btn-cancel {
-    background-color: #6c757d;
-    color: white;
-}
-.btn-cancel:hover {
-    background-color: #5a6268;
+  background-color: #6c757d;
+  color: white;
 }
 
 .btn-save {
-    background-color: #28a745;
-    color: white;
+  background-color: #007bff;
+  color: white;
 }
+
+.btn-cancel:hover {
+  background-color: #5a6268;
+}
+
 .btn-save:hover {
-    background-color: #1e7e34;
+  background-color: #0056b3;
 }
 
-/* =======================================
- * PC/Desktop Media Query (768px 이상)
- * ======================================= */
 
-@media (min-width: 768px) {
-    .page-with-header {
-        padding: 30px 20px;
-    }
+/* --- 반응형 디자인 (모바일 최적화) --- */
 
-    .finalize-header h1 {
-        font-size: 2rem;
-    }
+@media (max-width: 768px) {
+  .page-with-header {
+    padding: 10px;
+  }
 
-    /* Shift Editor: PC에서는 가로 정렬로 변경 */
-    .shift-editor {
-        flex-direction: row;
-        flex-wrap: wrap; /* 요소가 넘치면 다음 줄로 */
-        justify-content: center;
-        gap: 2px; /* 간격 축소 */
-    }
+  .finalize-container {
+    padding: 10px;
+    border-radius: 0;
+    box-shadow: none;
+  }
 
-    .shift-editor select {
-        width: 80px; /* 셀렉트 박스 너비 고정 */
-    }
-    
-    .shift-editor input[type="time"] {
-        width: 70px; /* 시간 입력 너비 축소 */
-    }
-    
-    /* 파트타임 시간 입력 시 가로 정렬 문제 해결 */
-    .shift-editor > span {
-        flex-shrink: 0; /* '~' 기호가 줄어들지 않도록 */
-    }
-}
+  .finalize-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .finalize-header p {
+    font-size: 0.9rem;
+  }
 
-.time-range input[type="time"] {
-  width: 130px;
-  min-width: 90px;
-  font-size: 14px;
-  padding: 4px 6px;
-  border: 1px solid #d0d0d0;
-  border-radius: 6px;
-  box-sizing: border-box;
-  font-size: small;
+  .rate-controls,
+  .break-controls,
+  .finalize-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .rate-controls button,
+  .break-controls button,
+  .rate-mode-select,
+  .add-employee select,
+  .btn-add {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* 테이블 래퍼는 그대로 가로 스크롤 사용 */
+  .finalize-table {
+      min-width: 1000px; /* 모바일에서 스크롤을 위해 최소 너비 확보 */
+  }
+
+  .finalize-table th:first-child,
+  .finalize-table td:first-child {
+    /* 모바일에서는 고정 영역 너비 줄이기 */
+    width: 100px; 
+    min-width: 100px;
+  }
+
+  .finalize-table thead th {
+    font-size: 0.8rem;
+  }
+
+  .finalize-table tbody td {
+    font-size: 0.8rem;
+  }
+  
+  .shift-editor select,
+  .shift-editor input[type="number"],
+  .shift-editor .fixed-area-label,
+  .shift-editor .time-range input { /* ✅ 시간 input도 모바일 폰트 크기 조정 */
+    font-size: 0.75rem;
+    padding: 3px;
+  }
+  
+  .shift-editor .break-input {
+      font-size: 0.75rem;
+  }
+
+  .finalize-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .btn-cancel,
+  .btn-save {
+    width: 100%;
+  }
 }

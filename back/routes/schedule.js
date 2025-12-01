@@ -23,11 +23,19 @@ const withTx = async (req, fn) => {
   }
 };
 
-const getKDay = (d) => ['일','월','화','수','목','금','토'][new Date(d).getDay()];
+// 안전한 시간 변환 함수
+function safeTime(value) {
+  if (!value || value === "" || value === "null") return null;
+  if (/^\d{2}:\d{2}$/.test(value)) return value + ":00";  // HH:MM → HH:MM:00
+  return null;
+}
+
+
+const getKDay = (d) => ['일', '월', '화', '수', '목', '금', '토'][new Date(d).getDay()];
 const statusText = (s) =>
   s === 'open' ? '신청 중' :
-  s === 'assigned' ? '배정 완료' :
-  s === 'closed' ? '마감' : s;
+    s === 'assigned' ? '배정 완료' :
+      s === 'closed' ? '마감' : s;
 
 // 🔹 관리자 권한별 관리 가능한 매장 목록 조회
 async function getAllowedStores(req) {
@@ -36,7 +44,7 @@ async function getAllowedStores(req) {
 
   // 총관리자: 모든 매장
   if (user.level === 4) {
-    const [[{count}]] = await conn.query(`SELECT COUNT(*) AS count FROM stores`);
+    const [[{ count }]] = await conn.query(`SELECT COUNT(*) AS count FROM stores`);
     if (count > 0) {
       const [rows] = await conn.query(`SELECT id FROM stores`);
       return rows.map(r => r.id);
@@ -285,9 +293,9 @@ router.get('/open', authMiddleware, async (req, res) => {
    4. 직원 스케줄 신청
 ========================================================= */
 router.post('/schedule', authMiddleware, async (req, res) => {
-  const { week_start, store_id, schedules,schedule_id } = req.body;
-  console.log(week_start, store_id, schedules,schedule_id);
-  
+  const { week_start, store_id, schedules, schedule_id } = req.body;
+  console.log(week_start, store_id, schedules, schedule_id);
+
   const userId = req.user.id;
 
   if (!week_start || !store_id || !schedules) {
@@ -368,7 +376,7 @@ router.get('/my-schedules', authMiddleware, async (req, res) => {
       [req.user.id, me.store_id]
     );
 
-    const day = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
+    const day = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일' };
 
     res.json(
       rows.map((r) => {
@@ -384,8 +392,8 @@ router.get('/my-schedules', authMiddleware, async (req, res) => {
               type === 'full'
                 ? '10:00 ~ 22:00'
                 : type === 'part' && start && end
-                ? `${formatTime(start)} ~ ${formatTime(end)}`
-                : '휴무'
+                  ? `${formatTime(start)} ~ ${formatTime(end)}`
+                  : '휴무'
           };
         }
 
@@ -399,8 +407,8 @@ router.get('/my-schedules', authMiddleware, async (req, res) => {
               r.status === 'requested'
                 ? '신청됨'
                 : r.status === 'assigned'
-                ? '배정됨'
-                : '확정됨'
+                  ? '배정됨'
+                  : '확정됨'
           },
           daily
         });
@@ -415,6 +423,9 @@ router.get('/my-schedules', authMiddleware, async (req, res) => {
 /* =========================================================
    6. 직원 - 확정된 스케줄 조회
 ========================================================= */
+// =========================================================
+// 📌 나의 확정 스케줄 조회 (full-time 안전 처리 완벽 버전)
+// =========================================================
 router.get('/my-final-schedule', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -422,10 +433,19 @@ router.get('/my-final-schedule', authMiddleware, async (req, res) => {
     const [rows] = await pool(req).query(
       `
       SELECT 
-        a.schedule_id, a.work_date, a.start_time, a.end_time,
-        a.shift_type, a.break_minutes,
-        s.week_start, s.week_end, s.status,
-        st.name AS store_name
+        a.schedule_id,
+        a.work_date,
+        a.start_time,
+        a.end_time,
+        a.shift_type,
+        a.break_minutes,
+
+        s.week_start,
+        s.week_end,
+        s.status,
+        st.name AS store_name,
+        st.open_time,
+        st.close_time
       FROM assigned_shifts a
       JOIN schedules s ON s.id = a.schedule_id
       JOIN stores st ON st.id = s.store_id
@@ -440,21 +460,49 @@ router.get('/my-final-schedule', authMiddleware, async (req, res) => {
     const m = new Map();
 
     for (const r of rows) {
+
+      // 스케줄 묶음 생성
       if (!m.has(r.schedule_id)) {
         m.set(r.schedule_id, {
           id: r.schedule_id,
           store_name: r.store_name,
           label: `${formatDate(r.week_start)} ~ ${formatDate(r.week_end)}`,
-          status: { value: r.status, text: '확정됨' },
+          status: {
+            value: r.status,
+            text: r.status === 'confirmed' ? '확정됨' : '미확정'
+          },
           daily: {}
         });
       }
 
+      // ================================
+      // 🔥 시간 보정 (full-time 대응)
+      // ================================
+      let startStr = "";
+      let endStr = "";
+
+      if (r.shift_type === "full") {
+        // 가게 오픈/마감 시간 적용
+        startStr = r.open_time ? r.open_time.slice(0, 5) : "09:00";
+        endStr = r.close_time ? r.close_time.slice(0, 5) : "18:00";
+      } else {
+        // part-time → DB 값 사용
+        startStr = r.start_time ? r.start_time.slice(0, 5) : "";
+        endStr = r.end_time ? r.end_time.slice(0, 5) : "";
+      }
+
+      // ================================
+      // 🔥 요일 라벨
+      // ================================
       const dayKor = getKDay(r.work_date);
+
+      // ================================
+      // 🔥 daily 값 저장
+      // ================================
       m.get(r.schedule_id).daily[dayKor] = {
         type: r.shift_type,
-        break_minutes: r.break_minutes,
-        time: `${r.start_time.slice(0, 5)} ~ ${r.end_time.slice(0, 5)}`
+        break_minutes: r.break_minutes || 0,
+        time: `${startStr} ~ ${endStr}`
       };
     }
 
@@ -465,106 +513,89 @@ router.get('/my-final-schedule', authMiddleware, async (req, res) => {
   }
 });
 
+
 /* =========================================================
-   7. 관리자 - 확정 스케줄 저장(배정)
-   - shifts[userId][day] 에서 work_area, section_name 도 저장
+   7. 관리자 - 스케줄 확정 저장 (최적화 버전)
 ========================================================= */
+// 쉬는시간 저장 포함된 finalize API
+
 router.post('/:id/finalize', authMiddleware, storeAdmin, async (req, res) => {
   const scheduleId = req.params.id;
   const { shifts } = req.body;
 
-  if (!shifts) return res.status(400).json({ message: 'shifts 필요' });
+  if (!shifts) {
+    return res.status(400).json({ message: "shifts 데이터가 없습니다." });
+  }
 
   try {
     await withTx(req, async (conn) => {
-      // 스케줄 + 매장 권한 확인
       const [[sched]] = await conn.query(
-        'SELECT store_id, week_start, work_area FROM schedules WHERE id = ?',
+        `SELECT store_id, week_start, work_area FROM schedules WHERE id = ?`,
         [scheduleId]
       );
-      if (!sched) throw { status: 404, msg: '스케줄 없음' };
+      if (!sched) throw { status: 404, msg: "스케줄 없음" };
 
-      const allowedStores = await getAllowedStores({ ...req, app: { get: () => conn } });
+      const allowedStores = await getAllowedStores({ ...req, app:{ get:()=>conn } });
       if (!allowedStores.includes(sched.store_id)) {
-        throw { status: 403, msg: '해당 매장 관리 권한 없음' };
+        throw { status: 403, msg: "권한 없음" };
       }
 
-      await conn.query('DELETE FROM assigned_shifts WHERE schedule_id = ?', [
-        scheduleId
-      ]);
+      await conn.query(`DELETE FROM assigned_shifts WHERE schedule_id = ?`, [scheduleId]);
 
-      const start = new Date(sched.week_start);
-      const dayOffset = {
-        mon: 0,
-        tue: 1,
-        wed: 2,
-        thu: 3,
-        fri: 4,
-        sat: 5,
-        sun: 6
-      };
+      const dayIndex = { mon:0, tue:1, wed:2, thu:3, fri:4, sat:5, sun:6 };
+      const startDate = new Date(sched.week_start);
 
-      const tasks = [];
-      const scheduleArea = sched.work_area || 'both';
+      const insertData = [];
 
-      for (const [uid, days] of Object.entries(shifts)) {
-        for (const [day, info] of Object.entries(days)) {
-          if (!info || info.type === 'off') continue;
+      for (const [userId, daysObj] of Object.entries(shifts)) {
+        for (const [day, info] of Object.entries(daysObj)) {
+          if (!info || info.type === "off") continue;
 
-          const d = new Date(start);
-          d.setDate(start.getDate() + dayOffset[day]);
-          const dateStr = d.toISOString().split('T')[0];
+          const idx = dayIndex[day];
+          const d = new Date(startDate);
+          d.setDate(startDate.getDate() + idx);
 
-          const shiftType = info.type === 'full' ? 'full' : 'part';
-          const startTime = info.start || '09:00:00';
-          const endTime = info.end || '18:00:00';
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
 
-          // 스케줄이 hall/kitchen 이면 그 값으로 고정, both일 때만 info.work_area 사용
-          let workArea = 'hall';
-          if (scheduleArea === 'hall' || scheduleArea === 'kitchen') {
-            workArea = scheduleArea;
-          } else {
-            workArea = info.work_area || 'hall';
-          }
-
-          const sectionName = info.section_name || null;
-
-          tasks.push(
-            conn.query(
-              `
-              INSERT INTO assigned_shifts
-              (schedule_id, user_id, work_date, shift_type, start_time, end_time, break_minutes, work_area, section_name)
-              VALUES (?, ?, ?, ?, ?, ?, 60, ?, ?)
-              `,
-              [
-                scheduleId,
-                uid,
-                dateStr,
-                shiftType,
-                startTime,
-                endTime,
-                workArea,
-                sectionName
-              ]
-            )
-          );
+          insertData.push([
+            scheduleId,
+            Number(userId),
+            `${yyyy}-${mm}-${dd}`,
+            info.type,
+            info.start ? info.start + ":00" : null,
+            info.end ? info.end + ":00" : null,
+            info.break_minutes ?? 60,
+            sched.work_area === "both" ? info.work_area : sched.work_area,
+            info.section_name || null,
+            info.custom_hourly_rate || null
+          ]);
         }
       }
 
-      if (tasks.length) await Promise.all(tasks);
+      if (insertData.length > 0) {
+        await conn.query(
+          `INSERT INTO assigned_shifts
+           (schedule_id, user_id, work_date, shift_type, start_time, end_time, break_minutes, work_area, section_name, custom_hourly_rate)
+           VALUES ?`,
+          [insertData]
+        );
+      }
 
       await conn.query(
-        `UPDATE schedules SET status = 'assigned', assigned_at = NOW() WHERE id = ?`,
+        `UPDATE schedules SET status='assigned', assigned_at=NOW() WHERE id=?`,
         [scheduleId]
       );
     });
 
-    res.json({ message: '확정 완료' });
+    res.json({ message: "스케줄 확정 완료" });
+    
   } catch (err) {
-    console.error('확정 오류:', err);
-    res.status(err.status || 500).json({ message: err.msg || '확정 실패' });
+    res.status(err.status || 500).json({ message: err.msg || "스케줄 확정 실패" });
   }
 });
+
 
 /* =========================================================
    8. 관리자 - 신청자/직원 목록 조회 (해당 매장 전체 직원 + 신청 정보)
@@ -726,8 +757,8 @@ router.post('/:id/auto-assign', authMiddleware, storeAdmin, async (req, res) => 
         throw { status: 400, msg: '신청한 직원이 없습니다.' };
       }
 
-      const dayKeys = ['mon','tue','wed','thu','fri','sat','sun'];
-      const dayOffset = { mon:0, tue:1, wed:2, thu:3, fri:4, sat:5, sun:6 };
+      const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+      const dayOffset = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
 
       const start = new Date(sched.week_start);
       const tasks = [];
@@ -751,9 +782,13 @@ router.post('/:id/auto-assign', authMiddleware, storeAdmin, async (req, res) => 
           if (et > closeTime) et = closeTime;
           if (et <= st) continue;
 
-          const d = new Date(start);
-          d.setDate(start.getDate() + dayOffset[day]);
-          const dateStr = d.toISOString().split('T')[0];
+          const d = new Date(sched.week_start);
+          d.setDate(d.getDate() + dayOffset[day]);
+
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          const dd = String(d.getDate()).padStart(2, '0');
+          const dateStr = `${yyyy}-${mm}-${dd}`;  // "2025-11-24" 이런식
 
           tasks.push(
             conn.query(
@@ -874,6 +909,97 @@ router.get('/:id/labor-report', authMiddleware, storeAdmin, async (req, res) => 
   } catch (err) {
     console.error('labor-report 오류:', err);
     res.status(500).json({ message: '인건비 리포트 조회 실패' });
+  }
+});
+
+router.get('/:id/assigned', authMiddleware, storeAdmin, async (req, res) => {
+  try {
+    const scheduleId = req.params.id;
+
+    const [rows] = await pool(req).query(`
+      SELECT 
+        a.user_id,
+        a.work_date,
+        a.shift_type,
+        a.start_time,
+        a.end_time,
+        a.work_area,
+        a.section_name,
+        a.custom_hourly_rate,
+        a.break_minutes
+      FROM assigned_shifts a
+      WHERE a.schedule_id = ?
+      ORDER BY a.work_date ASC
+    `, [scheduleId]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '확정 스케줄 조회 실패' });
+  }
+});
+
+
+// ===============================================
+// 📌 스케줄 삭제 API
+// DELETE /api/schedules/:id
+// ===============================================
+router.delete('/:id', authMiddleware, async (req, res) => {
+  const scheduleId = req.params.id;
+  const userId = req.user.id;
+  const userLevel = req.user.level;
+
+  const conn = await pool(req).getConnection();
+
+  try {
+    // 스케줄 존재 여부 확인
+    const [[schedule]] = await conn.query(
+      `SELECT id, store_id FROM schedules WHERE id = ?`,
+      [scheduleId]
+    );
+
+    if (!schedule) {
+      return res.status(404).json({ message: "해당 스케줄을 찾을 수 없습니다." });
+    }
+
+    // 🔥 권한 체크
+    if (userLevel === 3) {
+      // 매장 관리자 → 자기 매장만 삭제 가능
+      const [[me]] = await conn.query(
+        `SELECT store_id FROM users WHERE id = ?`,
+        [userId]
+      );
+
+      if (!me || me.store_id !== schedule.store_id) {
+        return res.status(403).json({ message: "해당 매장 스케줄을 삭제할 권한이 없습니다." });
+      }
+    }
+
+    // 총관리자(level 4)는 모든 스케줄 삭제 가능
+
+    // 🔥 삭제 처리 (assigned_shifts → schedules 순)
+    await conn.beginTransaction();
+
+    await conn.query(
+      `DELETE FROM assigned_shifts WHERE schedule_id = ?`,
+      [scheduleId]
+    );
+
+    await conn.query(
+      `DELETE FROM schedules WHERE id = ?`,
+      [scheduleId]
+    );
+
+    await conn.commit();
+
+    res.json({ message: "스케줄 삭제 완료" });
+
+  } catch (err) {
+    await conn.rollback();
+    console.error("스케줄 삭제 오류:", err);
+    res.status(500).json({ message: "스케줄 삭제 실패", error: err.message });
+  } finally {
+    conn.release();
   }
 });
 

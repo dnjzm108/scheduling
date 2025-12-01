@@ -140,6 +140,12 @@ function MySchedules() {
             >
               건의사항
             </button>
+            <button
+              className="myschedules-button myschedules-notice-button"
+              onClick={() => navigate('/Mypayroll')}
+            >
+              나의 월급
+            </button>
           </div>
 
           <div className="myschedules-tab-row">
@@ -221,9 +227,11 @@ function MySchedules() {
                 <div className="weekly-header">
                   <strong>{week.store_name}</strong>
                   <span className="week-range">{week.label}</span>
+                  {viewMode == 'requested' ? 
                   <span className="status-badge">
                     {week.status?.text || (viewMode === 'final' ? '확정됨' : '신청됨')}
                   </span>
+                      :'' }
                 </div>
 
                 <div className="weekly-days">

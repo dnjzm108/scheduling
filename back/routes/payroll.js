@@ -16,10 +16,12 @@ function toHM(minutes) {
   return `${h}시간 ${mm}분`;
 }
 
-function pad(n) { return String(n).padStart(2, '0'); }
+function pad(n) {
+  return String(n).padStart(2, '0');
+}
 
 function weekdayKorean(d) {
-  const arr = ['일','월','화','수','목','금','토'];
+  const arr = ['일', '월', '화', '수', '목', '금', '토'];
   return arr[d.getDay()];
 }
 
@@ -38,7 +40,7 @@ function getMonday(date) {
   const d = new Date(date);
   const day = (d.getDay() + 6) % 7; // 월요일 기준
   d.setDate(d.getDate() - day);
-  d.setHours(0,0,0,0);
+  d.setHours(0, 0, 0, 0);
   return d;
 }
 
@@ -47,7 +49,7 @@ function setBorder(style) {
     top: { style },
     left: { style },
     bottom: { style },
-    right: { style }
+    right: { style },
   };
 }
 
@@ -95,9 +97,19 @@ function bankHolderLabel(bank_name, account_holder) {
   return `${bank_name}(${account_holder})`;
 }
 
+// HH:MM:SS → 분
+function timeStrToMinutes(t) {
+  if (!t) return null;
+  const [h, m] = t.split(':');
+  const hh = Number(h) || 0;
+  const mm = Number(m) || 0;
+  return hh * 60 + mm;
+}
+
 // =========================================================
 // getPayrollData - 섹션/파트/쉬는 시간 반영된 최종 계산 함수
 //  🔥 알바: 세금 공제 없음 (net_pay = 세전 총액)
+//  🔥 custom_hourly_rate 있으면 해당 일자 시급으로 우선 사용
 // =========================================================
 async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
   const { store_id, work_area, section_name } = filters;
@@ -109,22 +121,51 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
   const endDateStr = `${year}-${mm}-31`;
 
   // 🔥 매장 범위
-  let storeIds = [];
-  if (userLevel >= 3) {
-    const [rows] = await conn.query(`SELECT id FROM stores`);
-    storeIds = rows.map(r => r.id);
-  } else {
-    const [[me]] = await conn.query(
-      `SELECT store_id FROM users WHERE id = ?`,
-      [userId]
-    );
-    storeIds = [me.store_id];
-  }
+  // ===============================
+// 매장 권한 처리
+// ===============================
+let storeIds = [];
 
-  // store 필터 적용
-  if (store_id && store_id !== "all") {
-    storeIds = storeIds.filter(id => String(id) === String(store_id));
+// 레벨 4 → 전체 매장 접근 가능
+if (userLevel === 4) {
+  const [rows] = await conn.query(`SELECT id FROM stores`);
+  storeIds = rows.map((r) => r.id);
+}
+
+// 레벨 3 → 자기 매장 + 허용 매장
+else if (userLevel === 3) {
+  // 내 기본 매장
+  const [[me]] = await conn.query(
+    `SELECT store_id FROM users WHERE id = ?`,
+    [userId]
+  );
+  storeIds = [me.store_id];
+
+  // 허용 매장 추가
+  const [allowed] = await conn.query(
+    `SELECT store_id FROM admin_store_access WHERE admin_user_id = ?`,
+    [userId]
+  );
+
+  if (allowed.length > 0) {
+    storeIds.push(...allowed.map((a) => a.store_id));
   }
+}
+
+// 레벨 1~2 → 자기 매장만
+else {
+  const [[me]] = await conn.query(
+    `SELECT store_id FROM users WHERE id = ?`,
+    [userId]
+  );
+  storeIds = [me.store_id];
+}
+
+// store_id 필터 적용
+if (store_id !== 'all') {
+  storeIds = storeIds.filter((id) => String(id) === String(store_id));
+}
+
 
   const payrolls = [];
   let grandTotal = 0;
@@ -134,11 +175,16 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
   // =========================================================
   for (const sid of storeIds) {
     const [[store]] = await conn.query(
-      `SELECT name FROM stores WHERE id = ?`,
+      `SELECT name, open_time, close_time FROM stores WHERE id = ?`,
       [sid]
     );
 
-    // 직원 목록 (필요한 인적 정보 추가)
+    const storeOpen = store?.open_time || '10:00:00';
+    const storeClose = store?.close_time || '22:00:00';
+    const storeOpenMin = timeStrToMinutes(storeOpen);
+    const storeCloseMin = timeStrToMinutes(storeClose);
+
+    // 직원 목록
     const [employees] = await conn.query(
       `
       SELECT 
@@ -169,8 +215,8 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
     // =========================================================
     for (const emp of employees) {
       // 🔥 work_area 필터 (hall / kitchen / all)
-      if (work_area && work_area !== "all") {
-        if (emp.work_area === "both") {
+      if (work_area && work_area !== 'all') {
+        if (emp.work_area === 'both') {
           // both는 항상 포함
         } else if (emp.work_area !== work_area) {
           continue;
@@ -187,7 +233,9 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
           break_minutes,
           work_area,
           section_name,
-          final_minutes
+          final_minutes,
+          shift_type,
+          custom_hourly_rate
         FROM assigned_shifts
         WHERE user_id = ?
           AND work_date BETWEEN ? AND ?
@@ -197,16 +245,20 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
         [emp.id, startDateStr, endDateStr]
       );
 
-      // 🔥 섹션 필터 적용
+      // 섹션 필터 적용
       let filteredRecords = records;
-      if (section_name && section_name !== "all") {
-        filteredRecords = filteredRecords.filter(r => r.section_name === section_name);
+      if (section_name && section_name !== 'all') {
+        filteredRecords = filteredRecords.filter(
+          (r) => r.section_name === section_name
+        );
       }
 
       if (filteredRecords.length === 0) continue;
 
       // =========================================================
       // 근무 기록 → 주차별 버킷 분리
+      //  - 풀타임: 가게 open~close 기준 + break_minutes
+      //  - 파트타임: final_minutes 또는 (end - start - break)
       // =========================================================
       const weeks = {};
       const weekOrder = [];
@@ -215,49 +267,89 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
 
       for (const rec of filteredRecords) {
         const dateObj = new Date(rec.work_date);
-        dateObj.setHours(0,0,0,0);
+        dateObj.setHours(0, 0, 0, 0);
         const monday = getMonday(dateObj);
         const mondayIso = isoDate(monday);
 
         if (!weeks[mondayIso]) {
           weeks[mondayIso] = {
-            monday: monday,
+            monday,
             minutes: 0,
-            days: []
+            days: [],
           };
           weekOrder.push(mondayIso);
         }
 
-        const minutes = rec.final_minutes || 0;
+        const dayOfWeek = dateObj.getDay(); // 0:일 ~ 6:토
+        const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+
+        let minutes = 0;
+        let breakMin = rec.break_minutes || 0;
+
+        let startStr = rec.start_time ? rec.start_time.slice(0, 5) : '';
+        let endStr = rec.end_time ? rec.end_time.slice(0, 5) : '';
+
+        if (rec.shift_type === 'full') {
+          // 🔥 풀타임 근무시간 = 가게 open~close - 쉬는시간
+          let totalSpan = 0;
+          if (storeOpenMin != null && storeCloseMin != null) {
+            totalSpan = storeCloseMin - storeOpenMin;
+          }
+
+          // 평일 풀타임인데 쉬는시간이 안 들어왔으면 60분 기본
+          if (!breakMin && isWeekday) {
+            breakMin = 60;
+          }
+
+          minutes = Math.max(0, totalSpan - breakMin);
+
+          // 화면에 표시할 출/퇴근 시간은 가게 시간으로
+          startStr = storeOpen.substring(0, 5);
+          endStr = storeClose.substring(0, 5);
+        } else {
+          // 파트타임
+          if (rec.final_minutes != null) {
+            minutes = rec.final_minutes;
+          } else if (rec.start_time && rec.end_time) {
+            const sMin = timeStrToMinutes(rec.start_time);
+            const eMin = timeStrToMinutes(rec.end_time);
+            if (sMin != null && eMin != null && eMin > sMin) {
+              minutes = eMin - sMin - breakMin;
+            }
+          }
+        }
+
+        minutes = Math.max(0, minutes);
+
         weeks[mondayIso].minutes += minutes;
         totalMinutes += minutes;
 
         weeks[mondayIso].days.push({
           date_iso: isoDate(dateObj),
           day_label: mdWeekLabel(dateObj),
-          start: rec.start_time?.slice(0,5) || "",
-          end: rec.end_time?.slice(0,5) || "",
-          break: rec.break_minutes || 0,
+          start: startStr,
+          end: endStr,
+          break: breakMin,
           minutes,
           time_str: toHM(minutes),
           section_name: rec.section_name,
-          work_area: rec.work_area
+          work_area: rec.work_area,
+          custom_hourly_rate: rec.custom_hourly_rate,
         });
       }
 
       // =========================================================
-      // 월급자 처리 (level = 2, 정직원)
-      //  - net_pay = monthly_salary 그대로 사용
+      // 월급자(정직원) 처리
       // =========================================================
       if (emp.level === 2) {
         const pay = emp.monthly_salary || 0;
 
         payrolls.push({
           store_id: sid,
-          store_name: store?.name || "",
+          store_name: store?.name || '',
           user_id: emp.id,
           user_name: emp.name,
-          employee_type: "full_time",
+          employee_type: 'full_time',
           hire_date: emp.hire_date,
           work_area: emp.work_area,
 
@@ -276,10 +368,10 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
           total_deduction: 0,
           net_pay: pay,
 
-          weeks: weekOrder.map(w => ({
-            week_label: "",
-            days: []     // 월급자는 상세 필요 없음
-          }))
+          weeks: weekOrder.map((w) => ({
+            week_label: '',
+            days: [], // 월급자는 상세 필요 없음
+          })),
         });
 
         grandTotal += pay;
@@ -288,7 +380,8 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
 
       // =========================================================
       // 알바 처리 (level = 1)
-      //  🔥 세금 3.3% 공제 제거 → gross = net
+      //  🔥 세금 공제 없음 → net_pay = gross
+      //  🔥 custom_hourly_rate 있으면 해당 일자 시급 사용
       // =========================================================
       const weekResult = [];
       let basePay = 0;
@@ -297,36 +390,44 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
       const MAX_BASE = 160 * 60;
       let remain = Math.min(MAX_BASE, totalMinutes);
 
+      let totalGrossFromDays = 0; // 👈 일별 pay 합 (custom 시급 포함)
+
       for (const mondayIso of weekOrder) {
         const wk = weeks[mondayIso];
         const wmin = wk.minutes;
 
-        // 주휴 포함 시급 판단
-        let rate = emp.hourly_rate;
+        // 주휴 포함 시급 판단 (기본 기준 시급)
+        let baseRate = emp.hourly_rate || 0;
         if (wmin >= 15 * 60 && emp.hourly_rate_with_holiday) {
-          rate = emp.hourly_rate_with_holiday;
+          baseRate = emp.hourly_rate_with_holiday;
         }
 
-        // base 구간
+        // base 구간 계산 (공식 기준 시급으로만 계산)
         const use = Math.min(wmin, remain);
-        basePay += Math.round((use/60) * rate);
+        basePay += Math.round((use / 60) * baseRate);
         remain -= use;
 
-        // 전체 일급
+        // 전체 일급 (custom 시급 포함)
         let weekTotalPay = 0;
-        const daysPaid = wk.days.map(day => {
-          const pay = Math.round((day.minutes / 60) * rate);
+        const daysPaid = wk.days.map((day) => {
+          let dayRate = baseRate;
+          if (day.custom_hourly_rate != null) {
+            dayRate = day.custom_hourly_rate;
+          }
+
+          const pay = Math.round((day.minutes / 60) * dayRate);
           weekTotalPay += pay;
+          totalGrossFromDays += pay;
 
           return {
             ...day,
-            hourly_rate_used: rate,
-            pay
+            hourly_rate_used: dayRate,
+            pay,
           };
         });
 
         const endDate = new Date(wk.monday);
-        endDate.setDate(endDate.getDate()+6);
+        endDate.setDate(endDate.getDate() + 6);
 
         weekResult.push({
           week_start_iso: isoDate(wk.monday),
@@ -334,25 +435,28 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
           week_label: `${mdWeekLabel(wk.monday)} ~ ${mdWeekLabel(endDate)}`,
           week_minutes: wmin,
           week_time_str: toHM(wmin),
-          rate_for_week: rate,
+          rate_for_week: baseRate,
           week_total_pay: weekTotalPay,
-          days: daysPaid
+          days: daysPaid,
         });
       }
 
-      // 초과수당
+      // 초과수당 (공식 기준 시급 사용)
       const overtime = Math.max(0, totalMinutes - MAX_BASE);
-      overtimePay = Math.round((overtime / 60) * emp.hourly_rate * 1.5);
+      overtimePay = Math.round(
+        (overtime / 60) * (emp.hourly_rate || 0) * 1.5
+      );
 
-      const gross = basePay + overtimePay;
-      const net = gross; // 🔥 세금 공제 없음
+      // 🔥 실지급 총액은 일별 pay 합 기준
+      const gross = totalGrossFromDays;
+      const net = gross;
 
       payrolls.push({
         store_id: sid,
-        store_name: store?.name || "",
+        store_name: store?.name || '',
         user_id: emp.id,
         user_name: emp.name,
-        employee_type: "part_time",
+        employee_type: 'part_time',
         hire_date: emp.hire_date,
         work_area: emp.work_area,
 
@@ -371,7 +475,7 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
         total_deduction: 0,
         net_pay: net,
 
-        weeks: weekResult
+        weeks: weekResult,
       });
 
       grandTotal += net;
@@ -386,13 +490,14 @@ async function getPayrollData(conn, month, userId, userLevel, filters = {}) {
 // =========================================================
 router.get('/:month/export', authMiddleware, async (req, res) => {
   const { month } = req.params;
-  const { store_id = "all", employee_type = "all", work_area = "all" } = req.query;
+  const { store_id = 'all', employee_type = 'all', work_area = 'all' } =
+    req.query;
 
   const userId = req.user.id;
   const userLevel = req.user.level || 1;
 
   if (!/^\d{6}$/.test(month)) {
-    return res.status(400).json({ message: "월 형식 오류(YYYYMM)" });
+    return res.status(400).json({ message: '월 형식 오류(YYYYMM)' });
   }
 
   const conn = await pool(req).getConnection();
@@ -401,17 +506,19 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
     const { payrolls } = await getPayrollData(conn, month, userId, userLevel, {
       store_id,
       work_area,
-      section_name: "all"
+      section_name: 'all',
     });
 
     // employee_type 필터 적용
     let filtered = payrolls;
-    if (employee_type && employee_type !== "all") {
-      filtered = filtered.filter(p => p.employee_type === employee_type);
+    if (employee_type && employee_type !== 'all') {
+      filtered = filtered.filter((p) => p.employee_type === employee_type);
     }
 
     if (!filtered.length) {
-      return res.status(404).json({ message: "엑셀로 내보낼 급여 데이터가 없습니다." });
+      return res
+        .status(404)
+        .json({ message: '엑셀로 내보낼 급여 데이터가 없습니다.' });
     }
 
     const workbook = new ExcelJS.Workbook();
@@ -422,19 +529,23 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
     const yy = year % 100;
 
     const areaLabel = workAreaLabel(work_area);
-    const firstStoreName = filtered[0]?.store_name || "";
+    const firstStoreName = filtered[0]?.store_name || '';
     const titleMonth = `${yy}년 ${monthNum}월`;
 
-    const isEmployeeOnly = (employee_type === 'full_time');
+    const isEmployeeOnly = employee_type === 'full_time';
 
-    const borderThin = setBorder("thin");
-    const headerFill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEEEEEE" } };
+    const borderThin = setBorder('thin');
+    const headerFill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFEEEEEE' },
+    };
 
     // =====================================================
     // 1) 직원용 엑셀 (월급자 샘플 형식)
-// =====================================================
+    // =====================================================
     if (isEmployeeOnly) {
-      const ws = workbook.addWorksheet("월급자");
+      const ws = workbook.addWorksheet('월급자');
 
       const count = filtered.length;
       const startCol = 2; // B열부터 직원
@@ -443,27 +554,26 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
 
       // 제목
       ws.mergeCells(`A1:${lastColName}1`);
-      ws.getCell("A1").value = `${firstStoreName} 전체 월급자(${titleMonth})`;
-      ws.getCell("A1").font = { bold: true, size: 14 };
-      ws.getCell("A1").alignment = { horizontal: "center" };
+      ws.getCell('A1').value = `${firstStoreName} 전체 월급자(${titleMonth})`;
+      ws.getCell('A1').font = { bold: true, size: 14 };
+      ws.getCell('A1').alignment = { horizontal: 'center' };
 
       // 2행: 번호
       for (let i = 0; i < count; i++) {
         ws.getCell(2, startCol + i).value = i + 1;
-        ws.getCell(2, startCol + i).alignment = { horizontal: "center" };
+        ws.getCell(2, startCol + i).alignment = { horizontal: 'center' };
       }
 
-      // 라벨 영역
       const labels = [
-        "이름",      // 3
-        "급여",      // 4
-        "주민번호",  // 5
-        "비자형태",  // 6
-        "세금여부",  // 7
-        "입사일",    // 8
-        "퇴사일",    // 9
-        "은행",      //10
-        "계좌번호"   //11
+        '이름',
+        '급여',
+        '주민번호',
+        '비자형태',
+        '세금여부',
+        '입사일',
+        '퇴사일',
+        '은행',
+        '계좌번호',
       ];
       const labelStartRow = 3;
 
@@ -471,87 +581,69 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
         const row = labelStartRow + idx;
         ws.getCell(row, 1).value = label;
         ws.getCell(row, 1).border = borderThin;
-        ws.getCell(row, 1).alignment = { horizontal: "center" };
+        ws.getCell(row, 1).alignment = { horizontal: 'center' };
       });
 
-      // 특이사항 / 급여 / 합계
-      ws.getCell(13, 1).value = "";
-      ws.getCell(14, 1).value = "특이사항";
+      ws.getCell(13, 1).value = '';
+      ws.getCell(14, 1).value = '특이사항';
       ws.getCell(14, 1).border = borderThin;
-      ws.getCell(14, 1).alignment = { horizontal: "center" };
+      ws.getCell(14, 1).alignment = { horizontal: 'center' };
 
-      ws.getCell(15, 1).value = "급여";
+      ws.getCell(15, 1).value = '급여';
       ws.getCell(15, 1).border = borderThin;
-      ws.getCell(15, 1).alignment = { horizontal: "center" };
+      ws.getCell(15, 1).alignment = { horizontal: 'center' };
 
-      ws.getCell(17, 1).value = "합계";
+      ws.getCell(17, 1).value = '합계';
       ws.getCell(17, 1).border = borderThin;
-      ws.getCell(17, 1).alignment = { horizontal: "center" };
+      ws.getCell(17, 1).alignment = { horizontal: 'center' };
 
-      // 데이터 채우기
       filtered.forEach((p, i) => {
         const col = startCol + i;
 
-        // 3행: 이름 (  이름)
         ws.getCell(3, col).value = `${p.user_name}`;
-        
-        // 4행: 급여(정보용, 비워둠)
         ws.getCell(4, col).value = `${p.monthly_salary}`;
-
-        // 5행: 주민번호
-        ws.getCell(5, col).value = p.resident_id || "";
-
-        // 6행: 비자형태 (기본값: 내국인)
-        ws.getCell(6, col).value = "내국인";
-
-        // 7행: 세금여부
+        ws.getCell(5, col).value = p.resident_id || '';
+        ws.getCell(6, col).value = '내국인';
         ws.getCell(7, col).value = taxLabel(p.tax_type);
-
-        // 8행: 입사일 (yymmdd)
         ws.getCell(8, col).value = toYYMMDD(p.hire_date);
-
-        // 9행: 퇴사일(없음)
-        // 10행: 은행(예금주)
-        ws.getCell(10, col).value = bankHolderLabel(p.bank_name, p.account_holder);
-
-        // 11행: 계좌번호
-        ws.getCell(11, col).value = p.bank_account || "";
-
-        // 15행: 급여 (월급)
+        ws.getCell(10, col).value = bankHolderLabel(
+          p.bank_name,
+          p.account_holder
+        );
+        ws.getCell(11, col).value = p.bank_account || '';
         ws.getCell(15, col).value = p.monthly_salary || p.net_pay || 0;
-        ws.getCell(15, col).numFmt = "#,##0";
+        ws.getCell(15, col).numFmt = '#,##0';
 
-        // 테두리
         for (let r = 3; r <= 11; r++) {
           ws.getCell(r, col).border = borderThin;
         }
         ws.getCell(15, col).border = borderThin;
       });
 
-      // 합계 (B열)
       if (count > 0) {
         const startColName = columnNumberToName(startCol);
         const endColName = columnNumberToName(endCol);
-        ws.getCell(17, 2).value = { formula: `SUM(${startColName}15:${endColName}15)` };
-        ws.getCell(17, 2).numFmt = "#,##0";
+        ws.getCell(17, 2).value = {
+          formula: `SUM(${startColName}15:${endColName}15)`,
+        };
+        ws.getCell(17, 2).numFmt = '#,##0';
         ws.getCell(17, 2).border = borderThin;
       }
 
-      // 컬럼 폭
       ws.getColumn(1).width = 12;
       for (let c = startCol; c <= endCol; c++) {
         ws.getColumn(c).width = 18;
       }
 
-      const fileTypeLabel = "직원";
+      const fileTypeLabel = '직원';
       const fileName = `(샤올) ${monthNum}월 ${areaLabel} ${fileTypeLabel} 급여.xlsx`;
 
       res.setHeader(
-        "Content-Type",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       );
       res.setHeader(
-        "Content-Disposition",
+        'Content-Disposition',
         `attachment; filename="${encodeURIComponent(fileName)}"`
       );
 
@@ -562,86 +654,79 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
 
     // =====================================================
     // 2) 알바 / 전체 엑셀 (알바 양식)
-//  - 시트1: 알바정산표
-//  - 시트N: 1_이름 (월 전체 날짜 + 주 단위 빈 행 구분 + 합계)
-//  - 정산표 금액은 개인 시트 합계 셀을 참조
-// =====================================================
-    const partTimers = filtered.filter(p => p.employee_type === "part_time");
+    // =====================================================
+    const partTimers = filtered.filter((p) => p.employee_type === 'part_time');
 
     if (!partTimers.length) {
-      return res.status(404).json({ message: "알바 급여 데이터가 없습니다." });
+      return res
+        .status(404)
+        .json({ message: '알바 급여 데이터가 없습니다.' });
     }
 
-    const wsSummary = workbook.addWorksheet("알바정산표");
+    const wsSummary = workbook.addWorksheet('알바정산표');
 
-    // 정산표 컬럼: 이름 / 세금 / 은행(예금주) / 계좌번호 / 총 근무시간 / 총 근무일 / 지급총액
     wsSummary.columns = [
-      { header: "이름", width: 16 },
-      { header: "세금", width: 10 },
-      { header: "은행(예금주)", width: 24 },
-      { header: "계좌번호", width: 22 },
-      { header: "총 근무시간", width: 16 },
-      { header: "총 근무일", width: 12 },
-      { header: "지급총액", width: 16 }
+      { header: '이름', width: 16 },
+      { header: '세금', width: 10 },
+      { header: '은행(예금주)', width: 24 },
+      { header: '계좌번호', width: 22 },
+      { header: '총 근무시간', width: 16 },
+      { header: '총 근무일', width: 12 },
+      { header: '지급총액', width: 16 },
     ];
 
-    // 제목
-    wsSummary.mergeCells("A1:G1");
-    wsSummary.getCell("A1").value = `${firstStoreName} 전체 ${titleMonth} 알바 급여 정산표`;
-    wsSummary.getCell("A1").font = { bold: true, size: 16 };
-    wsSummary.getCell("A1").alignment = { horizontal: "center" };
+    wsSummary.mergeCells('A1:G1');
+    wsSummary.getCell('A1').value = `${firstStoreName} 전체 ${titleMonth} 알바 급여 정산표`;
+    wsSummary.getCell('A1').font = { bold: true, size: 16 };
+    wsSummary.getCell('A1').alignment = { horizontal: 'center' };
 
-    // 헤더 (3행)
-    wsSummary.getRow(3).values = wsSummary.columns.map(c => c.header);
+    wsSummary.getRow(3).values = wsSummary.columns.map((c) => c.header);
     wsSummary.getRow(3).font = { bold: true };
-    wsSummary.getRow(3).alignment = { horizontal: "center", vertical: "middle" };
-    wsSummary.getRow(3).eachCell(cell => {
+    wsSummary.getRow(3).alignment = {
+      horizontal: 'center',
+      vertical: 'middle',
+    };
+    wsSummary.getRow(3).eachCell((cell) => {
       cell.fill = headerFill;
       cell.border = borderThin;
     });
 
-    // month → JS Date 범위 (한 달 전체)
     const baseYear = year;
-    const baseMonth = mm - 1; // 0-index
+    const baseMonth = mm - 1;
     const firstDay = new Date(baseYear, baseMonth, 1);
-    const lastDay = new Date(baseYear, baseMonth + 1, 0); // 말일
+    const lastDay = new Date(baseYear, baseMonth + 1, 0);
 
-    // 정산표에서 참조할 detail 합계 위치를 나중에 채우기 위해 저장
     let summaryRowIdx = 4;
 
     partTimers.forEach((p, idx) => {
-      const sheetName = `${idx + 1}_${p.user_name}`; // 예: 1_백서영
+      const sheetName = `${idx + 1}_${p.user_name}`;
 
-      // ========= 개인 상세 시트 생성 =========
       const ws = workbook.addWorksheet(sheetName);
 
-      // 제목: 알바이름 25년 11월 상세 근무내역
-      ws.mergeCells("A1:G1");
-      ws.getCell("A1").value = `알바일 ${p.user_name} ${titleMonth} 상세 근무내역`;
-      ws.getCell("A1").font = { bold: true, size: 15 };
-      ws.getCell("A1").alignment = { horizontal: "center" };
+      ws.mergeCells('A1:G1');
+      ws.getCell('A1').value = `알바일 ${p.user_name} ${titleMonth} 상세 근무내역`;
+      ws.getCell('A1').font = { bold: true, size: 15 };
+      ws.getCell('A1').alignment = { horizontal: 'center' };
 
-      // 헤더 (3행)
       ws.getRow(3).values = [
-        "날짜",
-        "출근",
-        "퇴근",
-        "쉬는시간",
-        "근무시간",
-        "시급",
-        "일급"
+        '날짜',
+        '출근',
+        '퇴근',
+        '쉬는시간',
+        '근무시간',
+        '시급',
+        '일급',
       ];
       ws.getRow(3).font = { bold: true };
-      ws.getRow(3).eachCell(cell => {
+      ws.getRow(3).eachCell((cell) => {
         cell.border = borderThin;
         cell.fill = headerFill;
-        cell.alignment = { horizontal: "center" };
+        cell.alignment = { horizontal: 'center' };
       });
 
-      // 기존 근무 기록을 날짜별로 map
       const dayMap = {};
-      p.weeks.forEach(w => {
-        w.days.forEach(d => {
+      p.weeks.forEach((w) => {
+        w.days.forEach((d) => {
           dayMap[d.date_iso] = d;
         });
       });
@@ -657,11 +742,9 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
         const dateIso = isoDate(d);
         const dayLabel = mdWeekLabel(d);
 
-        // 주 단위 구분 (월요일 기준)
         const monday = getMonday(d);
         const weekKey = isoDate(monday);
         if (currentWeekKey && currentWeekKey !== weekKey) {
-          // 주가 바뀔 때 빈 줄 삽입
           rr++;
         }
         currentWeekKey = weekKey;
@@ -671,29 +754,20 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
         if (dayData) {
           ws.getRow(rr).values = [
             dayData.day_label,
-            dayData.start || "",
-            dayData.end || "",
+            dayData.start || '',
+            dayData.end || '',
             `${dayData.break || 0}분`,
-            dayData.time_str || "",
+            dayData.time_str || '',
             dayData.hourly_rate_used || 0,
-            dayData.pay || 0
+            dayData.pay || 0,
           ];
         } else {
-          // 근무 안 한 날
-          ws.getRow(rr).values = [
-            dayLabel,
-            "",
-            "",
-            "",
-            "",
-            "",
-            ""
-          ];
+          ws.getRow(rr).values = [dayLabel, '', '', '', '', '', ''];
         }
 
         ws.getRow(rr).eachCell((c, col) => {
           c.border = borderThin;
-          if (col >= 5) c.alignment = { horizontal: "right" };
+          if (col >= 5) c.alignment = { horizontal: 'right' };
         });
 
         rr++;
@@ -702,13 +776,14 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
       const lastDataRow = rr - 1;
       const totalRow = rr;
 
-      // 합계 행
-      ws.getCell(totalRow, 1).value = "합계";
+      ws.getCell(totalRow, 1).value = '합계';
       ws.getCell(totalRow, 1).border = borderThin;
-      ws.getCell(totalRow, 7).value = { formula: `SUM(G4:G${lastDataRow})` };
-      ws.getCell(totalRow, 7).numFmt = "#,##0";
+      ws.getCell(totalRow, 7).value = {
+        formula: `SUM(G4:G${lastDataRow})`,
+      };
+      ws.getCell(totalRow, 7).numFmt = '#,##0';
       ws.getCell(totalRow, 7).border = borderThin;
-      ws.getCell(totalRow, 7).alignment = { horizontal: "right" };
+      ws.getCell(totalRow, 7).alignment = { horizontal: 'right' };
 
       ws.columns = [
         { width: 18 },
@@ -717,10 +792,9 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
         { width: 12 },
         { width: 14 },
         { width: 12 },
-        { width: 16 }
+        { width: 16 },
       ];
 
-      // ========= 정산표에 행 추가 =========
       const bankHolder = bankHolderLabel(p.bank_name, p.account_holder);
       const taxText = taxLabel(p.tax_type);
 
@@ -729,45 +803,45 @@ router.get('/:month/export', authMiddleware, async (req, res) => {
         p.user_name,
         taxText,
         bankHolder,
-        p.bank_account || "",
+        p.bank_account || '',
         p.total_work_time_str,
         p.weeks.reduce((cnt, w) => cnt + w.days.length, 0),
-        null // 지급총액은 함수로 채움
+        null,
       ];
 
       summaryRow.eachCell((c, col) => {
         c.border = borderThin;
-        if (col >= 5) c.alignment = { horizontal: "right" };
+        if (col >= 5) c.alignment = { horizontal: 'right' };
       });
 
-      // 지급총액 = 개인 시트 합계(GtotalRow) 참조
       const safeSheetName = sheetName.replace(/'/g, "''");
       wsSummary.getCell(summaryRowIdx, 7).value = {
-        formula: `'${safeSheetName}'!G${totalRow}`
+        formula: `'${safeSheetName}'!G${totalRow}`,
       };
-      wsSummary.getCell(summaryRowIdx, 7).numFmt = "#,##0";
+      wsSummary.getCell(summaryRowIdx, 7).numFmt = '#,##0';
 
       summaryRowIdx++;
     });
 
-    const fileTypeLabel = "알바";
+    const fileTypeLabel = '알바';
     const fileName = `(샤올) ${monthNum}월 ${areaLabel} ${fileTypeLabel} 급여.xlsx`;
 
     res.setHeader(
-      "Content-Type",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
     res.setHeader(
-      "Content-Disposition",
+      'Content-Disposition',
       `attachment; filename="${encodeURIComponent(fileName)}"`
     );
 
     await workbook.xlsx.write(res);
     res.end();
-
   } catch (err) {
-    console.error("엑셀 생성 실패:", err);
-    res.status(500).json({ message: "엑셀 생성 실패", error: err.message });
+    console.error('엑셀 생성 실패:', err);
+    res
+      .status(500)
+      .json({ message: '엑셀 생성 실패', error: err.message });
   } finally {
     conn.release();
   }
@@ -781,10 +855,14 @@ router.get('/:month', authMiddleware, async (req, res) => {
   const userId = req.user.id;
   const userLevel = req.user.level || 1;
 
+  const mode = req.query.mode || "all"; 
+  // "single" → 개인 조회
+  // 나머지 → 전체 조회
+
   const filters = {
-    store_id: req.query.store_id || "all",
-    work_area: req.query.work_area || "all",
-    section_name: req.query.section_name || "all"
+    store_id: req.query.store_id || 'all',
+    work_area: req.query.work_area || 'all',
+    section_name: req.query.section_name || 'all',
   };
 
   if (!/^\d{6}$/.test(month)) {
@@ -794,7 +872,21 @@ router.get('/:month', authMiddleware, async (req, res) => {
   const conn = await pool(req).getConnection();
   try {
     const result = await getPayrollData(conn, month, userId, userLevel, filters);
-    res.json(result);
+
+    if (mode === "single") {
+      const myData = result.payrolls.find((p) => p.user_id === userId);
+      if (!myData) return res.status(404).json({ message: "월급 데이터가 없습니다." });
+
+      return res.json(myData);
+    }
+
+    // 전체 조회
+    return res.json({
+      month,
+      payrolls: result.payrolls,
+      total: result.total
+    });
+
   } catch (err) {
     console.error('급여 조회 실패:', err);
     res.status(500).json({ message: '급여 조회 실패', error: err.message });
@@ -802,5 +894,7 @@ router.get('/:month', authMiddleware, async (req, res) => {
     conn.release();
   }
 });
+
+
 
 module.exports = router;

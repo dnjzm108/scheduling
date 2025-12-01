@@ -12,23 +12,15 @@ import './index.css';
 const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const dayLabels = { mon: '월', tue: '화', wed: '수', thu: '목', fri: '금', sat: '토', sun: '일' };
 
-// 스케줄/직원 기준 기본 work_area 결정
 function getDefaultWorkArea(scheduleArea, userArea) {
-  // 스케줄이 hall/kitchen 이면 그 값으로 고정
   if (scheduleArea === 'hall' || scheduleArea === 'kitchen') return scheduleArea;
-
-  // 스케줄이 both (전체) 일 때는 직원 소속 우선
   if (userArea === 'hall' || userArea === 'kitchen') return userArea;
-
-  // 둘 다 아니면 기본값 hall
   return 'hall';
 }
 
-// 헤더: 요일 + 날짜(월/일) 표시
 function formatHeaderWithDate(schedule, dayKey, index) {
   if (!schedule || !schedule.week_start) return dayLabels[dayKey];
-
-  const base = new Date(schedule.week_start); // 'YYYY-MM-DD'
+  const base = new Date(schedule.week_start);
   if (Number.isNaN(base.getTime())) return dayLabels[dayKey];
 
   base.setDate(base.getDate() + index);
@@ -43,18 +35,30 @@ function ScheduleFinalize() {
   const hasLoaded = useRef(false);
 
   const [schedule, setSchedule] = useState(null);
-  const [requests, setRequests] = useState([]);          // 매장 직원 전체 (신청 정보 포함)
-  const [finalShifts, setFinalShifts] = useState({});    // { [userId]: { mon: {...}, ... } }
-  const [activeUsers, setActiveUsers] = useState({});    // { [userId]: true/false }
+  const [requests, setRequests] = useState([]);
+  const [finalShifts, setFinalShifts] = useState({});
+  const [activeUsers, setActiveUsers] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // 섹션 목록
   const [hallSections, setHallSections] = useState([]);
   const [kitchenSections, setKitchenSections] = useState([]);
 
-  // 프론트 검색 제거 → 검색 state 삭제
-  // 추가용 드롭다운 (비활성 직원들에서 추가)
-  const [addUserId, setAddUserId] = useState('');
+  const [customRateEnabled, setCustomRateEnabled] = useState(false);
+  const [rateMode, setRateMode] = useState("individual");
+  const [dailyRate, setDailyRate] = useState({
+    mon: null, tue: null, wed: null, thu: null, fri: null, sat: null, sun: null
+  });
+
+  // 🔥 쉬는시간 커스텀 기능 상태
+  const [customBreakEnabled, setCustomBreakEnabled] = useState(true);
+  const [breakMode, setBreakMode] = useState("daily");
+  const [dailyBreak, setDailyBreak] = useState({
+    mon: 60, tue: 60, wed: 60, thu: 60, fri: 60, sat: 60, sun: 60
+  });
+
+
+  const [hasAssigned, setHasAssigned] = useState(false);
+  const [addUserId, setAddUserId] = useState("");
 
   useEffect(() => {
     if (hasLoaded.current) return;
@@ -62,77 +66,163 @@ function ScheduleFinalize() {
 
     const token = getToken();
     if (!token || !scheduleId) {
-      toast.error('잘못된 접근입니다.');
-      navigate('/ScheduleManagement');
+      toast.error("잘못된 접근입니다.");
+      navigate("/ScheduleManagement");
       return;
     }
 
     const loadData = async () => {
       try {
         setLoading(true);
-        const [schedRes, reqRes] = await Promise.all([
+
+        const [schedRes, reqRes, assignedRes] = await Promise.all([
           api.get(`/api/schedules/${scheduleId}`),
           api.get(`/api/schedules/${scheduleId}/applicants`),
-        ]);
-            const [hallRes, kitchenRes] = await Promise.all([
-          api.get(`/api/sections/hall?store_id=${schedRes.data.store_id}`),
-          api.get(`/api/sections/kitchen?store_id=`),
+          api.get(`/api/schedules/${scheduleId}/assigned`)
         ]);
 
         const scheduleData = schedRes.data;
         const requestsData = reqRes.data || [];
+        const assignedData = assignedRes.data || [];
 
         if (!scheduleData) {
-          toast.error('스케줄을 찾을 수 없습니다.');
-          navigate('/ScheduleManagement');
+          toast.error("스케줄을 찾을 수 없습니다.");
+          navigate("/ScheduleManagement");
           return;
         }
+
+        const [hallRes, kitchenRes] = await Promise.all([
+          api.get(`/api/sections/hall?store_id=${scheduleData.store_id}`),
+          api.get(`/api/sections/kitchen?store_id=${scheduleData.store_id}`)
+        ]);
 
         setSchedule(scheduleData);
         setRequests(requestsData);
         setHallSections(hallRes.data || []);
         setKitchenSections(kitchenRes.data || []);
 
-        // 초기값 세팅: 직원별 요일 데이터 (휴무 포함)
+        const start = new Date(scheduleData.week_start);
+        start.setHours(0, 0, 0, 0);
+
+        // ======================================================
+        // 확정된 스케줄이 있는 경우
+        // ======================================================
+        if (assignedData.length > 0) {
+          setHasAssigned(true);
+
+          const final = {};
+
+          assignedData.forEach((a) => {
+            console.log(a);
+
+            const uid = a.user_id.toString();
+            if (!final[uid]) final[uid] = {};
+
+            const d = new Date(a.work_date);
+            d.setHours(0, 0, 0, 0);
+
+            const idx = Math.floor((d - start) / 86400000);
+            if (idx < 0 || idx > 6) return;
+
+            const dayKey = days[idx];
+
+            final[uid][dayKey] = {
+              type: a.shift_type === "full" ? "full" : "part",
+              start: a.start_time?.slice(0, 5) || "",
+              end: a.end_time?.slice(0, 5) || "",
+              break_minutes: a.break_minutes ?? 60,
+              work_area: a.work_area || "hall",
+              section_name: a.section_name || null,
+              custom_hourly_rate: a.custom_hourly_rate ?? null
+            };
+          });
+
+          setFinalShifts(final);
+
+          // 시급 자동 판정
+          // 🔥 쉬는시간 자동 판정
+          let breakIsDaily = true;
+          const detectedBreak = {
+            mon: 60, tue: 60, wed: 60, thu: 60,
+            fri: 60, sat: 60, sun: 60
+          };
+
+          days.forEach((day) => {
+            const breaks = [];
+
+            Object.values(final).forEach((userDays) => {
+              const shift = userDays[day];
+              const br = shift ? shift.break_minutes : 60;
+              breaks.push(br);
+            });
+
+            if (breaks.length === 0) return;
+
+            const first = breaks[0];
+            const allSame = breaks.every((v) => v === first);
+
+            if (!allSame) {
+              breakIsDaily = false;
+              detectedBreak[day] = 60;
+            } else {
+              detectedBreak[day] = first;
+            }
+          });
+
+          // 🔥 breakMode / dailyBreak 자동 설정
+          setDailyBreak(detectedBreak);
+          setBreakMode(breakIsDaily ? "daily" : "individual");
+          setCustomBreakEnabled(true);  // 쉬는시간 기능 활성화
+
+
+          const anyActualRate = assignedData.some((a) => a.custom_hourly_rate != null);
+          setCustomRateEnabled(anyActualRate);
+
+          const active = {};
+          Object.keys(final).forEach((id) => (active[id] = true));
+          setActiveUsers(active);
+
+          return;
+        }
+
+        // ======================================================
+        // 확정 없음 → 신청 정보로 초기 세팅
+        // ======================================================
         const initial = {};
         const active = {};
 
         requestsData.forEach((r) => {
-          if (!r || !r.id) return;
-          const userIdStr = r.id.toString();
-          initial[userIdStr] = {};
+          const uid = r.id.toString();
+          const baseArea = getDefaultWorkArea(scheduleData.work_area, r.work_area);
 
-          const userArea = r.work_area || 'both';
-          const baseArea = getDefaultWorkArea(scheduleData.work_area, userArea);
-
-          let hasAnyWork = false;
+          initial[uid] = {};
+          let hasWork = false;
 
           days.forEach((day) => {
-            const typeKey = `${day}_type`;
-            const type = r[typeKey] || 'off';
-            if (type && type !== 'off') hasAnyWork = true;
+            const type = r[`${day}_type`] || "off";
+            if (type !== "off") hasWork = true;
 
-            initial[userIdStr][day] = {
+            initial[uid][day] = {
               type,
-              start: r[`${day}_start`] || '',
-              end: r[`${day}_end`] || '',
+              start: r[`${day}_start`] || "",
+              end: r[`${day}_end`] || "",
+              break_minutes: r[`${day}_break`] ?? 60,
               work_area: baseArea,
-              section_name: null, // 섹션은 새로 선택
+              section_name: null,
+              custom_hourly_rate: null
             };
           });
 
-          // 신청한 적 있는 직원은 기본 활성화
-          if (hasAnyWork) {
-            active[userIdStr] = true;
-          }
+          if (hasWork) active[uid] = true;
         });
 
         setFinalShifts(initial);
         setActiveUsers(active);
+
       } catch (err) {
         if (!axios.isCancel(err)) {
-          toast.error('데이터 로드 실패');
-          navigate('/ScheduleManagement');
+          toast.error("데이터 로드 실패");
+          navigate("/ScheduleManagement");
         }
       } finally {
         setLoading(false);
@@ -142,29 +232,23 @@ function ScheduleFinalize() {
     loadData();
   }, [scheduleId, navigate]);
 
-  // 셀 내용 변경
   const handleShiftChange = (userId, day, field, value) => {
-    if (!userId) return;
     const id = userId.toString();
 
     setFinalShifts((prev) => {
       const userObj = prev[id] || {};
-      const prevDay =
-        userObj[day] || {
-          type: 'off',
-          start: '',
-          end: '',
-          work_area: getDefaultWorkArea(schedule?.work_area, null),
-          section_name: null,
-        };
+      const prevDay = userObj[day] || {
+        type: "off",
+        start: "",
+        end: "",
+        break_minutes: 60,
+        work_area: getDefaultWorkArea(schedule?.work_area, null),
+        section_name: null,
+        custom_hourly_rate: null
+      };
 
-      // 스케줄이 hall/kitchen으로 고정된 경우 work_area 변경 무시
-      if (
-        field === 'work_area' &&
-        schedule?.work_area &&
-        schedule.work_area !== 'both'
-      ) {
-        return prev;
+      if (field === "custom_hourly_rate" && rateMode === "individual") {
+        setDailyRate((prev) => ({ ...prev, [day]: null }));
       }
 
       return {
@@ -173,122 +257,94 @@ function ScheduleFinalize() {
           ...userObj,
           [day]: {
             ...prevDay,
-            [field]: value,
-          },
-        },
+            [field]: value
+          }
+        }
       };
     });
   };
 
-  // 확정 대상에 직원 추가 (프론트에서 “추가” 버튼)
   const handleAddUser = () => {
     if (!addUserId) return;
 
     setFinalShifts((prev) => {
-      if (prev[addUserId]) {
-        // 이미 셀이 있는 직원이면 그대로 사용
-        return prev;
-      }
-      const user = requests.find(
-        (u) => u && u.id && u.id.toString() === addUserId
-      );
-      if (!user) return prev;
+      if (prev[addUserId]) return prev;
 
-      const userArea = user.work_area || 'both';
-      const baseArea = getDefaultWorkArea(schedule?.work_area, userArea);
+      const user = requests.find((u) => u.id.toString() === addUserId);
+      const baseArea = getDefaultWorkArea(schedule?.work_area, user.work_area);
+
       const dayObj = {};
-
       days.forEach((day) => {
         dayObj[day] = {
-          type: 'off',
-          start: '',
-          end: '',
+          type: "off",
+          start: "",
+          end: "",
+          break_minutes: 60,
           work_area: baseArea,
           section_name: null,
+          custom_hourly_rate: null
         };
       });
 
-      return {
-        ...prev,
-        [addUserId]: dayObj,
-      };
+      return { ...prev, [addUserId]: dayObj };
     });
 
-    setActiveUsers((prev) => ({
-      ...prev,
-      [addUserId]: true,
-    }));
+    setActiveUsers((prev) => ({ ...prev, [addUserId]: true }));
   };
 
-  // 확정 대상에서 직원 제거 (DB에서는 그냥 안 넣음)
   const handleRemoveUser = (userId) => {
-    const idStr = userId.toString();
-    setActiveUsers((prev) => ({
-      ...prev,
-      [idStr]: false,
-    }));
+    setActiveUsers((prev) => ({ ...prev, [userId.toString()]: false }));
   };
 
-  // 저장 요청
   const handleSave = async () => {
-    const cleanShifts = {};
-    Object.entries(finalShifts).forEach(([userIdStr, daysObj]) => {
-      if (!activeUsers[userIdStr]) return; // 비활성 직원 제외
+    const clean = {};
 
-      const userId = parseInt(userIdStr, 10);
-      if (Number.isNaN(userId)) return;
+    Object.entries(finalShifts).forEach(([uid, daysObj]) => {
+      if (!activeUsers[uid]) return;
 
-      cleanShifts[userId] = {};
-      Object.entries(daysObj || {}).forEach(([dayKey, shift]) => {
-        if (!shift || shift.type === 'off') {
-          cleanShifts[userId][dayKey] = { type: 'off' };
-          return;
+      clean[uid] = {};
+
+      Object.entries(daysObj).forEach(([day, shift]) => {
+        if (!shift || shift.type === "off") {
+          clean[uid][day] = { type: "off" };
+        } else {
+          clean[uid][day] = {
+            type: shift.type,
+            start: shift.start || null,
+            end: shift.end || null,
+            break_minutes: shift.break_minutes ?? 60,
+            work_area:
+              schedule.work_area !== "both"
+                ? schedule.work_area
+                : shift.work_area || "hall",
+            section_name: shift.section_name || null,
+            custom_hourly_rate: shift.custom_hourly_rate || null
+          };
         }
-
-        cleanShifts[userId][dayKey] = {
-          type: shift.type,
-          start: shift.start || null,
-          end: shift.end || null,
-          work_area:
-            schedule?.work_area && schedule.work_area !== 'both'
-              ? schedule.work_area
-              : shift.work_area || 'hall',
-          section_name: shift.section_name || null,
-        };
       });
     });
 
     try {
-      await api.post(`/api/schedules/${scheduleId}/finalize`, {
-        shifts: cleanShifts,
-      });
-      toast.success('스케줄 확정 완료!');
-      setTimeout(() => navigate('/ScheduleManagement'), 1500);
+      await api.post(`/api/schedules/${scheduleId}/finalize`, { shifts: clean });
+      toast.success(hasAssigned ? "스케줄 수정 완료!" : "스케줄 확정 완료!");
+      setTimeout(() => navigate("/ScheduleManagement"), 1500);
     } catch (err) {
-      if (!axios.isCancel(err)) {
-        toast.error(err.response?.data?.message || '저장 실패');
-      }
+      toast.error(err.response?.data?.message || "저장 실패");
     }
   };
 
-  // 섹션 셀 렌더 - 현재 work_area + 스케줄영역 기준으로 리스트 선택
   const renderSectionSelect = (shift, onChange) => {
-    const scheduleArea = schedule?.work_area || 'both';
-    const area =
-      scheduleArea !== 'both' ? scheduleArea : shift.work_area || 'hall';
+    const area = schedule.work_area !== "both"
+      ? schedule.work_area
+      : shift.work_area || "hall";
 
-    const list = area === 'kitchen' ? kitchenSections : hallSections;
+    const list = area === "kitchen" ? kitchenSections : hallSections;
 
     return (
-      <select
-        value={shift.section_name || ''}
-        onChange={(e) => onChange(e.target.value || null)}
-      >
-        <option value="">섹션 선택 없음</option>
+      <select value={shift.section_name || ""} onChange={(e) => onChange(e.target.value || null)}>
+        <option value="">섹션 없음</option>
         {list.map((sec) => (
-          <option key={sec.id} value={sec.name}>
-            {sec.name}
-          </option>
+          <option key={sec.id} value={sec.name}>{sec.name}</option>
         ))}
       </select>
     );
@@ -298,34 +354,17 @@ function ScheduleFinalize() {
     return <div className="loading">로딩 중...</div>;
   }
 
-  const scheduleArea = schedule.work_area || 'both';
+  const scheduleArea = schedule.work_area || "both";
+  const filteredUsers = requests.filter((u) => activeUsers[u.id.toString()]);
+  const inactiveUsers = requests.filter((u) => !activeUsers[u.id.toString()]);
 
-  // 검색 기능 제거 → activeUsers 기준으로만 렌더
-  const filteredUsers = requests.filter((u) => {
-    if (!u || !u.id) return false;
-    const idStr = u.id.toString();
-    return !!activeUsers[idStr];
-  });
-
-  const inactiveUsers = requests.filter((u) => {
-    if (!u || !u.id) return false;
-    const idStr = u.id.toString();
-    return !activeUsers[idStr];
-  });
-
-  // 문자열을 항상 같은 색상으로 변환
-function getSectionColor(name) {
-  if (!name) return 'transparent';
-
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 70%, 85%)`; // 부드러운 파스텔
-}
-
+  const getSectionColor = (name) => {
+    if (!name) return "transparent";
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 70%, 85%)`;
+  };
 
   return (
     <div className="finalize-page">
@@ -335,36 +374,56 @@ function getSectionColor(name) {
         <div className="finalize-container">
           <div className="finalize-header">
             <h1>{schedule.store_name} 스케줄 확정</h1>
+
+            {/* 시급 설정 */}
+            <div className="rate-controls">
+              <button
+                type="button"
+                className={customRateEnabled ? "btn-on" : ""}
+                onClick={() => setCustomRateEnabled((prev) => !prev)}
+              >
+                시급 수정 {customRateEnabled ? "ON" : "OFF"}
+              </button>
+
+              {customRateEnabled && (
+                <select value={rateMode} onChange={(e) => setRateMode(e.target.value)} className="rate-mode-select">
+                  <option value="individual">개인별</option>
+                  <option value="daily">요일 동일</option>
+                </select>
+              )}
+            </div>
+
+            {/* 🔥 쉬는시간 설정 */}
+            <div className="break-controls">
+              <button
+                type="button"
+                className={customBreakEnabled ? "btn-on" : ""}
+                onClick={() => {
+                  // 기본적으로 ON 상태이므로 모드만 daily ↔ individual 전환
+                  setBreakMode(prev => prev === "daily" ? "individual" : "daily");
+                }}
+              >
+                쉬는시간 {breakMode === "daily" ? "개별 입력" : "일괄 입력"}
+              </button>
+
+
+
+            </div>
+
             <p>
-              {schedule.week_start} ~ {schedule.week_end}{' '}
-              {scheduleArea === 'both'
-                ? '(홀/주방 전체)'
-                : scheduleArea === 'hall'
-                ? '(홀 스케줄)'
-                : '(주방 스케줄)'}
+              {schedule.week_start} ~ {schedule.week_end}{" "}
+              {scheduleArea === "both" ? "(홀/주방 전체)" : scheduleArea === "hall" ? "(홀)" : "(주방)"}
             </p>
 
-            {/* 검색 기능 제거 → 직원 추가만 남김 */}
             <div className="finalize-controls">
               <div className="add-employee">
-                <select
-                  value={addUserId}
-                  onChange={(e) => setAddUserId(e.target.value)}
-                >
-                  <option value="">직원 추가 선택</option>
+                <select value={addUserId} onChange={(e) => setAddUserId(e.target.value)}>
+                  <option value="">직원 추가</option>
                   {inactiveUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name}
-                    </option>
+                    <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={handleAddUser}
-                  className="btn-add"
-                >
-                  추가
-                </button>
+                <button onClick={handleAddUser} className="btn-add">추가</button>
               </div>
             </div>
           </div>
@@ -379,156 +438,203 @@ function getSectionColor(name) {
                   ))}
                 </tr>
               </thead>
+
               <tbody>
-                {filteredUsers.length === 0 && (
-                  <tr>
-                    <td colSpan={days.length + 1} style={{ textAlign: 'center' }}>
-                      표시할 직원이 없습니다. (상단 직원 추가에서 선택해 주세요)
-                    </td>
+
+                {/* 🔥 요일 시급 */}
+                {customRateEnabled && rateMode === "daily" && (
+                  <tr className="daily-rate-row">
+                    <td style={{ fontWeight: "bold" }}>요일 시급</td>
+                    {days.map((day) => (
+                      <td key={day}>
+                        <input
+                          type="number"
+                          value={dailyRate[day] ?? ""}
+                          placeholder="시급"
+                          onChange={(e) => {
+                            const v = e.target.value ? Number(e.target.value) : null;
+                            setDailyRate((prev) => ({ ...prev, [day]: v }));
+                            filteredUsers.forEach((u) =>
+                              handleShiftChange(u.id, day, "custom_hourly_rate", v)
+                            );
+                          }}
+                        />
+                      </td>
+                    ))}
                   </tr>
                 )}
 
-                {filteredUsers.map((user) => {
-                  if (!user || !user.id) return null;
-                  const userIdStr = user.id.toString();
-
-                  return (
-                    <tr key={user.id}>
-                      <td className="employee-name">
-                        {/* 직원 이름만 (파트 표기 X 선택) */}
-                        {user.name || '이름 없음'}
-                        <button
-                          type="button"
-                          className="btn-remove-user"
-                          onClick={() => handleRemoveUser(user.id)}
-                        >
-                          ✕
-                        </button>
+                {/* 🔥 요일 쉬는시간 */}
+                {customBreakEnabled && breakMode === "daily" && (
+                  <tr className="daily-break-row">
+                    <td style={{ fontWeight: "bold" }}>요일 쉬는시간</td>
+                    {days.map((day) => (
+                      <td key={day}>
+                        <input
+                          type="number"
+                          value={dailyBreak[day] ?? 60}
+                          placeholder="분"
+                          onChange={(e) => {
+                            const v = e.target.value ? Number(e.target.value) : 60;
+                            setDailyBreak((prev) => ({ ...prev, [day]: v }));
+                            filteredUsers.forEach((u) =>
+                              handleShiftChange(u.id, day, "break_minutes", v)
+                            );
+                          }}
+                        />
                       </td>
+                    ))}
+                  </tr>
+                )}
 
-                      {days.map((day) => {
-                        const shift =
-                          finalShifts[userIdStr]?.[day] ||
-                          {
-                            type: 'off',
-                            start: '',
-                            end: '',
-                            work_area: getDefaultWorkArea(
-                              scheduleArea,
-                              user.work_area
-                            ),
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={days.length + 1} style={{ textAlign: "center" }}>
+                      표시할 직원이 없습니다.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map((user) => {
+                    const uid = user.id.toString();
+
+                    return (
+                      <tr key={user.id}>
+                        <td className="employee-name">
+                          {user.name}
+                          <button type="button" className="btn-remove-user" onClick={() => handleRemoveUser(user.id)}>
+                            ✕
+                          </button>
+                        </td>
+
+                        {days.map((day) => {
+                          const shift = finalShifts[uid]?.[day] || {
+                            type: "off",
+                            start: "",
+                            end: "",
+                            break_minutes: 60,
+                            work_area: getDefaultWorkArea(scheduleArea, user.work_area),
                             section_name: null,
+                            custom_hourly_rate: null
                           };
 
-                        return (
-                          <td key={day} style={{
-    backgroundColor:
-      shift.type !== 'off' ? getSectionColor(shift.section_name) : 'transparent'
-  }}>
-                            <div className="shift-editor">
-                              {/* 근무타입 */}
-                              <select
-                                value={shift.type || 'off'}
-                                onChange={(e) =>
-                                  handleShiftChange(
-                                    user.id,
-                                    day,
-                                    'type',
-                                    e.target.value
-                                  )
-                                }
-                              >
-                                <option value="full">풀타임</option>
-                                <option value="part">파트타임</option>
-                                <option value="off">휴무</option>
-                              </select>
+                          return (
+                            <td
+                              key={day}
+                              style={{
+                                backgroundColor:
+                                  shift.type !== "off" ? getSectionColor(shift.section_name) : "transparent"
+                              }}
+                            >
+                              <div className="shift-editor">
 
-                              {shift.type !== 'off' && (
-                                <>
-                                  {/* work_area 선택: 스케줄이 both일 때만 홀/주방 선택 */}
-                                  {scheduleArea === 'both' ? (
-                                    <select
-                                      value={shift.work_area || 'hall'}
-                                      onChange={(e) =>
-                                        handleShiftChange(
-                                          user.id,
-                                          day,
-                                          'work_area',
-                                          e.target.value
-                                        )
-                                      }
-                                    >
-                                      <option value="hall">홀</option>
-                                      <option value="kitchen">주방</option>
-                                    </select>
-                                  ) : (
-                                    <span className="fixed-area-label">
-                                      {scheduleArea === 'hall' ? '홀' : '주방'}
-                                    </span>
-                                  )}
+                                {/* 근무타입 */}
+                                <select
+                                  value={shift.type}
+                                  onChange={(e) => handleShiftChange(user.id, day, "type", e.target.value)}
+                                >
+                                  <option value="full">풀타임</option>
+                                  <option value="part">파트타임</option>
+                                  <option value="off">휴무</option>
+                                </select>
 
-                                  {/* 섹션 선택 */}
-                                  {renderSectionSelect(shift, (val) =>
-                                    handleShiftChange(
-                                      user.id,
-                                      day,
-                                      'section_name',
-                                      val
-                                    )
-                                  )}
+                                {shift.type !== "off" && (
+                                  <>
+                                    {/* 홀/주방 */}
+                                    {scheduleArea === "both" ? (
+                                      <select
+                                        value={shift.work_area}
+                                        onChange={(e) =>
+                                          handleShiftChange(user.id, day, "work_area", e.target.value)
+                                        }
+                                      >
+                                        <option value="hall">홀</option>
+                                        <option value="kitchen">주방</option>
+                                      </select>
+                                    ) : (
+                                      <span className="fixed-area-label">
+                                        {scheduleArea === "hall" ? "홀" : "주방"}
+                                      </span>
+                                    )}
 
-                                  {/* 🔥 파트타임 시간 입력 → 항상 잘 보이게 */}
-                                  {shift.type === 'part' && (
-                                    <div className="time-range">
+                                    {/* 섹션 */}
+                                    {renderSectionSelect(
+                                      shift,
+                                      (val) => handleShiftChange(user.id, day, "section_name", val)
+                                    )}
+
+                                    {/* 시급(개인 모드일 때만) */}
+                                    {customRateEnabled && rateMode === "individual" && (
                                       <input
-                                        type="time"
-                                        value={shift.start || ''}
+                                        type="number"
+                                        placeholder="시급"
+                                        value={shift.custom_hourly_rate ?? ""}
                                         onChange={(e) =>
                                           handleShiftChange(
                                             user.id,
                                             day,
-                                            'start',
-                                            e.target.value
+                                            "custom_hourly_rate",
+                                            e.target.value ? Number(e.target.value) : null
                                           )
                                         }
                                       />
-                                      {/* <span>~</span> */}
-                                      <input
-                                        type="time"
-                                        value={shift.end || ''}
-                                        onChange={(e) =>
-                                          handleShiftChange(
-                                            user.id,
-                                            day,
-                                            'end',
-                                            e.target.value
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
+                                    )}
+
+                                    {/* 파트타임 시간 */}
+                                    {shift.type === "part" && (
+                                      <div className="time-range">
+                                        <input
+                                          type="time"
+                                          value={shift.start}
+                                          onChange={(e) => handleShiftChange(user.id, day, "start", e.target.value)}
+                                        />
+                                        <input
+                                          type="time"
+                                          value={shift.end}
+                                          onChange={(e) => handleShiftChange(user.id, day, "end", e.target.value)}
+                                        />
+                                      </div>
+                                    )}
+
+                                    {/* 🔥 쉬는시간(개별 모드일 때만 표시) */}
+                                    {customBreakEnabled && breakMode === "individual" && (
+                                      <div className="break-input">
+                                        쉬는시간:
+                                        <input
+                                          type="number"
+                                          placeholder="쉬는시간(분)"
+                                          value={shift.break_minutes ?? 60}
+                                          onChange={(e) =>
+                                            handleShiftChange(
+                                              user.id,
+                                              day,
+                                              "break_minutes",
+                                              e.target.value ? Number(e.target.value) : 60
+                                            )
+                                          }
+                                        />
+                                      </div>
+                                    )}
+
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="finalize-actions">
-            <button
-              onClick={() => navigate('/ScheduleManagement')}
-              className="btn-cancel"
-            >
+            <button onClick={() => navigate("/ScheduleManagement")} className="btn-cancel">
               취소
             </button>
             <button onClick={handleSave} className="btn-save">
-              스케줄 확정하기
+              {hasAssigned ? "스케줄 수정하기" : "스케줄 확정하기"}
             </button>
           </div>
         </div>

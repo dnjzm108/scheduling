@@ -26,6 +26,8 @@ import SchedulePreview from './pages/SchedulePreview';
 import PayrollCheck from './pages/PayrollCheck';
 import ScheduleFinalize from './pages/ScheduleFinalize';
 import SectionManagement from './pages/SectionManagement';
+import Mypayroll from './pages/Mypayroll';
+import StoreSales from './pages/StoreSales';
 
 // 전역 요청 취소 함수 임포트
 import { cancelAllRequests } from './utils/api';
@@ -71,6 +73,7 @@ const routes = [
   { path: '/signup', element: <Join /> },
   { path: '/apply', element: <Main /> },
   { path: '/myschedules', element: <Myschedules />, minLevel: 1 },
+  { path: '/Mypayroll', element: <Mypayroll />, minLevel: 1 },
 
   // 직원 이상
   { path: '/notices', element: <Notices />, minLevel: 1 },
@@ -86,6 +89,7 @@ const routes = [
   { path: '/PayrollCheck', element: <PayrollCheck />, minLevel: 2 },
   { path: '/schedule-finalize/:scheduleId', element: <ScheduleFinalize />, minLevel: 2 },
   { path: '/SectionManagement', element: <SectionManagement />, minLevel: 2 },
+  { path: '/StoreSales', element: <StoreSales />, minLevel: 2 },
 
   // 총관리자 전용
   { path: '/AdminDashboard', element: <Admin />, minLevel: 3 },

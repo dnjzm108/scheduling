@@ -11,16 +11,20 @@ import './index.css';
 
 function Notices() {
   const navigate = useNavigate();
-  const isProcessing = useRef(false);
   const hasLoaded = useRef(false);
 
   const [notices, setNotices] = useState([]);
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState('');
+  const [allowedStores, setAllowedStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userLevel, setUserLevel] = useState(0);
+  const [userStore, setUserStore] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
 
+  // -------------------------
+  // 초기 로드
+  // -------------------------
   useEffect(() => {
     if (hasLoaded.current) return;
     hasLoaded.current = true;
@@ -32,6 +36,7 @@ function Notices() {
     try {
       decoded = jwtDecode(token);
       setUserLevel(decoded.level);
+      setUserStore(decoded.store_id);
     } catch {
       removeToken();
       return navigate('/');
@@ -41,13 +46,29 @@ function Notices() {
       try {
         setLoading(true);
 
-        const dataReq = [ api.get('/api/notices') ];
-        if (decoded.level >= 3) dataReq.push(api.get('/api/stores'));
+        // 1) Notices(기본)
+        const noticeReq = api.get('/api/notices');
 
-        const [noticesRes, storesRes] = await Promise.all(dataReq);
+        // 2) 총관리자 & 매장관리자만 store 목록 가능
+        let storeReq = null;
+        if (decoded.level >= 3) storeReq = api.get('/api/stores');
 
-        setNotices(noticesRes.data || []);
-        if (storesRes) setStores(storesRes.data || []);
+        // 3) 권한 있는 매장 목록
+        const allowedReq = api.get('/api/user/allowed-stores');
+
+        const [noticeRes, storeRes, allowedRes] = await Promise.all([
+          noticeReq,
+          storeReq,
+          allowedReq
+        ]);
+
+        setNotices(noticeRes.data || []);
+
+        if (storeRes) setStores(storeRes.data || []);
+
+        if (allowedRes?.data) {
+          setAllowedStores(allowedRes.data.allowedStores || []);
+        }
 
       } catch {
         toast.error('데이터 로드 실패');
@@ -59,56 +80,53 @@ function Notices() {
     loadData();
   }, [navigate]);
 
+  // -------------------------
+  // 매장 변경
+  // -------------------------
   const handleStoreChange = async (e) => {
     const storeId = e.target.value;
     setSelectedStore(storeId);
 
     try {
-      const { data } = await api.get(`/api/notices${storeId ? `?store_id=${storeId}` : ''}`);
+      const { data } = await api.get(
+        `/api/notices${storeId ? `?store_id=${storeId}` : ''}`
+      );
       setNotices(data || []);
     } catch {
       toast.error('로드 실패');
     }
   };
 
+  // -------------------------
+  // 삭제
+  // -------------------------
   const handleDelete = async (id) => {
-    if (isProcessing.current) return;
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
-
-    isProcessing.current = true;
 
     try {
       await api.delete(`/api/notices/${id}`);
-      setNotices(prev => prev.filter(n => n.id !== id));
+      setNotices((prev) => prev.filter((n) => n.id !== id));
       toast.success('삭제 완료!');
     } catch {
       toast.error('삭제 실패');
-    } finally {
-      isProcessing.current = false;
     }
   };
 
   const toggleExpand = (id) => {
-    setExpandedId(prev => prev === id ? null : id);
+    setExpandedId((prev) => (prev === id ? null : id));
   };
 
   const renderAttachments = (attachments) => (
     <div className="notices-attachments">
       {attachments.map((file, i) => {
         const isImage = file.mimeType?.startsWith('image');
-
         return (
           <div key={i} className="notice-file-wrapper">
             {isImage ? (
-              <img
-                src={file.url}
-                alt={file.name}
-                className="notices-attachment-image"
-              />
+              <img src={file.url} alt={file.name} className="notices-attachment-image" />
             ) : (
               <div className="notices-file-icon">📄</div>
             )}
-
             <a href={file.url} download className="notices-download-link">
               {file.name}
             </a>
@@ -118,6 +136,55 @@ function Notices() {
     </div>
   );
 
+  // -------------------------
+  // 매장 선택 UI 생성 (권한 기반)
+  // -------------------------
+
+  const renderStoreSelector = () => {
+    if (userLevel < 3) return null; // 직원, 알바는 스토어 선택 자체 없음
+
+    const token = getToken();
+    let decoded;
+    try {
+      decoded = jwtDecode(token);
+    } catch {
+      return null;
+    }
+
+    // 총관리자: 전체 매장 가능
+    if (userLevel === 4) {
+      return (
+        <div className="notices-store-selector">
+          <select value={selectedStore} onChange={handleStoreChange}>
+            <option value="">전체 매장</option>
+            {stores.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    // 매장 관리자: 자기 매장 + 권한 있는 매장만
+    const manageableStores = stores.filter(
+      (s) => allowedStores.includes(s.id) || s.id === userStore
+    );
+
+    return (
+      <div className="notices-store-selector">
+        <select value={selectedStore} onChange={handleStoreChange}>
+          {manageableStores.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  };
+
   return (
     <>
       <Header title="공지사항" backTo="/AdminDashboard" />
@@ -126,24 +193,18 @@ function Notices() {
         <div className="notices-container">
           <main className="notices-main-content">
 
-            {/* 작성 버튼 - 매장관리자 이상만 */}
+            {/* 작성 버튼 - 매장관리자 이상 */}
             {userLevel >= 3 && (
-              <button className="notices-create-button" onClick={() => navigate('/NoticeCreate')}>
+              <button
+                className="notices-create-button"
+                onClick={() => navigate('/NoticeCreate')}
+              >
                 공지사항 작성
               </button>
             )}
 
-            {/* 매장 선택 */}
-            {userLevel >= 3 && stores.length > 0 && (
-              <div className="notices-store-selector">
-                <select value={selectedStore} onChange={handleStoreChange}>
-                  <option value="">전체 매장</option>
-                  {stores.map(s => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            {/* 매장 선택 UI */}
+            {renderStoreSelector()}
 
             {/* 출력 */}
             {loading ? (
@@ -152,7 +213,7 @@ function Notices() {
               <p className="notices-no-notices">등록된 공지사항이 없습니다.</p>
             ) : (
               <ul className="notices-list">
-                {notices.map(notice => (
+                {notices.map((notice) => (
                   <li
                     key={notice.id}
                     className={`notices-item ${expandedId === notice.id ? 'expanded' : ''}`}
@@ -168,14 +229,14 @@ function Notices() {
                       <div className="notices-details">
                         <p className="notice-body">{notice.body}</p>
 
-                        {/* 첨부파일 */}
-                        {notice.attachments?.length > 0 && renderAttachments(notice.attachments)}
+                        {notice.attachments?.length > 0 &&
+                          renderAttachments(notice.attachments)}
 
                         <p className="notice-footer">
-                          {notice.author_name} · {new Date(notice.published_at).toLocaleDateString('ko-KR')}
+                          {notice.author_name} ·{' '}
+                          {new Date(notice.published_at).toLocaleDateString('ko-KR')}
                         </p>
 
-                        {/* 관리자 기능 */}
                         {userLevel >= 3 && (
                           <div className="notices-admin-actions">
                             <button
@@ -204,7 +265,6 @@ function Notices() {
                 ))}
               </ul>
             )}
-
           </main>
         </div>
       </div>

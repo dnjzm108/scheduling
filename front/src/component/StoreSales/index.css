@@ -1,0 +1,288 @@
+/* src/pages/StoreSales/index.css */
+
+/* --- 기본 레이아웃 및 컨테이너 --- */
+
+.sales-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 20px;
+  max-width: 1200px; /* PC 최대 너비 */
+  margin: 0 auto;
+}
+
+h2 {
+  font-size: 1.5rem;
+  color: #343a40;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+/* --- 모드 탭 --- */
+
+.mode-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f1f3f5;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.mode-tabs .tab {
+  flex-grow: 1;
+  padding: 12px 0;
+  border: none;
+  background-color: transparent;
+  color: #495057;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+}
+
+.mode-tabs .tab:not(:last-child) {
+  border-right: 1px solid #dee2e6;
+}
+
+.mode-tabs .tab.active {
+  background-color: #007bff;
+  color: white;
+  border-bottom: 3px solid #007bff;
+}
+
+.mode-tabs .tab:hover:not(.active) {
+  background-color: #e9ecef;
+}
+
+/* --- 폼 요소 (select, input, textarea) --- */
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+  background-color: #ffffff;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.form-row label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.form-row select,
+.form-row input[type="month"],
+.form-row input[type="date"],
+.form-row input[type="number"],
+.form-row textarea {
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.form-row textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* --- 버튼 행 (등록/수정) --- */
+
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-save {
+  padding: 10px 25px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-save:hover {
+  background-color: #1e7e34;
+}
+
+/* --- 매출 조회 테이블 --- */
+
+.sales-table-wrapper {
+  overflow-x: auto; /* 테이블이 넘칠 때 스크롤 가능하도록 설정 */
+  margin-top: 20px;
+}
+
+.sales-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 700px; /* 모바일에서 최소 너비 확보 */
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  overflow: hidden; 
+}
+
+.sales-table th,
+.sales-table td {
+  border: 1px solid #dee2e6;
+  padding: 10px;
+  text-align: center;
+}
+
+.sales-table thead th {
+  background-color: #e9ecef;
+  color: #343a40;
+  font-weight: 600;
+}
+
+.sales-table tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.sales-table td {
+  font-size: 0.95rem;
+}
+
+/* 테이블 옵션 셀 (수정/삭제 버튼 포함) 스타일 */
+.sales-table td:nth-last-child(1) {
+    /* 수정: 옵션 버튼들을 감싸는 셀에 Flex 적용 */
+    display: flex;
+    justify-content: center;
+    gap: 8px; /* 버튼 사이 간격 */
+    padding: 5px; /* 버튼 높이에 맞춰 패딩 조정 */
+}
+
+
+/* 버튼 (테이블 내부) */
+.sales-table button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  flex-shrink: 0; /* 모바일에서 버튼 크기가 줄어들지 않도록 설정 */
+}
+
+.sales-table .btn-edit {
+  background-color: #007bff;
+  color: white;
+}
+.sales-table .btn-edit:hover {
+  background-color: #0056b3;
+}
+
+.sales-table .btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
+.sales-table .btn-delete:hover {
+  background-color: #bd2130;
+}
+
+/* --- 차트 영역 --- */
+
+.sales-page > p {
+  text-align: center;
+  color: #6c757d;
+  padding: 20px;
+  border: 1px dashed #ced4da;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  background-color: #ffffff;
+}
+
+/* ChartJS 컨테이너 기본 크기 설정 (PC) */
+.sales-page canvas {
+  max-height: 400px; 
+}
+
+
+/* --- 반응형 디자인 (모바일 최적화: max-width: 768px) --- */
+
+@media (max-width: 768px) {
+  .sales-page {
+    padding: 10px;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .mode-tabs {
+    margin-bottom: 15px;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .mode-tabs .tab {
+    font-size: 0.9rem;
+    padding: 10px 0;
+  }
+  
+  /* 폼 요소 */
+  .form-row {
+    padding: 10px;
+  }
+
+  .form-row label {
+    font-size: 0.9rem;
+  }
+
+  .form-row select,
+  .form-row input[type="month"],
+  .form-row input[type="date"],
+  .form-row input[type="number"],
+  .form-row textarea {
+    font-size: 0.9rem;
+    padding: 8px; /* 입력 필드 패딩 증가 */
+  }
+
+  /* 버튼 행 */
+  .button-row {
+    margin-top: 15px;
+  }
+  
+  .btn-save {
+    width: 100%;
+    padding: 12px 0;
+  }
+
+  /* 테이블 스타일 */
+  .sales-table {
+    min-width: 600px; /* 모바일에서 스크롤을 위해 최소 너비 확보 */
+  }
+
+  .sales-table th,
+  .sales-table td {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+  
+  /* 옵션 셀 버튼 */
+  .sales-table td:nth-last-child(1) {
+    /* 모바일에서는 버튼을 조금 더 작게 만듭니다. */
+    padding: 4px;
+    gap: 5px; 
+  }
+  
+  .sales-table button {
+    font-size: 0.75rem; /* 버튼 폰트 크기 감소 */
+    padding: 4px 6px; /* 버튼 패딩 감소 */
+  }
+}
