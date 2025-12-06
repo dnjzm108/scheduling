@@ -27,7 +27,7 @@ ChartJS.register(
   Legend
 );
 
-// 날짜 포맷 YY-MM-DD
+// 날짜 포맷 YY-MM-DD (테이블 표시용)
 const formatDateShort = (dateStr) => {
   if (!dateStr) return "";
   const d = new Date(dateStr);
@@ -39,24 +39,13 @@ const formatDateShort = (dateStr) => {
   return `${yy}-${mm}-${dd}`;
 };
 
-// YY-MM-DD → YYYY-MM-DD 변환
-const normalizeDate = (dateStr) => {
-  if (!dateStr) return dateStr;
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-
-  const [yy, mm, dd] = dateStr.split("-");
-  const fullYear = Number(yy) >= 70 ? `19${yy}` : `20${yy}`;
-  return `${fullYear}-${mm}-${dd}`;
-};
-
 // 오늘 날짜
 const getToday = () => new Date().toISOString().slice(0, 10);
 
 const StoreSales = () => {
   const [user, setUser] = useState(null);
   const [stores, setStores] = useState([]);
-  const [storeId, setStoreId] = useState("");
+  const [storeId, setStoreId] = useState(""); // 🔧 빈 문자열로 초기화 (null 금지)
 
   const currentMonth = new Date().toISOString().slice(0, 7);
   const currentYear = new Date().getFullYear();
@@ -72,12 +61,11 @@ const StoreSales = () => {
   const [isEdit, setIsEdit] = useState(false);
 
   const fetchLock = useRef(false);
-
   const [chartView, setChartView] = useState("day");
 
-  // ===========================================================================
+  // ===================================================================
   // 초기 데이터 로드
-  // ===========================================================================
+  // ===================================================================
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -90,21 +78,19 @@ const StoreSales = () => {
         setUser(userData);
         setStores(storeRes.data);
 
-        // 기본 매장: 자기 매장 고정
-        setStoreId(userData.store_id);
+        // 기본 매장: 자기 매장 (문자열로 저장)
+        setStoreId(userData.store_id ? String(userData.store_id) : "");
       } catch (err) {
-        if(err.message !== '중복 요청 취소'){
-            alert("초기 정보를 불러오지 못했습니다.");
-        }
+        alert("초기 정보를 불러오지 못했습니다.");
       }
     };
 
     loadData();
   }, []);
 
-  // ===========================================================================
+  // ===================================================================
   // 월별 매출 조회
-  // ===========================================================================
+  // ===================================================================
   const fetchMonthlySales = async () => {
     if (!storeId || !month) return;
     if (fetchLock.current) return;
@@ -116,12 +102,13 @@ const StoreSales = () => {
         params: { type: "month", date: `${month}-01` }
       });
 
+      // 테이블용: 최신 날짜가 위로 오게 내림차순 정렬
       const sorted = (res.data || []).sort(
         (a, b) => new Date(b.sales_date) - new Date(a.sales_date)
       );
 
       setSales(sorted);
-    } catch {
+    } catch (err) {
       setSales([]);
     } finally {
       fetchLock.current = false;
@@ -132,9 +119,9 @@ const StoreSales = () => {
     if (mode === "search") fetchMonthlySales();
   }, [storeId, month, mode]);
 
-  // ===========================================================================
+  // ===================================================================
   // 저장 / 수정
-  // ===========================================================================
+  // ===================================================================
   const saveSales = async () => {
     if (!salesDate || !amount) {
       alert("날짜와 금액은 필수입니다.");
@@ -143,7 +130,7 @@ const StoreSales = () => {
 
     try {
       await api.post("/api/store-sales", {
-        store_id: storeId,
+        store_id: storeId, // 문자열 그대로 전달 (백엔드에서 Number 처리)
         sales_date: salesDate,
         sales_amount: Number(amount),
         memo
@@ -163,9 +150,9 @@ const StoreSales = () => {
     }
   };
 
-  // ===========================================================================
+  // ===================================================================
   // 삭제
-  // ===========================================================================
+  // ===================================================================
   const deleteSales = async (sales_date) => {
     if (!window.confirm("정말 삭제하시겠습니까?")) return;
 
@@ -181,44 +168,59 @@ const StoreSales = () => {
     }
   };
 
-  // ===========================================================================
-  // 수정 클릭
-  // ===========================================================================
- const editSales = (entry) => {
-  setMode("register");
-  setIsEdit(true);
+  // ===================================================================
+  // 수정 시작
+  // ===================================================================
+  const editSales = (entry) => {
+    setMode("register");
+    setIsEdit(true);
 
-  setSalesDate(normalizeDate(entry.sales_date)); // 이제는 거의 그대로 들어감
-  setAmount(entry.sales_amount);
-  setMemo(entry.memo || "");
-};
+    // 백엔드에서 YYYY-MM-DD 로 내려오므로 그대로 사용
+    setSalesDate(entry.sales_date);
+    setAmount(entry.sales_amount);
+    setMemo(entry.memo || "");
+  };
 
-
-  // ===========================================================================
-  // 그래프 데이터
-  // ===========================================================================
+  // ===================================================================
+  // 그래프 데이터 생성 (최신 날짜가 오른쪽에 오도록 오름차순 정렬 사용)
+  // ===================================================================
   const createChartData = () => {
     if (sales.length === 0) return null;
+
+    // 그래프용: 오래된 날짜 → 최신 날짜 (오름차순)
+    const sortedForChart = [...sales].sort(
+      (a, b) => new Date(a.sales_date) - new Date(b.sales_date)
+    );
 
     let labels = [];
     let values = [];
 
     if (chartView === "day" || chartView === "week") {
-      labels = sales.map((s) => formatDateShort(s.sales_date));
-      values = sales.map((s) => s.sales_amount);
+      labels = sortedForChart.map((s) => formatDateShort(s.sales_date));
+      values = sortedForChart.map((s) => s.sales_amount);
     } else if (chartView === "month") {
+      // 올해 데이터 월별 합산 (1~12월 순서대로)
       const yearData = {};
-      sales.forEach((s) => {
-        const y = new Date(s.sales_date).getFullYear();
-        const m = new Date(s.sales_date).getMonth() + 1;
+      sortedForChart.forEach((s) => {
+        const y = Number(s.sales_date.slice(0, 4));
+        const m = Number(s.sales_date.slice(5, 7));
         if (y === currentYear) {
           if (!yearData[m]) yearData[m] = 0;
           yearData[m] += s.sales_amount;
         }
       });
 
-      labels = Object.keys(yearData).map((m) => `${m}월`);
-      values = Object.values(yearData);
+      const monthLabels = [];
+      const monthValues = [];
+      for (let m = 1; m <= 12; m++) {
+        if (yearData[m]) {
+          monthLabels.push(`${m}월`);
+          monthValues.push(yearData[m]);
+        }
+      }
+
+      labels = monthLabels;
+      values = monthValues;
     }
 
     return {
@@ -236,9 +238,9 @@ const StoreSales = () => {
 
   const chartData = createChartData();
 
-  // ===========================================================================
-  // 화면 렌더링
-  // ===========================================================================
+  // ===================================================================
+  // 렌더링
+  // ===================================================================
   return (
     <div className="sales-page">
       <Header title="📊 매장 매출 관리" />
@@ -266,25 +268,26 @@ const StoreSales = () => {
         </button>
       </div>
 
-      {/* 매장 선택 — 총관리자만 변경 가능 */}
+      {/* 매장 선택 — 총관리자만 변경 가능, 그 외는 본인 매장 고정 */}
       <div className="form-row">
         <label>매장</label>
         <select
-          value={storeId}
+          value={storeId || ""} // 🔧 null 대신 항상 문자열
           onChange={(e) => setStoreId(e.target.value)}
-          disabled={user?.level !== 4} // 총관리자만 선택 가능
+          disabled={user ? user.level !== 4 : true} // user 로드 전까지는 비활성화
         >
+          {/* user가 매장 관리자인 경우에도, 본인 매장만 하나 나오게 설정돼 있다고 가정 */}
           {stores.map((s) => (
-            <option key={s.id} value={s.id}>
+            <option key={s.id} value={String(s.id)}>
               {s.name}
             </option>
           ))}
         </select>
       </div>
 
-      {/* ===================================================================
+      {/* =========================
           조회 모드
-      =================================================================== */}
+      ========================== */}
       {mode === "search" && (
         <>
           <div className="form-row">
@@ -322,19 +325,13 @@ const StoreSales = () => {
               </tr>
             </thead>
             <tbody>
-                {console.log(sales)}
               {sales.map((s, idx) => (
-                
                 <tr key={idx}>
                   <td>{formatDateShort(s.sales_date)}</td>
                   <td>{s.sales_amount.toLocaleString()}</td>
                   <td>{s.memo}</td>
                   <td>
-                    <button className="btn-edit" onClick={() =>{ 
-                        editSales(s)
-                        console.log('수정 : ',s);
-                        
-                        }}>
+                    <button className="btn-edit" onClick={() => editSales(s)}>
                       수정
                     </button>
                     <button
@@ -351,9 +348,9 @@ const StoreSales = () => {
         </>
       )}
 
-      {/* ===================================================================
+      {/* =========================
           등록 / 수정 모드
-      =================================================================== */}
+      ========================== */}
       {mode === "register" && (
         <>
           <h2>{isEdit ? "매출 수정" : "매출 등록"}</h2>
