@@ -109,9 +109,9 @@ function PayrollCheck() {
   }, [navigate]);
 
   useEffect(() => {
-  if (!selectedMonth) return;
-  loadPayroll(selectedMonth);
-}, [selectedStore, selectedType, workArea]);
+    if (!selectedMonth) return;
+    loadPayroll(selectedMonth);
+  }, [selectedStore, selectedType, workArea]);
 
   // ------------------------------------------------------------------
   // 급여 로드 (필터 변경)
@@ -165,15 +165,15 @@ function PayrollCheck() {
   const isSuper = userLevel === 4;
 
   // 필터링 (관리자 이상만 적용됨)
- const filtered = (isUser ? payrolls : payrolls
-  .filter((p) => selectedStore === 'all' || String(p.store_id) === String(selectedStore))
-  .filter((p) => selectedType === 'all' || p.employee_type === selectedType)
-)
-.filter((p) => 
-  searchName.trim() === '' ||
-  p.user_name.toLowerCase().includes(searchName.toLowerCase()) ||
-  p.user_name.includes(searchName)
-);
+  const filtered = (isUser ? payrolls : payrolls
+    .filter((p) => selectedStore === 'all' || String(p.store_id) === String(selectedStore))
+    .filter((p) => selectedType === 'all' || p.employee_type === selectedType)
+  )
+    .filter((p) =>
+      searchName.trim() === '' ||
+      p.user_name.toLowerCase().includes(searchName.toLowerCase()) ||
+      p.user_name.includes(searchName)
+    );
 
   const totalPayroll = filtered.reduce((sum, p) => sum + (p.net_pay || 0), 0);
 
@@ -207,9 +207,9 @@ function PayrollCheck() {
                   <select
                     value={selectedStore}
                     onChange={(e) => {
-                    const v = e.target.value;
-setSelectedStore(v);
-loadPayroll(selectedMonth, { store: v });
+                      const v = e.target.value;
+                      setSelectedStore(v);
+                      loadPayroll(selectedMonth, { store: v });
 
                     }}
                   >
@@ -298,12 +298,12 @@ loadPayroll(selectedMonth, { store: v });
               )}
 
               <input
-  type="text"
-  placeholder="직원 이름 검색"
-  value={searchName}
-  onChange={(e) => setSearchName(e.target.value)}
-  className="search-input"
-/>
+                type="text"
+                placeholder="직원 이름 검색"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+                className="search-input"
+              />
 
             </div>
 

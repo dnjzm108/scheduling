@@ -1,0 +1,169 @@
+/* src/pages/UserEdit/index.css */
+
+/* --- 기본 레이아웃 및 컨테이너 --- */
+
+.edit-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 20px;
+  max-width: 800px; /* PC 최대 너비 */
+  margin: 0 auto;
+}
+
+h2 {
+  font-size: 1.5rem;
+  color: #343a40;
+  margin-top: 30px;
+  margin-bottom: 20px;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+/* --- 탭 메뉴 --- */
+
+.edit-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f1f3f5;
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+}
+
+.edit-tabs .tab {
+  flex-grow: 1;
+  padding: 12px 0;
+  border: none;
+  background-color: transparent;
+  color: #495057;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+}
+
+.edit-tabs .tab:not(:last-child) {
+  border-right: 1px solid #dee2e6;
+}
+
+.edit-tabs .tab.active {
+  background-color: #007bff;
+  color: white;
+  border-bottom: 3px solid #007bff;
+}
+
+.edit-tabs .tab:hover:not(.active) {
+  background-color: #e9ecef;
+}
+
+/* --- 폼 레이아웃 (PC: Grid, Mobile: Stack) --- */
+
+.form-grid {
+  display: grid;
+  /* PC 기본: 레이블(1fr)과 입력 필드(2fr) */
+  grid-template-columns: 1fr 2fr; 
+  gap: 15px 20px;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.form-grid label {
+  font-weight: 600;
+  color: #495057;
+  display: flex; /* 레이블 수직 정렬을 위해 */
+  align-items: center;
+}
+
+.form-grid input {
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* 비밀번호 변경 화면의 그리드 (아이템이 하나이므로 flex-direction 대신 grid로 유지) */
+.form-grid:has(input[type="password"]) {
+  grid-template-columns: 1fr; /* PC에서 비밀번호 필드는 1열로 꽉 차게 */
+}
+
+.form-grid:has(input[type="password"]) label {
+  grid-column: 1 / 2; /* 레이블은 한 칸 차지 */
+}
+.form-grid:has(input[type="password"]) input {
+  grid-column: 1 / 2; /* 입력 필드는 한 칸 차지 */
+}
+
+
+/* --- 저장 버튼 --- */
+
+.save-btn {
+  width: 100%;
+  padding: 12px 0;
+  margin-top: 30px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.save-btn:hover {
+  background-color: #1e7e34;
+}
+
+/* --- 반응형 디자인 (모바일 최적화: max-width: 768px) --- */
+
+@media (max-width: 768px) {
+  .edit-container {
+    padding: 10px;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+    margin-top: 20px;
+  }
+
+  .edit-tabs {
+    margin-bottom: 15px;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .edit-tabs .tab {
+    font-size: 0.9rem;
+    padding: 10px 0;
+  }
+
+  /* 폼 레이아웃: 모바일에서는 레이블과 입력 필드가 세로로 Stack */
+  .form-grid {
+    grid-template-columns: 1fr; /* 전체를 1열로 변경 */
+    gap: 10px 0; /* 세로 간격만 유지 */
+    padding: 15px;
+  }
+  
+  .form-grid label {
+    font-size: 0.9rem;
+    padding-top: 5px;
+  }
+
+  .form-grid input {
+    font-size: 0.9rem;
+    padding: 8px; /* 입력 필드 패딩 조정 */
+  }
+
+  /* 비밀번호 변경 화면은 모바일에서도 자연스럽게 1열 유지 */
+  
+  .save-btn {
+    font-size: 1rem;
+    padding: 10px 0;
+    margin-top: 20px;
+  }
+}

@@ -60,6 +60,39 @@ function EmployeeManagement() {
     );
   };
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+
+      const [userRes, allowRes, empRes, storeRes, pendingRes] = await Promise.all([
+        api.get('/api/user'),
+        api.get('/api/user/allowed-stores'),
+        api.get('/api/user/employees?store_id=all'),
+        api.get('/api/stores'),
+        api.get('/api/user/pending-users')
+      ]);
+
+      setUserInfo(userRes.data);
+      setAllowedStores(allowRes.data.allowedStores || []);
+      setEmployees(empRes.data || []);
+      setStores(storeRes.data || []);
+      setPendingUsers(pendingRes.data || []);
+
+      if (pendingRes.data?.length > 0) {
+        setActiveTab('pending');
+      }
+
+    } catch (err) {
+      toast.error(err.response?.data?.message || '데이터 로드 실패');
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        removeToken();
+        navigate('/');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 🚀 초기 로드
   useEffect(() => {
     if (hasLoaded.current) return;
@@ -70,39 +103,6 @@ function EmployeeManagement() {
       toast.error('로그인 필요');
       return setTimeout(() => navigate('/'), 2000);
     }
-
-    const loadData = async () => {
-      try {
-        setLoading(true);
-
-        const [userRes, allowRes, empRes, storeRes, pendingRes] = await Promise.all([
-          api.get('/api/user'),
-          api.get('/api/user/allowed-stores'),
-          api.get('/api/user/employees?store_id=all'),
-          api.get('/api/stores'),
-          api.get('/api/user/pending-users')
-        ]);
-
-        setUserInfo(userRes.data);
-        setAllowedStores(allowRes.data.allowedStores || []);
-        setEmployees(empRes.data || []);
-        setStores(storeRes.data || []);
-        setPendingUsers(pendingRes.data || []);
-
-        if (pendingRes.data?.length > 0) {
-          setActiveTab('pending');
-        }
-
-      } catch (err) {
-        toast.error(err.response?.data?.message || '데이터 로드 실패');
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          removeToken();
-          navigate('/');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
 
     loadData();
   }, [navigate]);
@@ -120,8 +120,8 @@ function EmployeeManagement() {
       .filter(e => e.level >= 1)
       .filter(e =>
         userInfo.level === 4 ? true :
-        userInfo.level === 3 ? true :
-        e.store_id === userInfo.store_id
+          userInfo.level === 3 ? true :
+            e.store_id === userInfo.store_id
       )
       .filter(e =>
         selectedStore === 'all'
@@ -140,7 +140,7 @@ function EmployeeManagement() {
       setPendingUsers(prev => prev.filter(u => u.id !== id));
       setEmployees(prev => [...prev, { ...user, level: 1 }]);
       toast.success('승인 완료');
-
+      loadData();
       if (filteredPendingUsers.length === 1) {
         setActiveTab('employees');
       }
@@ -317,7 +317,7 @@ function EmployeeManagement() {
                 value={selectedStore}
                 onChange={e => setSelectedStore(e.target.value)}
               >
-                
+
                 <option value="all">모든 매장</option>
 
                 {stores
@@ -626,9 +626,9 @@ function EmployeeManagement() {
                   </button>
                 </div>
               </form>
-            /* ============================================================
-               🔑 비밀번호 변경 FORM
-               ============================================================ */
+              /* ============================================================
+                 🔑 비밀번호 변경 FORM
+                 ============================================================ */
             ) : (
               <form onSubmit={savePassword} className="emp-pw-form">
                 <input

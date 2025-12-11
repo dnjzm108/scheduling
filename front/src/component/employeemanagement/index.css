@@ -1,318 +1,424 @@
-/* index.css (직원 관리 페이지 - 수정된 최종 버전) */
-* {
-    box-sizing: border-box;
-}
+/* src/component/EmployeeManagement/index.css */
 
 /* --- 기본 레이아웃 및 컨테이너 --- */
+
 .emp-page {
-    /* Header 컴포넌트가 별도로 처리되므로, 컨테이너는 내용만 담당 */
+    display: flex;
+    flex-direction: column;
     min-height: 100vh;
-    background-color: #f7f7f7;
+    background-color: #f8f9fa; /* 밝은 배경색 */
 }
 
 .page-with-header {
-    /* Header가 fixed/sticky인 경우를 대비하여 padding-top 확보 */
-    padding-top: 50px; /* Header 높이에 따라 조정 */
+    flex-grow: 1;
+    padding: 25px;
 }
 
 .emp-container {
-    padding: 2rem;
-    max-width: 1200px;
+    width: 1200px;
     margin: 0 auto;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* width: 100%; */
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* --- 필터 및 탭 섹션 --- */
+/* --- 검색 및 필터 --- */
+
+.emp-search-box {
+    margin-bottom: 20px;
+}
+
+.emp-search-box input {
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #cdd4db;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    transition: border-color 0.3s;
+}
+
+.emp-search-box input:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
 .emp-filter {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background-color: #fff;
-    border: 1px solid #e0e7ff;
-    border-radius: 0.75rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 25px;
 }
 
 .emp-filter select {
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #ccc;
-    border-radius: 0.375rem;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.07);
-    width: 100%; /* 모바일 대응 */
-    max-width: 300px;
+    width: 100%;
+    padding: 15px;
+    border: 1px solid #cdd4db;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    background-color: #f3f5f7;
+    /* 기본 브라우저 스타일 제거 */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
 }
+
+/* --- 탭 메뉴 --- */
 
 .emp-tabs {
     display: flex;
-    border-bottom: 2px solid #e0e7ff;
-    margin-bottom: 1.5rem;
-    gap: 0.5rem;
-    overflow-x: auto;
+    margin-bottom: 30px;
+    border-bottom: 3px solid #e9ecef;
 }
 
 .emp-tab {
-    padding: 0.75rem 1.25rem;
+    flex-grow: 1;
+    padding: 14px 15px;
     border: none;
-    background: transparent;
+    background-color: transparent;
+    color: #495057;
+    font-weight: 700;
     cursor: pointer;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #6b7280;
-    transition: color 0.15s, border-bottom 0.15s;
+    transition: all 0.3s;
+    font-size: 1.05rem;
     border-bottom: 3px solid transparent;
-    flex-shrink: 0;
+    text-align: center;
+}
+
+.emp-tab:hover:not(.emp-tab-active) {
+    background-color: #f1f3f5;
+    color: #007bff;
 }
 
 .emp-tab-active {
-    color: #4f46e5;
-    border-bottom: 3px solid #4f46e5;
+    color: #007bff;
+    border-bottom: 3px solid #007bff;
 }
 
-/* --- 직원 및 대기 목록 (카드뷰) --- */
+.emp-tab:disabled {
+    color: #adb5bd;
+    cursor: not-allowed;
+}
+
+/* --- 목록 (직원 및 승인 대기) --- */
+
 .emp-list {
+    /* 🚨 PC 화면 크기 고정을 위한 최소 높이 설정 */
+    min-height: 400px;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 20px;
 }
 
 .emp-item {
-    background-color: #fff;
-    padding: 1.5rem;
-    border: 1px solid #eee;
-    border-radius: 0.75rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    background-color: #fff;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.emp-item:hover {
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
 }
 
 .emp-item.pending {
-    border-left: 5px solid #f59e0b; /* 승인 대기 카드 색상 강조 */
+    background-color: #e9f3ff;
+    border-color: #b3d9ff;
 }
 
-.emp-info {
-    flex-grow: 1;
-    min-width: 250px;
-    /* 세부 정보 스타일링: 2열 그리드 */
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-    gap: 0.3rem 1.5rem;
-    font-size: 0.95rem;
+/* PC: 정보 Grid화 (769px 이상) */
+@media (min-width: 769px) {
+    .emp-info {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px 30px;
+        font-size: 0.95rem;
+        color: #495057;
+        margin-bottom: 15px;
+    }
+
+    .emp-info>div {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        line-height: 1.4;
+    }
 }
 
-.emp-info > div:first-child { /* 이름(첫 번째 div) */
-    font-size: 1.125rem;
+
+.emp-info strong {
     font-weight: 700;
-    color: #333;
-    margin-bottom: 0.5rem;
-    grid-column: 1 / -1; 
+    color: #343a40;
 }
 
 .emp-actions {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 10px;
     justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 0;
 }
 
-/* 액션 버튼 */
 .emp-actions button {
-    padding: 0.6rem 0.8rem;
-    border-radius: 0.5rem;
+    padding: 10px 15px;
     border: none;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.15s;
-    font-weight: 500;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    background-color: #4f46e5;
+    font-size: 0.95rem;
+    font-weight: 600;
+    min-width: 90px;
+    transition: background-color 0.2s, box-shadow 0.2s;
+    background-color: #007bff;
     color: white;
 }
 
 .emp-actions button:hover {
-    background-color: #4338ca;
+    background-color: #0056b3;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* 삭제 및 퇴사 버튼 */
-.emp-actions .delete {
-    background-color: #dc2626;
-    color: white;
+.emp-actions button.delete {
+    background-color: #dc3545;
 }
 
-.emp-actions .delete:hover {
-    background-color: #b91c1c;
+.emp-actions button.delete:hover {
+    background-color: #bd2130;
 }
 
-/* 승인 대기 탭의 버튼 */
-.emp-item.pending .emp-actions button:first-child {
-    background-color: #10b981; /* 승인 버튼: 녹색 */
-}
-.emp-item.pending .emp-actions button:first-child:hover {
-    background-color: #059669;
-}
-
-
-/* --- 인라인 폼 스타일 (수정/비밀번호) --- */
-.emp-edit-form, .emp-pw-form {
-    padding: 1.5rem;
-    background-color: #fff;
-    border-radius: 0.75rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    margin-bottom: 1.5rem;
+.emp-no-data {
+    /* 🚨 min-height가 설정된 부모(.emp-list) 내에서 중앙 배치되도록 수정 */
+    text-align: center;
+    padding: 30px;
+    color: #6c757d;
+    font-size: 1.1rem;
+    border: 1px dashed #a0c3ff;
+    border-radius: 8px;
+    background-color: #f1f7ff;
+    /* 부모(.emp-list)가 Flex 컨테이너이므로, 중앙 정렬에 도움이 되도록 margin-top/bottom을 auto로 설정 */
+    margin: auto 0; 
+    width: 100%;
 }
 
-/* PC 화면에서 폼 그룹을 2열로 배치 */
+.emp-loading {
+    text-align: center;
+    padding: 30px;
+    font-size: 1.1rem;
+    color: #007bff;
+}
+
+/* --- 직원 정보 수정 폼 (PC: 2열 Grid) --- */
+
+.emp-edit-form,
+.emp-pw-form {
+    padding: 30px;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+    background-color: #f8f9fa;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
 .emp-edit-form {
+    /* 🚨 폼 크기 고정을 위한 최소 높이 설정 */
+    min-height: 600px; 
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 기본 2열 그리드 */
-    gap: 1.25rem 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px 30px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 8px;
 }
 
 .form-group label {
     font-weight: 600;
-    color: #4b5563;
-    font-size: 0.95rem;
-}
-
-.emp-edit-form input, 
-.emp-edit-form select {
-    padding: 0.75rem 0.6rem;
-    border: 1px solid #ccc;
-    border-radius: 0.375rem;
+    color: #343a40;
     font-size: 1rem;
-    width: 100%;
 }
 
-/* 비밀번호 폼은 1열 유지 */
+.emp-edit-form input,
+.emp-edit-form select,
+.emp-pw-form input {
+    padding: 12px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+/* 월급/시급/계좌 등 연속 정보는 1열(전체 너비) + 내부 2열 Grid로 배치 */
+.emp-edit-form .form-group:nth-child(8),
+.emp-edit-form .form-group:nth-child(9),
+.emp-edit-form .form-group:nth-child(10),
+.emp-edit-form .form-group:nth-child(11),
+.emp-edit-form .form-group:nth-child(12),
+.emp-edit-form .form-group:nth-child(13),
+.emp-edit-form .form-group:nth-child(14) {
+    grid-column: 1 / 3;
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    align-items: center;
+    gap: 10px;
+}
+
+.emp-edit-form .form-group:nth-child(8) label, .emp-edit-form .form-group:nth-child(9) label, .emp-edit-form .form-group:nth-child(10) label, 
+.emp-edit-form .form-group:nth-child(11) label, .emp-edit-form .form-group:nth-child(12) label, .emp-edit-form .form-group:nth-child(13) label, 
+.emp-edit-form .form-group:nth-child(14) label {
+    grid-column: 1 / 2;
+    margin-bottom: 0;
+}
+
+.emp-edit-form .form-group:nth-child(8) input, .emp-edit-form .form-group:nth-child(9) input, .emp-edit-form .form-group:nth-child(10) input, 
+.emp-edit-form .form-group:nth-child(11) input, .emp-edit-form .form-group:nth-child(12) input, .emp-edit-form .form-group:nth-child(13) input, 
+.emp-edit-form .form-group:nth-child(14) select {
+    grid-column: 2 / 3;
+}
+
+
 .emp-pw-form {
     display: flex;
-    gap: 0.75rem;
-    align-items: center;
+    gap: 20px;
 }
 
 .emp-pw-form input {
-    padding: 0.75rem 0.6rem;
-    border: 1px solid #ccc;
-    border-radius: 0.375rem;
-    font-size: 1rem;
     flex-grow: 1;
 }
 
-/* 폼 액션 버튼 그룹 */
 .emp-form-actions {
+    grid-column: 1 / 3;
     display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
-    grid-column: 1 / -1; /* PC에서 저장/취소 버튼은 전체 너비 */
-    justify-content: flex-end; /* 오른쪽 정렬 */
-    margin-top: 0.5rem;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 10px;
 }
 
 .emp-form-actions button {
-    padding: 0.75rem 1.25rem;
-    border: none;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background-color 0.15s;
+    padding: 12px 25px;
     font-size: 1rem;
+    font-weight: 700;
+    border-radius: 8px;
+    min-width: 100px;
 }
 
 .emp-form-actions button[type="submit"] {
-    color: #fff;
-    background-color: #4f46e5;
-}
-.emp-form-actions button[type="submit"]:hover {
-    background-color: #4338ca;
+    background-color: #28a745;
 }
 
-.emp-form-actions button[type="button"] { /* 취소 버튼 */
-    background-color: #e5e7eb;
-    color: #374151;
-}
-.emp-form-actions button[type="button"]:hover {
-    background-color: #d1d5db;
+.emp-form-actions button[type="button"] {
+    background-color: #6c757d;
 }
 
-/* --- 기타 정보 및 로딩 --- */
-.emp-loading, .emp-no-data {
-    text-align: center;
-    padding: 2rem;
-    color: #4f46e5;
-    font-size: 1.125rem;
-    font-weight: 500;
-    background-color: #fff;
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
+/* --- 모바일 반응형 (max-width: 768px) 통합 --- */
 
-/* --- 📱 모바일 대응 (@media) --- */
 @media (max-width: 768px) {
-    .emp-container {
-        padding: 1rem;
-    }
-
-    /* 직원 카드 */
-    .emp-item {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 1rem;
+    .page-with-header {
+        padding: 10px;
     }
     
-    .emp-info {
-        min-width: 100%;
-        margin-bottom: 1rem;
-        /* 모바일에서는 1열로 변경 */
-        grid-template-columns: 1fr;
-        gap: 0.2rem 0;
+    .emp-list {
+        /* 🚨 모바일 최소 높이 설정 */
+        min-height: 300px;
+        gap: 15px;
     }
 
-    .emp-info > div:first-child { 
-        margin-bottom: 0.75rem;
+    .emp-container {
+        padding: 15px;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    /* 탭 메뉴 */
+    .emp-tab {
+        padding: 10px 5px;
+        font-size: 0.9rem;
+    }
+
+    /* 목록 아이템 */
+    .emp-item {
+        padding: 12px;
+    }
+
+    /* 모바일 목록 정보 표시 */
+    .emp-info {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        font-size: 0.9rem;
+    }
+
+    .emp-info>div {
+        flex-direction: row;
+        justify-content: space-between;
     }
 
     .emp-actions {
-        width: 100%;
+        flex-direction: row;
         justify-content: space-between;
-        margin-top: 0;
-    }
-    
-    .emp-actions button {
-        flex-grow: 1; 
-        min-width: 45%;
-        margin-top: 0.5rem;
+        margin-top: 10px;
+        gap: 5px;
     }
 
-    /* 인라인 폼 모바일 대응 (세로 1열) */
+    .emp-actions button {
+        flex: 1;
+        padding: 8px 5px;
+        font-size: 0.85rem;
+    }
+
+    /* 수정 폼 */
     .emp-edit-form {
-        grid-template-columns: 1fr; /* 1열로 변경 */
-        gap: 0.75rem;
+        /* 🚨 모바일 폼 최소 높이 설정 */
+        min-height: 400px;
+        grid-template-columns: 1fr;
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .form-group {
+        gap: 5px;
+    }
+
+    /* 복합 정보 폼 그룹은 세로 스택으로 */
+    .emp-edit-form .form-group:nth-child(8), .emp-edit-form .form-group:nth-child(9), .emp-edit-form .form-group:nth-child(10),
+    .emp-edit-form .form-group:nth-child(11), .emp-edit-form .form-group:nth-child(12), .emp-edit-form .form-group:nth-child(13),
+    .emp-edit-form .form-group:nth-child(14) {
+        grid-column: 1 / 2;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .emp-edit-form .form-group:nth-child(8) label, .emp-edit-form .form-group:nth-child(9) label, .emp-edit-form .form-group:nth-child(10) label,
+    .emp-edit-form .form-group:nth-child(11) label, .emp-edit-form .form-group:nth-child(12) label, .emp-edit-form .form-group:nth-child(13) label,
+    .emp-edit-form .form-group:nth-child(14) label,
+    .emp-edit-form .form-group:nth-child(8) input, .emp-edit-form .form-group:nth-child(9) input, .emp-edit-form .form-group:nth-child(10) input,
+    .emp-edit-form .form-group:nth-child(11) input, .emp-edit-form .form-group:nth-child(12) input, .emp-edit-form .form-group:nth-child(13) input,
+    .emp-edit-form .form-group:nth-child(14) select {
+        grid-column: auto;
+    }
+
+
+    .emp-edit-form input,
+    .emp-edit-form select,
+    .emp-pw-form input {
+        padding: 10px;
+        font-size: 0.9rem;
     }
 
     .emp-pw-form {
         flex-direction: column;
-        align-items: stretch;
-    }
-
-    .emp-pw-form input {
-        min-width: 100%;
+        padding: 15px;
     }
 
     .emp-form-actions {
-        width: 100%;
-        gap: 0.75rem;
-        grid-column: 1 / -1;
-        justify-content: stretch; /* 전체 너비로 늘리기 */
+        grid-column: 1 / 2;
+        justify-content: space-between;
+        margin-top: 15px;
     }
-    
+
     .emp-form-actions button {
-        flex-grow: 1;
+        flex: 1;
+        padding: 10px 15px;
     }
 }

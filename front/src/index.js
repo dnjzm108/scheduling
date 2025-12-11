@@ -28,6 +28,7 @@ import ScheduleFinalize from './pages/ScheduleFinalize';
 import SectionManagement from './pages/SectionManagement';
 import Mypayroll from './pages/Mypayroll';
 import StoreSales from './pages/StoreSales';
+import UserEdit from './pages/UserEdit';
 
 // 전역 요청 취소 함수 임포트
 import { cancelAllRequests } from './utils/api';
@@ -79,6 +80,7 @@ const routes = [
   { path: '/notices', element: <Notices />, minLevel: 1 },
   { path: '/NoticeCreate', element: <NoticeCreate />, minLevel: 2 },
   { path: '/requests', element: <Requests />, minLevel: 1 },
+  { path: '/UserEdit', element: <UserEdit />, minLevel: 1 },
   { path: '/RequestsList', element: <RequestsList />, minLevel: 2 },
 
   // 매장관리자 이상

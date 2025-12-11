@@ -38,7 +38,8 @@ const logAudit = async (conn, action, actorId, targetId, details) => {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const [rows] = await pool(req).query(
-      `SELECT u.id, u.name, u.userId, u.level, u.store_id, u.work_area, s.name AS store_name
+      `SELECT u.id, u.name, u.userId, u.level, u.store_id, u.work_area, s.name AS store_name ,
+      u.phone,u.resident_id,u.bank_name,u.bank_account,u.account_holder 
        FROM users u LEFT JOIN stores s ON u.store_id = s.id 
        WHERE u.id = ?`,
       [req.user.id]
@@ -197,146 +198,7 @@ router.put('/:userId/reject', authMiddleware, storeAdmin, async (req, res) => {
   }
 });
 
-// 7. 직원 정보 수정
-router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
-  const { userId } = req.params;
-  const {
-    name,
-    userId: newUserId,
-    phone,
-    store_id,
-    hire_date,
-    level,
-    hourly_rate,
-    hourly_rate_with_holiday,
-    monthly_salary,
 
-    bank_name,
-    bank_account,
-    account_holder,
-    tax_type,
-    work_area
-  } = req.body;
-
-  try {
-    const result = await withTransaction(req, async (conn) => {
-      const [userRows] = await conn.query(`SELECT * FROM users WHERE id = ? FOR UPDATE`, [userId]);
-      if (!userRows[0]) throw { status: 404, msg: '사용자 없음' };
-      const oldUser = userRows[0];
-
-      if (!name || !newUserId || !phone) {
-        throw { status: 400, msg: '이름, 아이디, 전화번호는 필수입니다.' };
-      }
-
-      // 중복 체크
-      for (const [field, value] of Object.entries({ userId: newUserId, phone })) {
-        if (value && value !== oldUser[field]) {
-          const [dup] = await conn.query(
-            `SELECT id FROM users WHERE ${field} = ? AND id != ?`,
-            [value, userId]
-          );
-          if (dup.length > 0) {
-            throw { status: 409, msg: `이미 사용 중인 ${field === 'userId' ? '아이디' : '전화번호'}입니다.` };
-          }
-        }
-      }
-
-      if (store_id != null) {
-        const [store] = await conn.query('SELECT id FROM stores WHERE id = ?', [store_id]);
-        if (!store[0]) throw { status: 400, msg: '존재하지 않는 매장입니다.' };
-      }
-
-      const finalLevel = level ?? oldUser.level;
-      const finalWorkArea = work_area || oldUser.work_area || 'both';
-      const finalTaxType = (tax_type !== undefined && tax_type !== null) ? parseInt(tax_type, 10) : (oldUser.tax_type ?? 0);
-
-      // users 테이블 업데이트
-      await conn.query(
-        `UPDATE users 
-         SET name = ?, userId = ?, phone = ?, store_id = ?, hire_date = ?, level = ?,
-             bank_name = ?, bank_account = ?, account_holder = ?, tax_type = ?, work_area = ?
-         WHERE id = ?`,
-        [
-          name, newUserId, phone, store_id ?? null, hire_date ?? null, finalLevel,
-          bank_name || null,
-          bank_account || null,
-          account_holder || null,
-          finalTaxType,
-          finalWorkArea,
-          userId
-        ]
-      );
-
-      // 급여 정보
-      if (finalLevel !== undefined || hourly_rate || hourly_rate_with_holiday || monthly_salary) {
-        const isHourly = finalLevel === 1;
-        const isMonthly = [2, 3].includes(finalLevel);
-
-        if (isHourly) {
-          const rate1 = hourly_rate ? parseInt(hourly_rate, 10) : null;
-          const rate2 = hourly_rate_with_holiday ? parseInt(hourly_rate_with_holiday, 10) : null;
-          if (!rate1 || !rate2 || isNaN(rate1) || isNaN(rate2) || rate1 <= 0 || rate2 <= 0) {
-            throw { status: 400, msg: '알바는 기본 시급과 주휴수당 포함 시급을 올바르게 입력해야 합니다.' };
-          }
-        }
-
-        if (isMonthly) {
-          const salary = monthly_salary ? parseInt(monthly_salary, 10) : null;
-          if (!salary || isNaN(salary) || salary <= 0) {
-            throw { status: 400, msg: '정직원/매장관리자는 월급을 올바르게 입력해야 합니다.' };
-          }
-        }
-
-        await conn.query(`
-          INSERT INTO employee_salary 
-            (user_id, salary_type, hourly_rate, hourly_rate_with_holiday, monthly_salary)
-          VALUES (?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE
-            salary_type = VALUES(salary_type),
-            hourly_rate = VALUES(hourly_rate),
-            hourly_rate_with_holiday = VALUES(hourly_rate_with_holiday),
-            monthly_salary = VALUES(monthly_salary),
-            updated_at = CURRENT_TIMESTAMP
-        `, [
-          userId,
-          finalLevel === 1 ? 'hourly' : 'monthly',
-          finalLevel === 1 ? parseInt(hourly_rate, 10) : null,
-          finalLevel === 1 ? parseInt(hourly_rate_with_holiday, 10) : null,
-          [2, 3].includes(finalLevel) ? parseInt(monthly_salary, 10) : null
-        ]);
-      }
-
-      const changed = [];
-      if (name !== oldUser.name) changed.push('name');
-      if (newUserId !== oldUser.userId) changed.push('userId');
-      if (phone !== oldUser.phone) changed.push('phone');
-      if (store_id != oldUser.store_id) changed.push('store_id');
-      if (hire_date != oldUser.hire_date) changed.push('hire_date');
-      if (finalLevel !== oldUser.level) changed.push('level');
-      if (bank_name !== oldUser.bank_name || bank_account !== oldUser.bank_account || account_holder !== oldUser.account_holder) changed.push('bank');
-      if (finalTaxType !== oldUser.tax_type) changed.push('tax_type');
-      if (finalWorkArea !== oldUser.work_area) changed.push('work_area');
-      if (hourly_rate || hourly_rate_with_holiday || monthly_salary) changed.push('salary');
-
-      if (changed.length > 0) {
-        await logAudit(conn, 'user_update', req.user.id, userId, { fields: changed });
-      }
-
-      const [newUser] = await conn.query(`SELECT * FROM users WHERE id = ?`, [userId]);
-      const [salary] = await conn.query(`SELECT * FROM employee_salary WHERE user_id = ?`, [userId]);
-
-      return {
-        ...newUser[0],
-        salary_info: salary[0] || null
-      };
-    });
-
-    res.json({ message: '직원 정보 수정 완료', user: result });
-  } catch (err) {
-    console.error('직원 수정 실패:', err);
-    res.status(err.status || 500).json({ message: err.msg || '서버 오류 발생' });
-  }
-});
 
 // 8. 비밀번호 변경
 router.put('/:userId/password', authMiddleware, storeAdmin, async (req, res) => {
@@ -475,5 +337,334 @@ router.get('/allowed-stores', authMiddleware, async (req, res) => {
   });
 });
 
+// ============================
+// 직원 정보 조회
+// ============================
+router.get("/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const userLevel = req.user.level;
+
+    if (userLevel < 3) {
+      return res.status(403).json({ message: "권한이 없습니다." });
+    }
+
+    const [rows] = await pool(req).query(`
+      SELECT 
+        u.id, u.name, u.phone, u.resident_id, u.hire_date, u.resign_date,
+        u.work_area, u.bank_name, u.bank_account, u.account_holder,
+        u.is_active,
+        es.hourly_rate
+      FROM users u
+      LEFT JOIN employee_salary es ON es.user_id = u.id
+      WHERE u.id = ?
+    `, [userId]);
+
+    res.json(rows[0] || {});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "직원 조회 실패" });
+  }
+});
+
+// ============================
+// 직원 정보 수정 API
+// ============================
+router.put("/:id", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const adminLevel = req.user.level;
+
+    if (adminLevel < 3) {
+      return res.status(403).json({ message: "권한이 없습니다." });
+    }
+
+    const {
+      name, phone, resident_id,
+      hire_date, resign_date,
+      work_area,
+      bank_name, bank_account, account_holder,
+      is_active,
+      hourly_rate
+    } = req.body;
+
+    const conn = pool(req);
+
+    // 직원 정보 업데이트
+    await conn.query(`
+      UPDATE users SET 
+        name = ?, phone = ?, resident_id = ?, 
+        hire_date = ?, resign_date = ?, work_area = ?,
+        bank_name = ?, bank_account = ?, account_holder = ?,
+        is_active = ?
+      WHERE id = ?
+    `, [
+      name, phone, resident_id,
+      hire_date, resign_date, work_area,
+      bank_name, bank_account, account_holder,
+      is_active,
+      userId
+    ]);
+
+    // 급여테이블 업데이트
+    await conn.query(`
+      INSERT INTO employee_salary (user_id, hourly_rate)
+      VALUES (?, ?)
+      ON DUPLICATE KEY UPDATE hourly_rate = VALUES(hourly_rate)
+    `, [userId, hourly_rate]);
+
+    res.json({ message: "수정 완료" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "직원 수정 실패" });
+  }
+});
+
+
+// ===========================================
+// 11. 개인정보 수정 (프론트 요청 API)
+// PUT /api/user/:id/personal
+// ===========================================
+router.put("/:id/personal", authMiddleware, async (req, res) => {
+  const userId = req.params.id;
+  const requesterId = req.user.id;
+  const requesterLevel = req.user.level;
+
+  try {
+    // 본인 또는 관리자 이상만 수정 가능
+    if (parseInt(userId) !== requesterId && requesterLevel < 3) {
+      return res.status(403).json({ message: "권한이 없습니다." });
+    }
+
+    const {
+      name,
+      phone,
+      resident_id,
+      bank_name,
+      bank_account,
+      account_holder
+    } = req.body;
+
+    // 필수값 체크
+    if (!name || !phone) {
+      return res.status(400).json({ message: "이름과 전화번호는 필수입니다." });
+    }
+
+    const conn = req.app.get("db");
+
+    // 중복 체크 (전화번호)
+    const [dupPhone] = await conn.query(
+      `SELECT id FROM users WHERE phone = ? AND id != ?`,
+      [phone, userId]
+    );
+    if (dupPhone.length > 0) {
+      return res.status(409).json({ message: "이미 사용 중인 전화번호입니다." });
+    }
+
+    // 개인정보 업데이트
+    await conn.query(
+      `
+      UPDATE users SET
+        name = ?,
+        phone = ?,
+        resident_id = ?,
+        bank_name = ?,
+        bank_account = ?,
+        account_holder = ?
+      WHERE id = ?
+      `,
+      [
+        name,
+        phone,
+        resident_id || null,
+        bank_name || null,
+        bank_account || null,
+        account_holder || null,
+        userId
+      ]
+    );
+
+    res.json({ message: "개인정보 수정 완료" });
+  } catch (err) {
+    console.error("개인정보 수정 오류:", err);
+    res.status(500).json({
+      message: "서버 오류: 개인정보를 수정할 수 없습니다.",
+      error: err.message
+    });
+  }
+});
+
+
+
+// 7. 직원 정보 수정
+router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
+  const { userId } = req.params;
+  const {
+    name,
+    userId: newUserId,
+    phone,
+    store_id,
+    hire_date,
+    level,
+    hourly_rate,
+    hourly_rate_with_holiday,
+    monthly_salary,
+
+    bank_name,
+    bank_account,
+    account_holder,
+    tax_type,
+    work_area
+  } = req.body;
+  console.log(req.body);
+
+
+  try {
+    const result = await withTransaction(req, async (conn) => {
+      const [userRows] = await conn.query(`SELECT * FROM users WHERE id = ? FOR UPDATE`, [userId]);
+      if (!userRows[0]) throw { status: 404, msg: '사용자 없음' };
+      const oldUser = userRows[0];
+
+      if (!name || !newUserId || !phone) {
+        throw { status: 400, msg: '이름, 아이디, 전화번호는 필수입니다.' };
+      }
+
+      // 중복 체크
+      for (const [field, value] of Object.entries({ userId: newUserId, phone })) {
+        if (value && value !== oldUser[field]) {
+          const [dup] = await conn.query(
+            `SELECT id FROM users WHERE ${field} = ? AND id != ?`,
+            [value, userId]
+          );
+          if (dup.length > 0) {
+            throw { status: 409, msg: `이미 사용 중인 ${field === 'userId' ? '아이디' : '전화번호'}입니다.` };
+          }
+        }
+      }
+
+      if (store_id != null) {
+        const [store] = await conn.query('SELECT id FROM stores WHERE id = ?', [store_id]);
+        if (!store[0]) throw { status: 400, msg: '존재하지 않는 매장입니다.' };
+      }
+
+      const finalLevel = level ?? oldUser.level;
+      const finalWorkArea = work_area || oldUser.work_area || 'both';
+      const finalTaxType = (tax_type !== undefined && tax_type !== null) ? parseInt(tax_type, 10) : (oldUser.tax_type ?? 0);
+
+      // users 테이블 업데이트
+      await conn.query(
+        `UPDATE users 
+         SET name = ?, userId = ?, phone = ?, store_id = ?, hire_date = ?, level = ?,
+             bank_name = ?, bank_account = ?, account_holder = ?, tax_type = ?, work_area = ?
+         WHERE id = ?`,
+        [
+          name, newUserId, phone, store_id ?? null, hire_date ?? null, finalLevel,
+          bank_name || null,
+          bank_account || null,
+          account_holder || null,
+          finalTaxType,
+          finalWorkArea,
+          userId
+        ]
+      );
+
+      // 급여 정보
+      if (finalLevel !== undefined || hourly_rate || hourly_rate_with_holiday || monthly_salary) {
+        const isHourly = finalLevel === 1;
+        const isMonthly = [2, 3].includes(finalLevel);
+
+        if (isHourly) {
+          const rate1 = hourly_rate ? parseInt(hourly_rate, 10) : null;
+          const rate2 = hourly_rate_with_holiday ? parseInt(hourly_rate_with_holiday, 10) : null;
+          if (!rate1 || !rate2 || isNaN(rate1) || isNaN(rate2) || rate1 <= 0 || rate2 <= 0) {
+            throw { status: 400, msg: '알바는 기본 시급과 주휴수당 포함 시급을 올바르게 입력해야 합니다.' };
+          }
+        }
+
+        if (isMonthly) {
+          const salary = monthly_salary ? parseInt(monthly_salary, 10) : null;
+          if (!salary || isNaN(salary) || salary <= 0) {
+            throw { status: 400, msg: '정직원/매장관리자는 월급을 올바르게 입력해야 합니다.' };
+          }
+        }
+
+        await conn.query(`
+          INSERT INTO employee_salary 
+            (user_id, salary_type, hourly_rate, hourly_rate_with_holiday, monthly_salary)
+          VALUES (?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+            salary_type = VALUES(salary_type),
+            hourly_rate = VALUES(hourly_rate),
+            hourly_rate_with_holiday = VALUES(hourly_rate_with_holiday),
+            monthly_salary = VALUES(monthly_salary),
+            updated_at = CURRENT_TIMESTAMP
+        `, [
+          userId,
+          finalLevel === 1 ? 'hourly' : 'monthly',
+          finalLevel === 1 ? parseInt(hourly_rate, 10) : null,
+          finalLevel === 1 ? parseInt(hourly_rate_with_holiday, 10) : null,
+          [2, 3].includes(finalLevel) ? parseInt(monthly_salary, 10) : null
+        ]);
+      }
+
+      const changed = [];
+      if (name !== oldUser.name) changed.push('name');
+      if (newUserId !== oldUser.userId) changed.push('userId');
+      if (phone !== oldUser.phone) changed.push('phone');
+      if (store_id != oldUser.store_id) changed.push('store_id');
+      if (hire_date != oldUser.hire_date) changed.push('hire_date');
+      if (finalLevel !== oldUser.level) changed.push('level');
+      if (bank_name !== oldUser.bank_name || bank_account !== oldUser.bank_account || account_holder !== oldUser.account_holder) changed.push('bank');
+      if (finalTaxType !== oldUser.tax_type) changed.push('tax_type');
+      if (finalWorkArea !== oldUser.work_area) changed.push('work_area');
+      if (hourly_rate || hourly_rate_with_holiday || monthly_salary) changed.push('salary');
+
+      if (changed.length > 0) {
+        await logAudit(conn, 'user_update', req.user.id, userId, { fields: changed });
+      }
+
+      const [newUser] = await conn.query(`SELECT * FROM users WHERE id = ?`, [userId]);
+      const [salary] = await conn.query(`SELECT * FROM employee_salary WHERE user_id = ?`, [userId]);
+
+      return {
+        ...newUser[0],
+        salary_info: salary[0] || null
+      };
+    });
+
+    res.json({ message: '직원 정보 수정 완료', user: result });
+  } catch (err) {
+    console.error('직원 수정 실패:', err);
+    res.status(err.status || 500).json({ message: err.msg || '서버 오류 발생' });
+  }
+});
+
+
+// 8. 비밀번호 변경
+router.put('/:userId/password/personal', authMiddleware, async (req, res) => {
+  const { userId } = req.params;
+  const { password } = req.body;
+  
+  try {
+    if (!password || password.length < 4) throw { status: 400, msg: '비밀번호 4자 이상' };
+
+    const result = await withTransaction(req, async (conn) => {
+      const [user] = await conn.query(`SELECT id, name FROM users WHERE id = ? FOR UPDATE`, [userId]);
+      if (!user[0]) throw { status: 404, msg: '사용자 없음' };
+
+      const hashed = await bcrypt.hash(password, SALT_ROUNDS);
+      await conn.query(`UPDATE users SET password = ? WHERE id = ?`, [hashed, userId]);
+      await logAudit(conn, 'password_reset', req.user.id, userId, { name: user[0].name });
+
+      return { user_id: parseInt(userId) };
+    });
+
+    res.json({ message: '비밀번호 변경 완료', ...result });
+  } catch (err) {
+    console.log(err);
+    
+    res.status(err.status || 500).json({ message: err.msg || '변경 실패' });
+  }
+});
 
 module.exports = router;

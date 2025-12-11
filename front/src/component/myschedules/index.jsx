@@ -146,6 +146,12 @@ function MySchedules() {
             >
               나의 월급
             </button>
+            <button
+              className="myschedules-button myschedules-notice-button"
+              onClick={() => navigate('/UserEdit')}
+            >
+              개인 정보 수정
+            </button>
           </div>
 
           <div className="myschedules-tab-row">
