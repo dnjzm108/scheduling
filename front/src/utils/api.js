@@ -1,7 +1,8 @@
 // src/utils/api.js (완전 최종판 - 중복 + 전역 취소 모두 포함)
 import axios from 'axios';
-import { BASE_URL } from '../config';
 import { getToken } from './auth';
+const API_URL = process.env.REACT_APP_API_URL;
+console.log("test : ",API_URL);
 
 // 전역 취소 토큰 배열 (페이지 이동 시 전체 취소용)
 const cancelTokens = [];
@@ -10,7 +11,7 @@ const cancelTokens = [];
 const pendingRequests = new Map();
 
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
