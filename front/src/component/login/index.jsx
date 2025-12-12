@@ -1,20 +1,48 @@
-// src/pages/Login.jsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { BASE_URL } from '../../config';
-import { setToken } from '../../utils/auth';
+import { setToken, getToken } from '../../utils/auth';
 import './index.css';
+import { jwtDecode } from 'jwt-decode';
+
+const AUTO_LOGIN_KEY = 'auto_login';
 
 function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ userId: '', password: '' });
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-  
-  // 중복 제출 방지
   const isSubmitting = useRef(false);
+
+  /** 🔹 자동로그인 체크 */
+  useEffect(() => {
+    const autoLogin = JSON.parse(localStorage.getItem(AUTO_LOGIN_KEY));
+    if (!autoLogin) return;
+
+    console.log(autoLogin);
+
+    const token2 = getToken();
+
+    let level = 0;
+    if (typeof token2 == 'string') {
+      level = jwtDecode(token2).level;
+    }
+
+
+
+    const { token, expireAt } = autoLogin;
+    if (Date.now() < expireAt) {
+      setToken(token);
+
+      let path = level >= 3 ? '/AdminDashboard' : '/myschedules';
+      navigate(path, { replace: true });
+    } else {
+      localStorage.removeItem(AUTO_LOGIN_KEY);
+    }
+  }, [navigate]);
 
   const errorMap = {
     '존재하지 않는 아이디입니다.': '존재하지 않는 아이디입니다.',
@@ -30,8 +58,6 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 연타 방지
     if (isSubmitting.current) return;
     isSubmitting.current = true;
     setError('');
@@ -44,22 +70,33 @@ function Login() {
     }
 
     try {
-      const { data } = await axios.post(`${BASE_URL}/api/auth/login`, 
-        { userId, password },
+      const { data } = await axios.post(
+        `${BASE_URL}/api/auth/login`,
+        { userId, password, rememberMe },
         { headers: { 'Content-Type': 'application/json' } }
       );
 
       const { token, user } = data;
       setToken(token);
+
+      /** 🔹 자동로그인 저장 */
+      if (rememberMe) {
+        localStorage.setItem(
+          AUTO_LOGIN_KEY,
+          JSON.stringify({
+            token,
+            expireAt: Date.now() + 1000 * 60 * 60 * 24 * 30 // 30일
+          })
+        );
+      }
+
       toast.success('로그인 성공!');
 
-      // 1.5초 후 이동
       setTimeout(() => {
-        const path = user.level >= 3 ? '/AdminDashboard'
-                   : user.level === 2 || 1 ? '/myschedules'
-                   : '/myschedules';
+        const path =
+          user.level >= 3 ? '/AdminDashboard' : '/myschedules';
         navigate(path, { replace: true });
-      }, 1500);
+      }, 1000);
 
     } catch (err) {
       const msg = err.response?.data?.message || '로그인 실패';
@@ -74,7 +111,7 @@ function Login() {
   return (
     <div className="login-container">
       <div className="login-bg-overlay" />
-      
+
       <div className="login-card">
         <div className="login-header">
           <h1 className="login-title">KM Company</h1>
@@ -83,57 +120,51 @@ function Login() {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="login-input-group">
-            <label className="login-label">아이디</label>
+            <label>아이디</label>
             <input
-              type="text"
               name="userId"
               value={formData.userId}
               onChange={handleChange}
-              className="login-input"
-              placeholder="아이디를 입력하세요"
               disabled={isSubmitting.current}
               autoComplete="username"
             />
           </div>
 
           <div className="login-input-group">
-            <label className="login-label">비밀번호</label>
+            <label>비밀번호</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="login-input"
-              placeholder="비밀번호를 입력하세요"
               disabled={isSubmitting.current}
               autoComplete="current-password"
             />
           </div>
 
+          {/* 🔹 자동로그인 체크박스 */}
+          <div className="login-remember">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>자동 로그인(30일)</span>
+          </div>
+
           {error && <div className="login-error">{error}</div>}
 
-          <button
-            type="submit"
-            disabled={isSubmitting.current}
-            className={`login-button ${isSubmitting.current ? 'login-loading' : ''}`}
-          >
-            {isSubmitting.current ? (
-              <>
-                <div className="login-spinner" />
-                로그인 중...
-              </>
-            ) : (
-              '로그인하기'
-            )}
+          <button disabled={isSubmitting.current}>
+            로그인
           </button>
         </form>
 
         <p className="login-signup-link">
-          계정이 없으신가요? <a href="/signup">회원가입하기</a>
+          계정이 없으신가요? <a href="/signup">회원가입</a>
         </p>
       </div>
 
-      <ToastContainer theme="colored" position="top-center" autoClose={3000} />
+      <ToastContainer theme="colored" position="top-center" />
     </div>
   );
 }

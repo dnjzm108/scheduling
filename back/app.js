@@ -6,12 +6,14 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { createDatabaseAndPool } = require('./config/db');
 const initDB = require('./utils/initDB');
-const API_URL = process.env.API_URL;
+const API_URL = process.env.API_URL || 'http://localhost:3000';
 // const { assignWorkers } = require('./utils/assigner');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+
+console.log(API_URL)
 // 미들웨어
 app.use(cors({ origin: API_URL }));
 app.use(express.json({ limit: '10mb' }));

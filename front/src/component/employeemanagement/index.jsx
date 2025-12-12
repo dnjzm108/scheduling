@@ -71,6 +71,11 @@ function EmployeeManagement() {
         api.get('/api/stores'),
         api.get('/api/user/pending-users')
       ]);
+      console.log("userRes.data : ", userRes.data);
+      console.log("allowRes.data.allowedStores : ", allowRes.data.allowedStores);
+      console.log("empRes.data : ", empRes.data);
+      console.log("storeRes.data : ", storeRes.data);
+      console.log("pendingRes.data : ", pendingRes.data);
 
       setUserInfo(userRes.data);
       setAllowedStores(allowRes.data.allowedStores || []);
@@ -222,6 +227,7 @@ function EmployeeManagement() {
       account_holder: d.account_holder || null,
       tax_type: d.tax_type ?? 0,
       work_area: d.work_area || 'both',
+      resident_id:d.resident_id || ''
     };
 
     if (d.level === 1) {
@@ -287,6 +293,18 @@ function EmployeeManagement() {
     } finally {
       isProcessing.current = false;
     }
+  };
+
+  const format_Resident_id = (e) => {
+    // 주민번호: 13자리 + 자동 하이픈
+    let val = e
+      .replace(/\D/g, '')  // 숫자만
+      .slice(0, 13);        // 최대 13자리
+
+    if (val.length > 6) {
+      val = val.replace(/(\d{6})(\d+)/, '$1-$2');
+    }
+    return val
   };
 
   return (
@@ -496,6 +514,19 @@ function EmployeeManagement() {
                     <option value="kitchen">주방</option>
                     <option value="both">전체</option>
                   </select>
+                </div>
+                 <div className="form-group">
+                  <label>주민번호</label>
+                   <input
+                    value={editing.data.resident_id}
+                    onChange={e =>
+                      setEditing(p => ({
+                        ...p,
+                        data: { ...p.data, resident_id: e.target.value }
+                      }))
+                    }
+                  />
+
                 </div>
 
                 {/* 알바 → 시급 입력 */}
@@ -733,7 +764,7 @@ function EmployeeManagement() {
                           계좌: {emp.bank_account || '미등록'} /
                           예금주: {emp.account_holder || '미등록'}
                         </div>
-
+                        <div>주민번호 : {format_Resident_id(emp.resident_id)}</div>
                         <div>
                           세금 방식: {emp.tax_type === 1 ? '4대보험' : '3.3% 공제'}
                         </div>

@@ -11,6 +11,8 @@ function Header({ title, backTo, showBack = true }) {
   const isNavigating = useRef(false);
   const isLoggingOut = useRef(false);
 
+const AUTO_LOGIN_KEY = 'auto_login';
+
   const token = getToken();
   let userName = '사용자님';
   let userLevel = 0;
@@ -27,6 +29,8 @@ function Header({ title, backTo, showBack = true }) {
     if (isLoggingOut.current) return;
     isLoggingOut.current = true;
 
+    localStorage.removeItem(AUTO_LOGIN_KEY);
+    
     removeToken();
     toast.success('로그아웃되었습니다.');
 

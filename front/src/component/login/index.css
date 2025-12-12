@@ -1,154 +1,154 @@
-/* index.css (로그인 페이지 - Login 컴포넌트용) */
-* {
-    box-sizing: border-box;
-}
+/* src/component/Login/index.css */
 
-/* --- 전체 배경 및 컨테이너 --- */
+/* --- 1. 전체 레이아웃 (반응형 기본) --- */
+
 .login-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 1rem;
-    background-color: #e0e7ff; /* 연한 인디고 배경 */
-    font-family: Arial, sans-serif;
+    background-color: #f0f2f5; /* 밝은 회색 배경 */
+    position: relative;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
+/* 배경 오버레이 (선택 사항: 원하는 배경 이미지/색상 위에 반투명 효과를 줄 때 사용) */
 .login-bg-overlay {
-    /* 배경 오버레이는 사용하지 않으므로 투명 처리 */
-    display: none; 
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #007bff99, #0056b399); /* 파란색 그라데이션 오버레이 */
+    opacity: 0.1;
+    z-index: 0;
 }
 
-/* --- 로그인 카드 --- */
+/* --- 2. 로그인 카드 스타일 (PC/태블릿 기본) --- */
+
 .login-card {
-    background-color: #fff;
-    padding: 3rem;
-    border-radius: 1rem;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 10;
     width: 100%;
-    max-width: 400px; /* 고정된 너비 */
+    max-width: 420px; /* PC에서 적절한 크기 제한 */
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* 부드러운 그림자 */
+    transition: all 0.3s ease;
 }
 
 .login-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: 30px;
 }
 
 .login-title {
     font-size: 2rem;
-    font-weight: 700;
-    color: #4f46e5; /* 인디고 메인 색상 */
-    margin: 0;
+    color: #007bff; /* 브랜드 색상 */
+    margin-bottom: 5px;
+    font-weight: 800;
 }
 
 .login-subtitle {
     font-size: 1rem;
-    color: #6b7280;
-    margin-top: 0.5rem;
+    color: #6c757d;
 }
 
-/* --- 폼 및 입력 필드 --- */
+/* --- 3. 폼 요소 스타일 --- */
+
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 15px;
 }
 
-.login-input-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.login-label {
+.login-input-group label {
+    display: block;
+    margin-bottom: 5px;
     font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #333;
+    color: #495057;
     font-size: 0.95rem;
 }
 
-.login-input {
-    padding: 0.75rem 1rem;
-    border: 1px solid #ccc;
-    border-radius: 0.5rem;
+.login-input-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
     font-size: 1rem;
-    transition: border-color 0.15s, box-shadow 0.15s;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-sizing: border-box;
 }
 
-.login-input:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+.login-input-group input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
     outline: none;
 }
 
-/* --- 에러 메시지 --- */
-.login-error {
-    background-color: #fee2e2;
-    color: #991b1b;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.9rem;
+/* 자동 로그인 체크박스 */
+.login-remember {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+    color: #495057;
 }
 
-.login-error-icon {
-    font-size: 1.1rem;
+.login-remember input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
 }
 
-/* --- 로그인 버튼 --- */
-.login-button {
-    padding: 1rem;
+/* 에러 메시지 */
+.login-error {
+    color: #dc3545;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* 로그인 버튼 */
+.login-form button {
+    background-color: #007bff;
+    color: white;
+    padding: 14px 20px;
     border: none;
-    border-radius: 0.5rem;
-    background-color: #4f46e5;
-    color: #fff;
+    border-radius: 8px;
     font-size: 1.1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.2s, opacity 0.2s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
+    transition: background-color 0.3s, opacity 0.3s;
+    margin-top: 10px;
 }
 
-.login-button:hover:not(:disabled) {
-    background-color: #4338ca;
+.login-form button:hover:not(:disabled) {
+    background-color: #0056b3;
 }
 
-.login-button:disabled,
-.login-loading {
-    background-color: #a5b4fc;
+.login-form button:disabled {
+    background-color: #a0c3ff;
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
-/* --- 로딩 스피너 --- */
-.login-spinner {
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top: 3px solid #fff;
-    border-radius: 50%;
-    width: 18px;
-    height: 18px;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* --- 회원가입 링크 --- */
+/* 회원가입 링크 */
 .login-signup-link {
     text-align: center;
-    margin-top: 1.5rem;
+    margin-top: 25px;
     font-size: 0.95rem;
-    color: #6b7280;
+    color: #6c757d;
 }
 
 .login-signup-link a {
-    color: #4f46e5;
+    color: #007bff;
     text-decoration: none;
     font-weight: 600;
 }
@@ -157,10 +157,41 @@
     text-decoration: underline;
 }
 
-/* --- 토스트 스타일 (ToastContainer에서 사용) --- */
-.login-toast {
-    font-family: Arial, sans-serif;
-    font-size: 0.95rem;
-    padding: 1rem;
-    border-radius: 0.5rem;
+/* --- 4. 모바일 반응형 (max-width: 768px) --- */
+
+@media (max-width: 768px) {
+    .login-container {
+        padding: 0;
+        /* 모바일에서 화면 전체 사용 */
+    }
+
+    .login-card {
+        max-width: none;
+        width: 100%;
+        min-height: 100vh; /* 모바일에서 화면 전체 높이 사용 */
+        padding: 30px 20px;
+        border-radius: 0; /* 모서리 제거 */
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* 내용을 중앙에 배치 */
+    }
+
+    .login-header {
+        margin-bottom: 25px;
+    }
+
+    .login-title {
+        font-size: 1.8rem;
+    }
+
+    .login-form button {
+        padding: 12px 15px;
+        font-size: 1rem;
+    }
+
+    .login-input-group input {
+        padding: 10px 12px;
+        font-size: 0.95rem;
+    }
 }

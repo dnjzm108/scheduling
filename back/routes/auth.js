@@ -12,7 +12,8 @@ const pool = (req) => req.app.get('db');
 // 로그인
 router.post('/login', async (req, res) => {
   try {
-    const { userId, password } = req.body;
+    const { userId, password, rememberMe } = req.body;
+
     if (!userId || !password) {
       return res.status(400).json({ message: '아이디와 비밀번호를 입력하세요.' });
     }
@@ -21,11 +22,15 @@ router.post('/login', async (req, res) => {
       'SELECT * FROM users WHERE userId = ? LIMIT 1',
       [userId]
     );
+
     if (!rows[0]) {
       return res.status(401).json({ message: '아이디 또는 비밀번호가 올바르지 않습니다.' });
     }
 
     const user = rows[0];
+    if (user.level < 1) {
+      return res.status(401).json({ message: '관리자 승인이 있어야 로그인이 가능합니다.' });
+    }
 
     // 퇴사/비활성
     const today = new Date();
@@ -42,6 +47,9 @@ router.post('/login', async (req, res) => {
 
     // 🔥🔥🔥 여기 추가해야 로그인 완료됨 🔥🔥🔥
 
+
+    const expiresIn = rememberMe ? '30d' : '7d';
+
     const token = jwt.sign(
       {
         id: user.id,
@@ -51,7 +59,7 @@ router.post('/login', async (req, res) => {
         name: user.name
       },
       SECRET_KEY,
-      { expiresIn: '7d' }
+      { expiresIn }
     );
 
     return res.json({

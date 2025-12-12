@@ -62,7 +62,7 @@ router.get('/employees', authMiddleware, async (req, res) => {
       SELECT 
         u.id, u.name, u.userId, u.phone, u.store_id, u.level, 
         u.signup_date, u.hire_date,
-        u.bank_name, u.bank_account, u.account_holder, u.tax_type, u.work_area,
+        u.bank_name, u.bank_account, u.account_holder, u.tax_type, u.work_area,u.resident_id,
         s.salary_type,
         s.hourly_rate,
         s.hourly_rate_with_holiday,
@@ -102,6 +102,7 @@ router.get('/employees', authMiddleware, async (req, res) => {
       level: row.level,
       signup_date: row.signup_date,
       hire_date: row.hire_date,
+      resident_id: row.resident_id,
 
       bank_name: row.bank_name,
       bank_account: row.bank_account,
@@ -370,55 +371,52 @@ router.get("/:id", authMiddleware, async (req, res) => {
 // ============================
 // 직원 정보 수정 API
 // ============================
-router.put("/:id", authMiddleware, async (req, res) => {
-  try {
-    const userId = req.params.id;
-    const adminLevel = req.user.level;
+// router.put("/:id", authMiddleware, async (req, res) => {
+//   try {
+//     const userId = req.params.id;
+//     const adminLevel = req.user.level;
 
-    if (adminLevel < 3) {
-      return res.status(403).json({ message: "권한이 없습니다." });
-    }
+//     if (adminLevel < 3) {
+//       return res.status(403).json({ message: "권한이 없습니다." });
+//     }
 
-    const {
-      name, phone, resident_id,
-      hire_date, resign_date,
-      work_area,
-      bank_name, bank_account, account_holder,
-      is_active,
-      hourly_rate
-    } = req.body;
+//     const {
+//       name, phone, resident_id,
+//       hire_date, resign_date,
+//       work_area,
+//       bank_name, bank_account, account_holder,
+//       hourly_rate,
+//     } = req.body;
 
-    const conn = pool(req);
+//     const conn = pool(req);
 
-    // 직원 정보 업데이트
-    await conn.query(`
-      UPDATE users SET 
-        name = ?, phone = ?, resident_id = ?, 
-        hire_date = ?, resign_date = ?, work_area = ?,
-        bank_name = ?, bank_account = ?, account_holder = ?,
-        is_active = ?
-      WHERE id = ?
-    `, [
-      name, phone, resident_id,
-      hire_date, resign_date, work_area,
-      bank_name, bank_account, account_holder,
-      is_active,
-      userId
-    ]);
+//     // 직원 정보 업데이트
+//     await conn.query(`
+//       UPDATE users SET 
+//         name = ?, phone = ?, resident_id = ?, 
+//         hire_date = ?, resign_date = ?, work_area = ?,
+//         bank_name = ?, bank_account = ?, account_holder = ?
+//       WHERE id = ?
+//     `, [
+//       name, phone, resident_id,
+//       hire_date, resign_date, work_area,
+//       bank_name, bank_account, account_holder,
+//       userId
+//     ]);
 
-    // 급여테이블 업데이트
-    await conn.query(`
-      INSERT INTO employee_salary (user_id, hourly_rate)
-      VALUES (?, ?)
-      ON DUPLICATE KEY UPDATE hourly_rate = VALUES(hourly_rate)
-    `, [userId, hourly_rate]);
+//     // 급여테이블 업데이트
+//     await conn.query(`
+//       INSERT INTO employee_salary (user_id, hourly_rate)
+//       VALUES (?, ?)
+//       ON DUPLICATE KEY UPDATE hourly_rate = VALUES(hourly_rate)
+//     `, [userId, hourly_rate]);
 
-    res.json({ message: "수정 완료" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "직원 수정 실패" });
-  }
-});
+//     res.json({ message: "수정 완료" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "직원 수정 실패" });
+//   }
+// });
 
 
 // ===========================================
@@ -499,24 +497,11 @@ router.put("/:id/personal", authMiddleware, async (req, res) => {
 // 7. 직원 정보 수정
 router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
   const { userId } = req.params;
-  const {
-    name,
-    userId: newUserId,
-    phone,
-    store_id,
-    hire_date,
-    level,
-    hourly_rate,
-    hourly_rate_with_holiday,
-    monthly_salary,
-
-    bank_name,
-    bank_account,
-    account_holder,
-    tax_type,
-    work_area
+  const { name, userId: newUserId, phone, store_id, hire_date,
+    level, hourly_rate, hourly_rate_with_holiday, monthly_salary,
+    bank_name, bank_account, account_holder, tax_type, work_area , resident_id
   } = req.body;
-  console.log(req.body);
+
 
 
   try {
@@ -555,7 +540,7 @@ router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
       await conn.query(
         `UPDATE users 
          SET name = ?, userId = ?, phone = ?, store_id = ?, hire_date = ?, level = ?,
-             bank_name = ?, bank_account = ?, account_holder = ?, tax_type = ?, work_area = ?
+             bank_name = ?, bank_account = ?, account_holder = ?, tax_type = ?, work_area = ? , resident_id = ?
          WHERE id = ?`,
         [
           name, newUserId, phone, store_id ?? null, hire_date ?? null, finalLevel,
@@ -564,6 +549,7 @@ router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
           account_holder || null,
           finalTaxType,
           finalWorkArea,
+          resident_id,
           userId
         ]
       );
@@ -633,6 +619,7 @@ router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
     });
 
     res.json({ message: '직원 정보 수정 완료', user: result });
+
   } catch (err) {
     console.error('직원 수정 실패:', err);
     res.status(err.status || 500).json({ message: err.msg || '서버 오류 발생' });
@@ -644,7 +631,7 @@ router.put('/:userId', authMiddleware, storeAdmin, async (req, res) => {
 router.put('/:userId/password/personal', authMiddleware, async (req, res) => {
   const { userId } = req.params;
   const { password } = req.body;
-  
+
   try {
     if (!password || password.length < 4) throw { status: 400, msg: '비밀번호 4자 이상' };
 
@@ -662,7 +649,7 @@ router.put('/:userId/password/personal', authMiddleware, async (req, res) => {
     res.json({ message: '비밀번호 변경 완료', ...result });
   } catch (err) {
     console.log(err);
-    
+
     res.status(err.status || 500).json({ message: err.msg || '변경 실패' });
   }
 });

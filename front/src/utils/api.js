@@ -2,7 +2,6 @@
 import axios from 'axios';
 import { getToken } from './auth';
 const API_URL = process.env.REACT_APP_API_URL;
-console.log("test : ",API_URL);
 
 // 전역 취소 토큰 배열 (페이지 이동 시 전체 취소용)
 const cancelTokens = [];
