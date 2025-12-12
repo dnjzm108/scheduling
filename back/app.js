@@ -6,7 +6,7 @@ const path = require('path');
 const rateLimit = require('express-rate-limit');
 const { createDatabaseAndPool } = require('./config/db');
 const initDB = require('./utils/initDB');
-const API_URL = process.env.API_URL;
+const API_URL = "http://kmcompany.site";
 // const { assignWorkers } = require('./utils/assigner');
 
 const app = express();
