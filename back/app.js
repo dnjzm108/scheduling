@@ -7,7 +7,6 @@ const rateLimit = require('express-rate-limit');
 const { createDatabaseAndPool } = require('./config/db');
 const initDB = require('./utils/initDB');
 const API_URL = process.env.API_URL || 'http://localhost:3000';
-// const { assignWorkers } = require('./utils/assigner');
 
 const app = express();
 const PORT = process.env.PORT || 5001;

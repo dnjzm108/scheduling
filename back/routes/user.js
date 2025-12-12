@@ -368,57 +368,6 @@ router.get("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// ============================
-// 직원 정보 수정 API
-// ============================
-// router.put("/:id", authMiddleware, async (req, res) => {
-//   try {
-//     const userId = req.params.id;
-//     const adminLevel = req.user.level;
-
-//     if (adminLevel < 3) {
-//       return res.status(403).json({ message: "권한이 없습니다." });
-//     }
-
-//     const {
-//       name, phone, resident_id,
-//       hire_date, resign_date,
-//       work_area,
-//       bank_name, bank_account, account_holder,
-//       hourly_rate,
-//     } = req.body;
-
-//     const conn = pool(req);
-
-//     // 직원 정보 업데이트
-//     await conn.query(`
-//       UPDATE users SET 
-//         name = ?, phone = ?, resident_id = ?, 
-//         hire_date = ?, resign_date = ?, work_area = ?,
-//         bank_name = ?, bank_account = ?, account_holder = ?
-//       WHERE id = ?
-//     `, [
-//       name, phone, resident_id,
-//       hire_date, resign_date, work_area,
-//       bank_name, bank_account, account_holder,
-//       userId
-//     ]);
-
-//     // 급여테이블 업데이트
-//     await conn.query(`
-//       INSERT INTO employee_salary (user_id, hourly_rate)
-//       VALUES (?, ?)
-//       ON DUPLICATE KEY UPDATE hourly_rate = VALUES(hourly_rate)
-//     `, [userId, hourly_rate]);
-
-//     res.json({ message: "수정 완료" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ message: "직원 수정 실패" });
-//   }
-// });
-
-
 // ===========================================
 // 11. 개인정보 수정 (프론트 요청 API)
 // PUT /api/user/:id/personal
